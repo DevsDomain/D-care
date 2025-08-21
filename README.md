@@ -1,4 +1,4 @@
-<h1 align="center">👨🏻‍⚕️ D-Care</h1>
+<h1 align="center">👨🏻‍⚕D-Care💓</h1>
 
 ## :memo: Desafio
 Este projeto tem como objetivo o desenvolvimento de uma plataforma digital completa (API, aplicação web e mobile) para conectar familiares de idosos a cuidadores de confiança. A solução foca em segurança, rapidez e impacto social, oferecendo verificação de registros profissionais (CRM, COREN), suporte educativo com IA, avaliação funcional (IVCF-20) e agendamento emergencial on-demand. A proposta é inspirada em modelos de intermediação ágil, mas com foco diferenciado em cuidado humanizado e qualidade de vida no envelhecimento.
