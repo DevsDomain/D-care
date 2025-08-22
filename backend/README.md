@@ -146,6 +146,84 @@ pnpm start:dev
 A API ficará disponível em:
 
 👉 [http://localhost:3000/api/v1](http://localhost:3000/api/v1)
+
+## Arquitetura do Backend
+
+```
+backend/
+└── src/
+    ├── app.module.ts
+    ├── main.ts
+    │
+    ├── common/                      # Recursos compartilhados (cross-cutting)
+    │   ├── dto/
+    │   ├── guards/
+    │   ├── interceptors/
+    │   ├── filters/
+    │   ├── pipes/
+    │   └── utils/
+    │
+    ├── database/                    # Infra de dados (ORM/Prisma/TypeORM)
+    │   ├── database.module.ts
+    │   ├── entities/
+    │   ├── migrations/
+    │   └── repositories/
+    │
+    ├── auth/                        # Autenticação/Autorização (JWT, refresh, etc.)
+    │   ├── auth.module.ts
+    │   ├── auth.controller.ts
+    │   ├── auth.service.ts
+    │   └── dto/
+    │
+    ├── perfis/                      # Perfis de usuário (CRUD)
+    │   ├── perfis.module.ts
+    │   ├── perfis.controller.ts
+    │   ├── perfis.service.ts
+    │   └── dto/
+    │
+    ├── idosos/                      # Domínio Idosos (CRUD e regras)
+    │   ├── idosos.module.ts
+    │   ├── idosos.controller.ts
+    │   ├── idosos.service.ts
+    │   └── dto/
+    │
+    ├── disponibilidade/             # Janelas de disponibilidade
+    │   ├── disponibilidade.module.ts
+    │   ├── disponibilidade.controller.ts
+    │   ├── disponibilidade.service.ts
+    │   └── dto/
+    │
+    ├── agendamentos/                # Agendamentos/consultas
+    │   ├── agendamentos.module.ts
+    │   ├── agendamentos.controller.ts
+    │   ├── agendamentos.service.ts
+    │   └── dto/
+    │
+    ├── reviews/                     # Avaliações e feedbacks
+    │   ├── reviews.module.ts
+    │   ├── reviews.controller.ts
+    │   ├── reviews.service.ts
+    │   └── dto/
+    │
+    ├── ivcf/                        # IVCF-20 (índice de vulnerabilidade)
+    │   ├── ivcf.module.ts
+    │   ├── ivcf.controller.ts
+    │   ├── ivcf.service.ts
+    │   └── dto/
+    │
+    ├── ai-proxy/                    # Proxy para serviços de IA
+    │   ├── ai-proxy.module.ts
+    │   ├── ai-proxy.controller.ts
+    │   ├── ai-proxy.service.ts
+    │   └── dto/
+    │
+    └── uploads/                     # Upload e gerenciamento de arquivos
+        ├── uploads.module.ts
+        ├── uploads.controller.ts
+        ├── uploads.service.ts
+        └── dto/
+```
+
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
