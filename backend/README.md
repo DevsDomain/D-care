@@ -25,64 +25,127 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Project setup
+# Backend (NestJS) — Guia de Execução
+
+Backend em **NestJS** para o projeto
+
+---
+
+## 📦 Pré-requisitos
+
+- **Node.js 20+** e **pnpm**
+  ```bash
+  node -v
+  corepack enable
+  corepack prepare pnpm@9.6.0 --activate
+  ```
+
+- **Docker + Docker Compose**
+  ```bash
+  docker -v
+  docker compose version
+  ```
+
+- **Sistema Operacional**
+  - Ubuntu 22.04 (ou compatível)
+
+---
+
+## 🔽 Clonar o repositório
 
 ```bash
-$ pnpm install
+git clone https://github.com/DevsDomain/D-care.git
+cd D-care
 ```
 
-## Compile and run the project
+---
+
+## ⚙️ Variáveis de Ambiente
+
+Nunca versionamos segredos reais. O fluxo é:
+
+- **`.env.example`** → arquivo versionado com placeholders (pode ser commitado).  
+- **`.env.docker`** → arquivo local (não commitado), usado pelo `docker-compose`.  
+- **`backend/.env`** → arquivo local (não commitado), usado pelo backend NestJS.  
+
+### Exemplo de arquivos
+
+#### `.env.example` (na raiz do repo, versionado)
+```env
+POSTGRES_USER=care
+POSTGRES_PASSWORD=change-me
+POSTGRES_DB=caredb
+DB_PORT=5432
+JWT_SECRET=replace-with-long-random-secret
+JWT_REFRESH_SECRET=replace-with-long-random-refresh-secret
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=my-care-bucket
+```
+
+#### `.env.docker` (na raiz do repo, **NÃO versionar**)
+```env
+POSTGRES_USER=care
+POSTGRES_PASSWORD=carepass
+POSTGRES_DB=caredb
+DB_PORT=5432
+```
+
+#### `backend/.env` (**NÃO versionar**)
+```env
+NODE_ENV=development
+PORT=3000
+API_GLOBAL_PREFIX=/api/v1
+
+JWT_SECRET=dev-secret
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=dev-refresh-secret
+JWT_REFRESH_EXPIRES_IN=30d
+
+DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${DB_PORT}/caredb?schema=public
+
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=my-care-bucket
+```
+
+---
+
+## 🐘 Subir PostgreSQL com Docker
+
+O `docker-compose.yml` está versionado, mas não contém segredos (eles vêm do `.env.docker`).
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+docker compose up -d
 ```
 
-## Run tests
+> ⚠️ Se a porta **5432** já estiver em uso, altere no `.env.docker`:
+> ```env
+> DB_PORT=5433
+> ```
+> e ajuste o `DATABASE_URL` em `backend/.env`.
+
+---
+
+## 📥 Instalar dependências e configurar ORM
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+cd backend
+pnpm install
+pnpm prisma generate
 ```
 
-## Deployment
+> ⚠️ As migrations serão adicionadas quando o schema estiver pronto.
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+---
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## 🚀 Rodar a API em modo desenvolvimento
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+pnpm start:dev
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+A API ficará disponível em:
 
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
+👉 [http://localhost:3000/api/v1](http://localhost:3000/api/v1)
 ## Support
 
 Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
