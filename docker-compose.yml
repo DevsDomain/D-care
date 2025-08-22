@@ -1,0 +1,20 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres:16
+    container_name: pg-care
+    environment:
+      POSTGRES_USER: care
+      POSTGRES_PASSWORD: carepass
+      POSTGRES_DB: caredb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U care -d caredb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+volumes:
+  pgdata:
