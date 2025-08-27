@@ -1,19 +1,29 @@
-<h1 align="center">👨🏻‍⚕D-Care💓</h1>
+<h1 align="center" style="border-bottom: none;">👨🏻‍⚕D-Care💓</h1>
 
-## :memo: Desafio
+## ✎ᝰ Desafio
 Este projeto tem como objetivo o desenvolvimento de uma plataforma digital completa (API, aplicação web e mobile) para conectar familiares de idosos a cuidadores de confiança. A solução foca em segurança, rapidez e impacto social, oferecendo verificação de registros profissionais (CRM, COREN), suporte educativo com IA, avaliação funcional (IVCF-20) e agendamento emergencial on-demand. A proposta é inspirada em modelos de intermediação ágil, mas com foco diferenciado em cuidado humanizado e qualidade de vida no envelhecimento.
- 
 
-## 📋 Product Backlog
+
+## ╰┈➤ Entregas de Sprints
+
+ Cada entrega será realizada a partir da criação de uma **tag** conforme relação a seguir:
+| Sprint | Previsão de entrega | Status | Release | Kanban | BurnDown |
+|:--:|:----------:|:-------------------|:-------------------:|:-------------------:|:-------------------:|
+| 01 | 07/10/2025 | 🚧 A iniciar | [Ver release 1](https://github.com/DevsDomain/D-FireTrack/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/39/views/5) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care) |
+| 02 | 03/11/2025 | 🚧 A iniciar | [Ver release 2](https://github.com/DevsDomain/D-care) | [Ver Sprint 2](https://github.com/DevsDomain/D-care) | [Ver BurnDown 2](https://github.com/DevsDomain/D-care) |
+| 03 | 24/11/2025 | 🚧 A iniciar | [Ver release 3](https://github.com/DevsDomain/D-care) | [Ver Sprint 3](https://github.com/DevsDomain/D-care) | [Ver BurnDown 3](https://github.com/DevsDomain/D-care) |
+
+
+## ✍️ Product Backlog
 O Product Backlog segue o padrão de priorização:
 - *A* Alta
 - *M* Média
 - *B* Baixa
 
----
-# 📌 Backlog e Requisitos do Projeto
 
-## 1. Requisitos Funcionais
+## 📌 Backlog e Requisitos do Projeto
+
+### 1. Requisitos Funcionais
 
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------ |
@@ -33,9 +43,8 @@ O Product Backlog segue o padrão de priorização:
 | US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD              | Baixa        | 5            | 4               | To Do  |
 | US15 | Como sistema, preciso validar CRM/COREN de cuidadores                       | Média        | 4            | 4               | To Do  |
 
----
 
-## 2. Requisitos Não Funcionais
+### 2. Requisitos Não Funcionais
 
 - **Protótipo (Figma)** – Wireframes e protótipos navegáveis
 - **Banco de Dados** – Modelagem e implementação
@@ -43,7 +52,6 @@ O Product Backlog segue o padrão de priorização:
 - **Configuração Docker** – Containers para backend, frontend e banco
 - **GitHub** – Organização com board, cards e versionamento
 
----
 
 ## 3. Priorização das Histórias de Usuário
 
@@ -52,9 +60,8 @@ O Product Backlog segue o padrão de priorização:
 | *A (Alta)*    | US01, US02, US03, US04, US05, US06, US07, US09 |
 | *M (Média)*   | US08, US10, US11, US13, US15                   |
 | *B (Baixa)*   | US12, US14                                    |
----
 
-## 🔧 Tecnologias utilizadas
+## 👾⋆˚ Tecnologias utilizadas ˖°👾
 
 #### Backend
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?style=for-the-badge&logo=typescript&logoColor=white)
@@ -76,7 +83,7 @@ O Product Backlog segue o padrão de priorização:
 
 <span id="equipe">
 
-## :busts_in_silhouette: Equipe
+## Equipe 𐦂𖨆𐀪𖠋:
 
 |    Função       | Nome             | LinkedIn & GitHub |
 | :-------------: | :--------------- | :---------------- |
