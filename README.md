@@ -9,7 +9,7 @@ Este projeto tem como objetivo o desenvolvimento de uma plataforma digital compl
  Cada entrega será realizada a partir da criação de uma **tag** conforme relação a seguir:
 | Sprint | Previsão de entrega | Status | Release | Kanban | BurnDown |
 |:--:|:----------:|:-------------------|:-------------------:|:-------------------:|:-------------------:|
-| 01 | 07/10/2025 | 🚧 A iniciar | [Ver release 1](https://github.com/DevsDomain/D-FireTrack/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/39/views/5) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care) |
+| 01 | 07/10/2025 | 🚧 A iniciar | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care) |
 | 02 | 03/11/2025 | 🚧 A iniciar | [Ver release 2](https://github.com/DevsDomain/D-care) | [Ver Sprint 2](https://github.com/DevsDomain/D-care) | [Ver BurnDown 2](https://github.com/DevsDomain/D-care) |
 | 03 | 24/11/2025 | 🚧 A iniciar | [Ver release 3](https://github.com/DevsDomain/D-care) | [Ver Sprint 3](https://github.com/DevsDomain/D-care) | [Ver BurnDown 3](https://github.com/DevsDomain/D-care) |
 
