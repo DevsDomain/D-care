@@ -43,6 +43,7 @@ services:
     image: postgres:16
     container_name: pg-care
     environment:
+      # Alterar os dados para o projeto:
       POSTGRES_USER: care
       POSTGRES_PASSWORD: carepass
       POSTGRES_DB: caredb

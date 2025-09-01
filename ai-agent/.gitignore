@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+*.log
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+# OS
+# Docker
+*.local

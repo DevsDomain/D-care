@@ -1,0 +1,8 @@
+# Teste
+*.log
+coverage/
+.vscode/
+.idea/
+*.swp
+*.swo
+	# Removed .DS_Store and Thumbs.db as they are handled globally
