@@ -8,13 +8,13 @@ Este projeto tem como objetivo o desenvolvimento de uma plataforma digital compl
 
 ## ╰┈➤ Entregas de Sprints
 
- Cada entrega será realizada a partir da criação de uma **tag** conforme relação a seguir:
-| Sprint | Data de início | Previsão de entrega | Status | Release | Kanban | BurnDown |
-|:--:|:--------------:|:-------------------:|:-------------------:|:-------------------:|:-------------------:|:-------------------:|
-| 01 | 16/09/2025 |06/10/2025 |🚧 A iniciar |[Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) |[Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) |[Ver BurnDown 1](https://github.com/DevsDomain/D-care) |
-| 02 | 13/10/2025 |02/11/2025 |🚧 A iniciar |[Ver release 2](https://github.com/DevsDomain/D-care) |[Ver Sprint 2](https://github.com/DevsDomain/D-care) |[Ver BurnDown 2](https://github.com/DevsDomain/D-care) |
-| 03 | 06/11/2025 |23/11/2025 |🚧 A iniciar |[Ver release 3](https://github.com/DevsDomain/D-care) |[Ver Sprint 3](https://github.com/DevsDomain/D-care) |[Ver BurnDown 3](https://github.com/DevsDomain/D-care) |
+Cada entrega será realizada a partir da criação de uma **tag** conforme relação a seguir:
 
+| Sprint | Início | Previsão de entrega | Status | Release | Kanban | BurnDown |
+|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
+| 01 | 16/09/2025 | 06/10/2025 | 🚧 A iniciar | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care) |
+| 02 | 13/10/2025 | 02/11/2025 | 🚧 A iniciar | [Ver release 2](https://github.com/DevsDomain/D-care) | [Ver Sprint 2](https://github.com/DevsDomain/D-care) | [Ver BurnDown 2](https://github.com/DevsDomain/D-care) |
+| 03 | 06/11/2025 | 23/11/2025 | 🚧 A iniciar | [Ver release 3](https://github.com/DevsDomain/D-care) | [Ver Sprint 3](https://github.com/DevsDomain/D-care) | [Ver BurnDown 3](https://github.com/DevsDomain/D-care) |
 
 ## ✍️ Product Backlog
 O Product Backlog segue o padrão de priorização:
