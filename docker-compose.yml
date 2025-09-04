@@ -28,16 +28,16 @@ services:
   #   depends_on:
   #     - backend
 
-  test:
-    build: ./test
-    volumes:
-      - testdata:/app/testdata
-    depends_on:
-      - backend
-      - frontend
-      #- ai-agent
-    environment:
-      - NODE_ENV=test
+  # test:
+  #  build: ./test
+  # volumes:
+  #  - testdata:/app/testdata
+  #  depends_on:
+  #   - backend
+  #   - frontend
+  #   - ai-agent
+  #   environment:
+  #     - NODE_ENV=test
 
   postgres:
     image: postgres:16
