@@ -19,14 +19,14 @@ services:
     depends_on:
       - backend
 
-  ai-agent:
-    build: ./ai-agent
-    ports:
-      - "5000:5000"
-    env_file:
-      - ./ai-agent/.env
-    depends_on:
-      - backend
+  # ai-agent:
+  #   build: ./ai-agent
+  #   ports:
+  #     - "5000:5000"
+  #   env_file:
+  #     - ./ai-agent/.env
+  #   depends_on:
+  #     - backend
 
   test:
     build: ./test
@@ -35,7 +35,7 @@ services:
     depends_on:
       - backend
       - frontend
-      - ai-agent
+      #- ai-agent
     environment:
       - NODE_ENV=test
 
