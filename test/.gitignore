@@ -1,8 +1,7 @@
-# Teste
-*.log
-coverage/
-.vscode/
-.idea/
-*.swp
-*.swo
-	# Removed .DS_Store and Thumbs.db as they are handled globally
+# Test specific
+/node_modules
+/coverage
+/.nyc_output
+/test-results
+/screenshots
+/videos
