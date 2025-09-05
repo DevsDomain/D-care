@@ -1,9 +1,48 @@
-version: "3.9"
+
 services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - postgres
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3030:3030"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+
+  # ai-agent:
+  #   build: ./ai-agent
+  #   ports:
+  #     - "5000:5000"
+  #   env_file:
+  #     - ./ai-agent/.env
+  #   depends_on:
+  #     - backend
+
+  # test:
+  #  build: ./test
+  # volumes:
+  #  - testdata:/app/testdata
+  #  depends_on:
+  #   - backend
+  #   - frontend
+  #   - ai-agent
+  #   environment:
+  #     - NODE_ENV=test
+
   postgres:
     image: postgres:16
     container_name: pg-care
     environment:
+      # Alterar os dados para o projeto:
       POSTGRES_USER: care
       POSTGRES_PASSWORD: carepass
       POSTGRES_DB: caredb
