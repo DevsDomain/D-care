@@ -39,7 +39,7 @@ services:
   #     - NODE_ENV=test
 
   postgres:
-    image: postgres:16
+    image: postgis/postgis:16-3.4
     container_name: pg-care
     environment:
       # Alterar os dados para o projeto:
@@ -47,13 +47,14 @@ services:
       POSTGRES_PASSWORD: carepass
       POSTGRES_DB: caredb
     ports:
-      - "5432:5432"
+      - "55432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./bd/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U care -d caredb"]
       interval: 5s
       timeout: 5s
       retries: 5
 volumes:
-  pgdata:
+  pgdata: {}
