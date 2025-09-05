@@ -1,4 +1,6 @@
-<h1 align="center" style="border-bottom: none;">👨🏻‍⚕D-Care💓</h1>
+<h1 align="center" style="border-bottom: none; white-space: nowrap;">
+  👨🏻‍⚕ D-Care 💓
+</h1>
 
 ## ✎ᝰ Desafio
 Este projeto tem como objetivo o desenvolvimento de uma plataforma digital completa (API, aplicação web e mobile) para conectar familiares de idosos a cuidadores de confiança. A solução foca em segurança, rapidez e impacto social, oferecendo verificação de registros profissionais (CRM, COREN), suporte educativo com IA, avaliação funcional (IVCF-20) e agendamento emergencial on-demand. A proposta é inspirada em modelos de intermediação ágil, mas com foco diferenciado em cuidado humanizado e qualidade de vida no envelhecimento.
@@ -6,13 +8,13 @@ Este projeto tem como objetivo o desenvolvimento de uma plataforma digital compl
 
 ## ╰┈➤ Entregas de Sprints
 
- Cada entrega será realizada a partir da criação de uma **tag** conforme relação a seguir:
-| Sprint | Data de início | Previsão de entrega | Status | Release | Kanban | BurnDown |
-|:--:|:--------------:|:-------------------:|:-------------------:|:-------------------:|:-------------------:|:-------------------:|
+Cada entrega será realizada a partir da criação de uma **tag** conforme relação a seguir:
+
+| Sprint | Início | Previsão de entrega | Status | Release | Kanban | BurnDown |
+|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | 01 | 16/09/2025 | 06/10/2025 | 🚧 A iniciar | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care) |
 | 02 | 13/10/2025 | 02/11/2025 | 🚧 A iniciar | [Ver release 2](https://github.com/DevsDomain/D-care) | [Ver Sprint 2](https://github.com/DevsDomain/D-care) | [Ver BurnDown 2](https://github.com/DevsDomain/D-care) |
 | 03 | 06/11/2025 | 23/11/2025 | 🚧 A iniciar | [Ver release 3](https://github.com/DevsDomain/D-care) | [Ver Sprint 3](https://github.com/DevsDomain/D-care) | [Ver BurnDown 3](https://github.com/DevsDomain/D-care) |
-
 
 ## ✍️ Product Backlog
 O Product Backlog segue o padrão de priorização:
