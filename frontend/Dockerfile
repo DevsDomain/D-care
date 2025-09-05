@@ -1,20 +1,23 @@
+
 # Estágio de Desenvolvimento
 FROM node:20-alpine AS development
 
-# Define o diretório de trabalho dentro do container
+# Instalar dependências do sistema para compilar libs nativas (se precisar)
+RUN apk add --no-cache python3 make g++
+
+# Diretório de trabalho
 WORKDIR /app
 
-# Copia os arquivos de manifesto de pacotes
-COPY package.json pnpm-lock.yaml ./
+# Copiar apenas arquivos de manifesto primeiro (melhor pro cache)
+COPY package.json pnpm-lock.yaml* ./
 
-# Instala o pnpm e as dependências (baseado no seu backend/README.md)
-RUN corepack enable
-RUN pnpm install
+# Habilitar pnpm e instalar dependências
+RUN corepack enable && pnpm install --frozen-lockfile
 
-# Copia o resto do código da aplicação
+# Copiar o resto do código da aplicação
 COPY . .
 
-# Expõe a porta padrão do Vite
+# Expor a porta padrão do Vite
 EXPOSE 5173
 
 # Comando para iniciar o servidor de desenvolvimento do Vite
