@@ -12,7 +12,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3030:3030"
+      - "5173:5173"
     env_file:
       - ./frontend/.env
     depends_on:
