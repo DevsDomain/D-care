@@ -1,22 +1,22 @@
 
 services:
-  backend:
-    build: ./backend
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - postgres
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "3030:3030"
-    env_file:
-      - ./frontend/.env
-    depends_on:
-      - backend
+  #backend:
+  #  build: ./backend
+  #  ports:
+  #    - "3000:3000"
+  #  env_file:
+  #    - ./backend/.env
+  #  depends_on:
+  #    - postgres
+#
+  #frontend:
+  #  build: ./frontend
+  #  ports:
+  #    - "3030:3030"
+  #  env_file:
+  #    - ./frontend/.env
+  #  depends_on:
+  #    - backend
 
   # ai-agent:
   #   build: ./ai-agent
