@@ -70,18 +70,6 @@ Nunca versionamos segredos reais. O fluxo é:
 
 ### Exemplo de arquivos
 
-#### `.env.example` (na raiz do repo, versionado)
-```env
-POSTGRES_USER=care
-POSTGRES_PASSWORD=change-me
-POSTGRES_DB=caredb
-DB_PORT=5432
-JWT_SECRET=replace-with-long-random-secret
-JWT_REFRESH_SECRET=replace-with-long-random-refresh-secret
-AWS_REGION=us-east-1
-AWS_S3_BUCKET=my-care-bucket
-```
-
 #### `.env.docker` (na raiz do repo, **NÃO versionar**)
 ```env
 POSTGRES_USER=care
@@ -100,6 +88,9 @@ JWT_SECRET=dev-secret
 JWT_EXPIRES_IN=15m
 JWT_REFRESH_SECRET=dev-refresh-secret
 JWT_REFRESH_EXPIRES_IN=30d
+
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=my-care-bucket
 
 DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:${DB_PORT}/caredb?schema=public
 
@@ -130,6 +121,7 @@ docker compose up -d
 ```bash
 cd backend
 pnpm install
+pnpx prisma migrate dev
 pnpm prisma generate
 ```
 
