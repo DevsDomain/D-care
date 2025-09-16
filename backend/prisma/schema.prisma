@@ -9,21 +9,31 @@ datasource db {
   schemas  = ["appointments", "auth", "caregiver", "family", "knowledge", "reviews"]
 }
 
+enum UserRole {
+  ADMIN
+  CAREGIVER
+  FAMILY
+
+  @@schema("auth")   // required because you use multiple schemas
+  // optional if you want the db name to be snake_case:
+  // @@map("user_role")
+}
+
 model Users {
-  id           String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  email        String                   @unique @db.VarChar(255)
-  passwordHash String                   @map("password_hash")
-  role         Unsupported("user_role")
-  status       String?                  @default("active") @db.VarChar(20)
-  createdAt    DateTime?                @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt    DateTime?                @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  deletedAt    DateTime?                @map("deleted_at") @db.Timestamp(6)
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash")
+  role         UserRole  // <-- was Unsupported("user_role")
+  status       String?   @default("active") @db.VarChar(20)
+  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(6)
   userProfile  UserProfiles[]           @relation("UserToProfile")
   terms        UserTermsAcceptance[]    @relation("UserToTerms")
   caregiver    Caregivers[]             @relation("UserToCaregiver")
   family       Families[]               @relation("UserToFamily")
   faqQueries   FAQAIQueries[]           @relation("UserToFAQ")
-
+  
   @@map("users")
   @@schema("auth")
 }

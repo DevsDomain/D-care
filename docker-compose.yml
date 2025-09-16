@@ -47,7 +47,7 @@ services:
       POSTGRES_PASSWORD: carepass
       POSTGRES_DB: caredb
     ports:
-      - "55432:5432"
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./bd/init.sql:/docker-entrypoint-initdb.d/init.sql
