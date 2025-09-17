@@ -3,7 +3,7 @@ name: CI Pipeline - D-Care
 on:
   push:
     branches:
-      - fd-fix-conteineres-ci
+      - fd-fix-conteiners-ci
   pull_request:
 
 jobs:
