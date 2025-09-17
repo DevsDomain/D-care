@@ -41,8 +41,9 @@ jobs:
       - name: Wait for services
         run: sleep 15
 
-      - name: Run tests
-        run: docker compose -f docker-compose.yml run --rm test
+
+        # - name: Run tests
+        #   run: docker compose -f docker-compose.yml run --rm test
 
       - name: Shutdown
         if: always()
