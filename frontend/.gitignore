@@ -1,0 +1,10 @@
+# React/Frontend specific
+/build
+/dist
+/node_modules
+
+# Test coverage
+/coverage
+
+# Storybook
+/storybook-static
