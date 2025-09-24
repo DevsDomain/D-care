@@ -2,21 +2,22 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User,
-  Phone,
   MapPin,
   Heart,
-  Shield,
+  CalendarIcon,
   ArrowLeft,
   ArrowRight,
   Check,
   Plus,
   X,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { ptBR } from "date-fns/locale"; // precisa instalar: npm i date-fns
 import {
   Select,
   SelectContent,
@@ -28,6 +29,13 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/hooks/use-toast";
 import { useAppStore } from "@/lib/stores/appStore";
 import type { Elder } from "@/lib/types";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { createElder } from "@/lib/api/elders";
 
 const commonConditions = [
   "Diabetes",
@@ -65,14 +73,9 @@ export default function ElderRegistration() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<Elder>>({
     name: "",
-    age: 65,
+    birthDate: new Date(),
     conditions: [],
     medications: [],
-    emergencyContact: {
-      name: "",
-      phone: "",
-      relation: "",
-    },
     address: {
       street: "",
       city: "",
@@ -125,21 +128,27 @@ export default function ElderRegistration() {
 
   const handleSubmit = async () => {
     try {
-      const elder: Elder = {
-        id: Date.now().toString(),
-        createdAt: new Date().toISOString(),
-        ...(formData as Elder),
-      };
 
-      // In a real app, this would save to backend
-      setSelectedElder(elder);
-
+      console.log(formData)
+      if (!formData.name || !formData.birthDate) {
+        toast({
+          title: "Erro",
+          description: "Preencha os campos obrigatórios",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      const data = await createElder(formData);
+      console.log(data)
+      setSelectedElder(data);
+  
       toast({
         title: "Cadastro realizado!",
         description: "Informações do idoso salvas com sucesso",
       });
-
-      navigate("/");
+  
+      // navigate("/");
     } catch (error) {
       toast({
         title: "Erro",
@@ -148,11 +157,10 @@ export default function ElderRegistration() {
       });
     }
   };
+  
 
-  const isStep1Valid = formData.name && formData.age;
+  const isStep1Valid = formData.name && formData.birthDate;
   const isStep2Valid = formData.address?.street && formData.address?.city;
-  const isStep3Valid =
-    formData.emergencyContact?.name && formData.emergencyContact?.phone;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -170,13 +178,13 @@ export default function ElderRegistration() {
             <h1 className="text-xl font-semibold text-foreground">
               Cadastro do Idoso
             </h1>
-            <p className="text-sm text-muted-foreground">Passo {step} de 4</p>
+            <p className="text-sm text-muted-foreground">Passo {step} de 3</p>
           </div>
         </div>
 
         {/* Progress */}
         <div className="mt-4 flex gap-2">
-          {[1, 2, 3, 4].map((num) => (
+          {[1, 2, 3].map((num) => (
             <div
               key={num}
               className={`h-2 flex-1 rounded-full transition-colors ${
@@ -211,23 +219,6 @@ export default function ElderRegistration() {
                 </div>
 
                 <div>
-                  <Label htmlFor="age">Idade *</Label>
-                  <Input
-                    id="age"
-                    type="number"
-                    min="1"
-                    max="120"
-                    value={formData.age}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        age: parseInt(e.target.value),
-                      }))
-                    }
-                  />
-                </div>
-
-                <div>
                   <Label>Preferência de gênero do cuidador</Label>
                   <Select
                     value={formData.preferences?.gender}
@@ -247,6 +238,40 @@ export default function ElderRegistration() {
                       <SelectItem value="male">Masculino</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="birthDate">Data de Nascimento *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.birthDate
+                          ? formData.birthDate.toLocaleDateString("pt-BR")
+                          : "Selecione a data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.birthDate}
+                        initialFocus
+                        captionLayout="dropdown-years"
+                        fromYear={new Date().getFullYear() - 100}
+                        toYear={new Date().getFullYear()}
+                        locale={ptBR}
+                        onSelect={(date) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            birthDate: date!,
+                          }))
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </CardContent>
             </Card>
@@ -349,85 +374,6 @@ export default function ElderRegistration() {
         )}
 
         {step === 3 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Shield className="w-5 h-5 text-healthcare-light" />
-                  Contato de Emergência
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="emergencyName">Nome *</Label>
-                  <Input
-                    id="emergencyName"
-                    value={formData.emergencyContact?.name}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        emergencyContact: {
-                          ...prev.emergencyContact!,
-                          name: e.target.value,
-                        },
-                      }))
-                    }
-                    placeholder="Ex: Maria da Silva"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="emergencyPhone">Telefone *</Label>
-                  <Input
-                    id="emergencyPhone"
-                    type="tel"
-                    value={formData.emergencyContact?.phone}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        emergencyContact: {
-                          ...prev.emergencyContact!,
-                          phone: e.target.value,
-                        },
-                      }))
-                    }
-                    placeholder="(11) 99999-9999"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="relation">Parentesco</Label>
-                  <Input
-                    id="relation"
-                    value={formData.emergencyContact?.relation}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        emergencyContact: {
-                          ...prev.emergencyContact!,
-                          relation: e.target.value,
-                        },
-                      }))
-                    }
-                    placeholder="Ex: Filha, Filho, Cônjuge"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Button
-              onClick={() => setStep(4)}
-              disabled={!isStep3Valid}
-              className="w-full"
-              variant="healthcare"
-            >
-              <ArrowRight className="w-4 h-4 ml-2" />
-              Continuar
-            </Button>
-          </div>
-        )}
-
-        {step === 4 && (
           <div className="space-y-6">
             <Card>
               <CardHeader>
