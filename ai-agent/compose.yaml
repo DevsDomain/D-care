@@ -1,0 +1,30 @@
+services:
+  chatbot-backend:
+    build: backend/
+    container_name: chatbot_backend_dcare
+    hostname: chatbot_backend_dcare
+    networks:
+      - chatbot_dcare_network
+    ports:
+      - "8888:8000"
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
+  chatbot-frontend:
+    build: frontend/
+    container_name: chatbot_frontend_dcare
+    hostname: chatbot_frontend_dcare
+    networks:
+      - chatbot_dcare_network    
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./frontend/config.yaml:/app/config.yaml
+    environment:
+      - BACKEND_URL=http://chatbot_backend_dcare:8888/query
+      - CONFIG_PATH=/app/config.yaml
+    depends_on:
+      - chatbot-backend
+
+networks:
+  chatbot_dcare_network:
+    driver: bridge      
