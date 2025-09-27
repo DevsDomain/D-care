@@ -21,39 +21,55 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       # Passo crucial: Criar o arquivo .env.docker que o docker-compose espera.
-      # Use GitHub Secrets para segurança!
       - name: Criar arquivo de ambiente (.env)
         run: |
           echo "PG_USER=${{ secrets.PG_USER }}" >> .env
           echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
           echo "PG_DB=${{ secrets.PG_DB }}" >> .env
           echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
-          # Adicione outras variáveis de ambiente necessárias aqui
           echo "Conteúdo do .env:"
           cat .env
+          # O arquivo .env deve ser criado no mesmo diretório do docker-compose.yml
 
       - name: Build dos containers
+        # O build deve ser feito explicitamente
         run: docker compose build
 
       - name: Iniciar os containers em background
         run: docker compose up -d
 
-      # Adicionado para depuração: mostra os logs dos containers logo após a inicialização.
-      - name: Verificar logs dos containers
-        run: docker compose logs
+      # ----------------------------------------------------------------------
+      # NOVOS PASSOS PARA GARANTIR O PREPARO DO BANCO DE DADOS
+      # ----------------------------------------------------------------------
 
-      # Em vez de um 'sleep' fixo, esperamos o backend ficar saudável.
-      # Isso torna o pipeline mais rápido e confiável.
-      - name: Aguardar o backend ficar saudável
+      - name: Aguardar o Banco de Dados (pg-care) ficar pronto
+        # O comando 'wait' aguarda pelo status 'healthy' definido no healthcheck do container.
         run: |
-          echo "Aguardando o container do backend ficar saudável..."
-          timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+          echo "Aguardando o container do banco de dados (pg-care) ficar saudável..."
+          docker compose wait pg-care --timeout 120
+          echo "Banco de dados está pronto!"
+
+      - name: Aplicar Migrações do Prisma
+        # Este passo CRIA o schema (incluindo a coluna 'address') no banco de dados limpo.
+        run: docker compose exec -T backend npx prisma migrate deploy
+
+      # ----------------------------------------------------------------------
+      # FIM DOS NOVOS PASSOS
+      # ----------------------------------------------------------------------
+      
+      - name: Aguardar o backend ficar saudável
+        # Usa o 'wait' simples assumindo que o healthcheck está configurado.
+        run: |
+          echo "Aguardando o container do backend ficar saudável (aguardando a aplicação subir)..."
+          docker compose wait backend_dcare --timeout 300
           echo "Backend está saudável!"
           docker compose ps # Mostra o status dos containers
 
-      # O comando de teste deve ser executado DENTRO do container do backend.
-      # Substitua 'npm test' pelo seu comando de teste real.
+      - name: Verificar logs dos containers (para depuração)
+        run: docker compose logs
+
       - name: Executar testes de integração/E2E
+        # Agora o teste deve passar, pois o banco de dados tem o schema correto.
         run: docker compose exec -T backend npm test
 
       - name: Parar os containers
