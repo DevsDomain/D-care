@@ -1,4 +1,3 @@
-// backend/src/database/prisma.service.ts
 import {
   Injectable,
   OnModuleInit,
@@ -25,7 +24,8 @@ export class PrismaService
       await this.$connect();
       this.logger.log('Connected to the database');
     } catch (error) {
-      this.logger.error('Failed to connect to the database', error);
+      // Logger.error espera (message: string, stack?: string, context?: string)
+      this.logger.error('Failed to connect to the database', (error as Error)?.stack, PrismaService.name);
       throw error;
     }
   }
