@@ -20,7 +20,6 @@ jobs:
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # Passo crucial: Criar o arquivo .env.docker que o docker-compose espera.
       - name: Criar arquivo de ambiente (.env)
         run: |
           echo "PG_USER=${{ secrets.PG_USER }}" >> .env
@@ -36,14 +35,9 @@ jobs:
       - name: Iniciar os containers em background
         run: docker compose up -d
 
-      # ----------------------------------------------------------------------
-      # AGUARDANDO E SINCRONIZANDO O BANCO DE DADOS
-      # ----------------------------------------------------------------------
-
       - name: Aguardar o Banco de Dados (pg-care) ficar pronto
         run: |
           echo "Aguardando o container do banco de dados (pg-care) ficar saudável..."
-          # Verifica explicitamente o status 'healthy' com timeout de 120s
           timeout 120 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} pg-care)" != "healthy" ]]; do echo -n "."; sleep 5; done'
           if [ $? -ne 0 ]; then
             echo "Erro: O banco de dados (pg-care) não ficou saudável dentro do tempo limite."
@@ -52,16 +46,12 @@ jobs:
           echo "Banco de dados está pronto!"
 
       - name: Sincronizar Schema do Prisma para Teste (db push)
-        # O 'db push' é a solução recomendada para CI/Testes.
-        # Ele força o schema.prisma a ser aplicado, criando as tabelas que os testes precisam.
-        run: docker compose exec -T backend npx prisma db push --force --accept-data-loss
+        # CORREÇÃO: Removido --force, mantido apenas --accept-data-loss
+        run: docker compose exec -T backend npx prisma db push --accept-data-loss
 
-      # ----------------------------------------------------------------------
-      
       - name: Aguardar o backend ficar saudável
         run: |
           echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
-          # Aqui esperamos o backend subir e conectar ao DB que já está com o schema correto.
           timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
           if [ $? -ne 0 ]; then
             echo "Erro: O backend não ficou saudável dentro do tempo limite."
@@ -74,7 +64,6 @@ jobs:
         run: docker compose logs
 
       - name: Executar testes de integração/E2E
-        # Este passo deve ser o primeiro a ser executado em um ambiente com DB sincronizado.
         run: docker compose exec -T backend npm test
 
       - name: Parar os containers
