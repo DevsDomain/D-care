@@ -29,7 +29,6 @@ jobs:
           echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
           echo "Conteúdo do .env:"
           cat .env
-          # O arquivo .env deve ser criado no mesmo diretório do docker-compose.yml
 
       - name: Build dos containers
         run: docker compose build
@@ -38,7 +37,7 @@ jobs:
         run: docker compose up -d
 
       # ----------------------------------------------------------------------
-      # AGUARDANDO E RESETANDO O BANCO DE DADOS
+      # AGUARDANDO E SINCRONIZANDO O BANCO DE DADOS
       # ----------------------------------------------------------------------
 
       - name: Aguardar o Banco de Dados (pg-care) ficar pronto
@@ -52,27 +51,30 @@ jobs:
           fi
           echo "Banco de dados está pronto!"
 
-      - name: Resetar e Aplicar Migrações do Prisma (Solução P3005)
-        # O 'migrate reset' resolve o erro P3005 limpando o DB e aplicando as migrações.
-        run: docker compose exec -T backend npx prisma migrate reset --force
+      - name: Sincronizar Schema do Prisma para Teste (db push)
+        # O 'db push' é a solução recomendada para CI/Testes.
+        # Ele força o schema.prisma a ser aplicado, criando as tabelas que os testes precisam.
+        run: docker compose exec -T backend npx prisma db push --force --accept-data-loss
 
       # ----------------------------------------------------------------------
       
       - name: Aguardar o backend ficar saudável
         run: |
           echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
+          # Aqui esperamos o backend subir e conectar ao DB que já está com o schema correto.
           timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
           if [ $? -ne 0 ]; then
             echo "Erro: O backend não ficou saudável dentro do tempo limite."
             exit 1
           fi
           echo "Backend está saudável!"
-          docker compose ps # Mostra o status dos containers
+          docker compose ps
 
       - name: Verificar logs dos containers (para depuração)
         run: docker compose logs
 
       - name: Executar testes de integração/E2E
+        # Este passo deve ser o primeiro a ser executado em um ambiente com DB sincronizado.
         run: docker compose exec -T backend npm test
 
       - name: Parar os containers
