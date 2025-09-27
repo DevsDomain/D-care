@@ -14,9 +14,9 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
+          POSTGRES_USER: care
+          POSTGRES_PASSWORD: carepass
+          POSTGRES_DB: caredb
         ports:
           - 5432:5432
         options: >-
