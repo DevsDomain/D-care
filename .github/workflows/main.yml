@@ -4,6 +4,7 @@ on:
   push:
     # Mude para 'main' ou 'develop' quando estiver pronto
     branches:
+      - fd-fix-conteineres-ci
       - qas
   pull_request:
 
@@ -35,6 +36,10 @@ jobs:
 
       - name: Iniciar os containers em background
         run: docker compose up -d
+
+      # Adicionado para depuração: mostra os logs dos containers logo após a inicialização.
+      - name: Verificar logs dos containers
+        run: docker compose logs
 
       # Em vez de um 'sleep' fixo, esperamos o backend ficar saudável.
       # Isso torna o pipeline mais rápido e confiável.

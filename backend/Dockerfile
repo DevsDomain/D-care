@@ -8,6 +8,9 @@ RUN apk add --no-cache python3 make g++
 # Copiar só os manifestos primeiro (melhora cache)
 COPY package.json pnpm-lock.yaml* ./
 
+# Copiar pasta prisma
+COPY prisma ./prisma
+
 # Habilitar pnpm e instalar todas dependências
 RUN corepack enable && pnpm install --frozen-lockfile
 
