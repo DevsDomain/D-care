@@ -38,7 +38,7 @@ jobs:
         run: docker compose up -d
 
       # ----------------------------------------------------------------------
-      # CORREÇÃO APLICADA AQUI: Usando 'docker inspect' para compatibilidade total.
+      # AGUARDANDO E RESETANDO O BANCO DE DADOS
       # ----------------------------------------------------------------------
 
       - name: Aguardar o Banco de Dados (pg-care) ficar pronto
@@ -52,12 +52,12 @@ jobs:
           fi
           echo "Banco de dados está pronto!"
 
-      - name: Aplicar Migrações do Prisma
-        # Este passo CRIA o schema (incluindo a coluna 'address') no banco de dados limpo.
-        # É crucial que o 'pg-care' esteja saudável antes de rodar isso.
-        run: docker compose exec -T backend npx prisma migrate deploy
+      - name: Resetar e Aplicar Migrações do Prisma (Solução P3005)
+        # O 'migrate reset' resolve o erro P3005 limpando o DB e aplicando as migrações.
+        run: docker compose exec -T backend npx prisma migrate reset --force
 
-      # O passo de espera do backend também foi simplificado para ser mais robusto:
+      # ----------------------------------------------------------------------
+      
       - name: Aguardar o backend ficar saudável
         run: |
           echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
