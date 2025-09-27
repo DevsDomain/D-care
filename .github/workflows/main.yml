@@ -22,15 +22,15 @@ jobs:
 
       # Passo crucial: Criar o arquivo .env.docker que o docker-compose espera.
       # Use GitHub Secrets para segurança!
-      - name: Criar arquivo de ambiente (.env.docker)
+      - name: Criar arquivo de ambiente (.env)
         run: |
-          echo "PG_USER=${{ secrets.PG_USER }}" >> .env.docker
-          echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env.docker
-          echo "PG_DB=${{ secrets.PG_DB }}" >> .env.docker
-          echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env.docker
+          echo "PG_USER=${{ secrets.PG_USER }}" >> .env
+          echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
+          echo "PG_DB=${{ secrets.PG_DB }}" >> .env
+          echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
           # Adicione outras variáveis de ambiente necessárias aqui
-          echo "Conteúdo do .env.docker:"
-          cat .env.docker
+          echo "Conteúdo do .env:"
+          cat .env
 
       - name: Build dos containers
         run: docker compose build
