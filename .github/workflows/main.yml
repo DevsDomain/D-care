@@ -32,36 +32,40 @@ jobs:
           # O arquivo .env deve ser criado no mesmo diretório do docker-compose.yml
 
       - name: Build dos containers
-        # O build deve ser feito explicitamente
         run: docker compose build
 
       - name: Iniciar os containers em background
         run: docker compose up -d
 
       # ----------------------------------------------------------------------
-      # NOVOS PASSOS PARA GARANTIR O PREPARO DO BANCO DE DADOS
+      # CORREÇÃO APLICADA AQUI: Usando 'docker inspect' para compatibilidade total.
       # ----------------------------------------------------------------------
 
       - name: Aguardar o Banco de Dados (pg-care) ficar pronto
-        # O comando 'wait' aguarda pelo status 'healthy' definido no healthcheck do container.
         run: |
           echo "Aguardando o container do banco de dados (pg-care) ficar saudável..."
-          docker compose wait pg-care --timeout 120
+          # Verifica explicitamente o status 'healthy' com timeout de 120s
+          timeout 120 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} pg-care)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+          if [ $? -ne 0 ]; then
+            echo "Erro: O banco de dados (pg-care) não ficou saudável dentro do tempo limite."
+            exit 1
+          fi
           echo "Banco de dados está pronto!"
 
       - name: Aplicar Migrações do Prisma
         # Este passo CRIA o schema (incluindo a coluna 'address') no banco de dados limpo.
+        # É crucial que o 'pg-care' esteja saudável antes de rodar isso.
         run: docker compose exec -T backend npx prisma migrate deploy
 
-      # ----------------------------------------------------------------------
-      # FIM DOS NOVOS PASSOS
-      # ----------------------------------------------------------------------
-      
+      # O passo de espera do backend também foi simplificado para ser mais robusto:
       - name: Aguardar o backend ficar saudável
-        # Usa o 'wait' simples assumindo que o healthcheck está configurado.
         run: |
-          echo "Aguardando o container do backend ficar saudável (aguardando a aplicação subir)..."
-          docker compose wait backend_dcare --timeout 300
+          echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
+          timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+          if [ $? -ne 0 ]; then
+            echo "Erro: O backend não ficou saudável dentro do tempo limite."
+            exit 1
+          fi
           echo "Backend está saudável!"
           docker compose ps # Mostra o status dos containers
 
@@ -69,10 +73,8 @@ jobs:
         run: docker compose logs
 
       - name: Executar testes de integração/E2E
-        # Agora o teste deve passar, pois o banco de dados tem o schema correto.
         run: docker compose exec -T backend npm test
 
       - name: Parar os containers
-        # Este passo é executado sempre, mesmo que os testes falhem.
         if: always()
         run: docker compose down
