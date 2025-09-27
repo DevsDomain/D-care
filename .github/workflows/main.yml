@@ -2,48 +2,55 @@ name: CI Pipeline - D-Care
 
 on:
   push:
+    # Mude para 'main' ou 'develop' quando estiver pronto
     branches:
-      - fd-fix-conteineres-ci
+      - qas
   pull_request:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: care
-          POSTGRES_PASSWORD: carepass
-          POSTGRES_DB: caredb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build containers
-        run: docker compose -f docker-compose.yml build
+      # Passo crucial: Criar o arquivo .env.docker que o docker-compose espera.
+      # Use GitHub Secrets para segurança!
+      - name: Criar arquivo de ambiente (.env.docker)
+        run: |
+          echo "PG_USER=${{ secrets.PG_USER }}" >> .env.docker
+          echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env.docker
+          echo "PG_DB=${{ secrets.PG_DB }}" >> .env.docker
+          echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env.docker
+          # Adicione outras variáveis de ambiente necessárias aqui
+          echo "Conteúdo do .env.docker:"
+          cat .env.docker
 
-      - name: Start containers
-        run: docker compose -f docker-compose.yml up -d
+      - name: Build dos containers
+        run: docker compose build
 
-      - name: Wait for services
-        run: sleep 15
+      - name: Iniciar os containers em background
+        run: docker compose up -d
 
-      - name: Run tests
-        run: docker compose -f docker-compose.yml run --rm test
+      # Em vez de um 'sleep' fixo, esperamos o backend ficar saudável.
+      # Isso torna o pipeline mais rápido e confiável.
+      - name: Aguardar o backend ficar saudável
+        run: |
+          echo "Aguardando o container do backend ficar saudável..."
+          timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+          echo "Backend está saudável!"
+          docker compose ps # Mostra o status dos containers
 
-      - name: Shutdown
+      # O comando de teste deve ser executado DENTRO do container do backend.
+      # Substitua 'npm test' pelo seu comando de teste real.
+      - name: Executar testes de integração/E2E
+        run: docker compose exec -T backend_dcare npm test
+
+      - name: Parar os containers
+        # Este passo é executado sempre, mesmo que os testes falhem.
         if: always()
-        run: docker compose -f docker-compose.yml down
+        run: docker compose down
