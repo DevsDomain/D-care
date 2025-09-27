@@ -8,7 +8,7 @@ services:
     ports:
       - "3000:3000"
     env_file:
-      - .env.docker
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -19,7 +19,7 @@ services:
     networks:
       - dcare_network
     env_file:
-      - .env.docker
+      - .env
     ports:
       - "5173:8080"
     depends_on:
@@ -29,7 +29,7 @@ services:
     image: postgis/postgis:16-3.4
     container_name: pg-care
     env_file:
-      - .env.docker
+      - .env
     # Note: The variables below are also set from your .env.docker file.
     # This environment section is only needed if you want to override them
     # or if they aren't in the env_file.
