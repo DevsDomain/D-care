@@ -54,7 +54,7 @@ jobs:
       # O comando de teste deve ser executado DENTRO do container do backend.
       # Substitua 'npm test' pelo seu comando de teste real.
       - name: Executar testes de integração/E2E
-        run: docker compose exec -T backend_dcare npm test
+        run: docker compose exec -T backend npm test
 
       - name: Parar os containers
         # Este passo é executado sempre, mesmo que os testes falhem.
