@@ -6,6 +6,7 @@ on:
     branches:
       - fd-fix-conteineres-ci
       - qas
+      - teste_ci_docker
   pull_request:
 
 jobs:
