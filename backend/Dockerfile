@@ -42,6 +42,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
 COPY package.json ./
 
+COPY **prisma** ./prisma
+
 # **CRITICAL: COPY FILES NEEDED FOR 'npm test'**
 # Since 'npm test' (jest/ts-jest) needs access to the original source (.ts) and test files.
 # It also needs the config files in the correct relative locations.
