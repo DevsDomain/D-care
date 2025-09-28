@@ -2,13 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateElderDto } from './dto/create-elder.dto';
 import { UpdateElderDto } from './dto/update-elder.dto';
-
+import { getCoordinatesFromZipCode } from 'src/common/helper/getCoordinatesFromCep';
 @Injectable()
 export class IdososService {
   constructor(private prisma: PrismaService) {}
 
   async createElder(dto: CreateElderDto) {
-    return this.prisma.elders.create({
+    const geoData = await getCoordinatesFromZipCode(dto.zipCode);
+    const newElder = await this.prisma.elders.create({
       data: {
         familyId: dto.familyId,
         name: dto.name,
@@ -25,6 +26,16 @@ export class IdososService {
         zipCode: dto.zipCode,
       },
     });
+    if (geoData?.lat && geoData?.lng) {
+      const lat = parseFloat(geoData.lat);
+      const lgn = parseFloat(geoData.lng);
+
+      await this.prisma.$executeRaw`
+        UPDATE caredb."family".elders
+        SET location = ST_SetSRID(ST_MakePoint(${lgn}, ${lat}), 4326)
+        WHERE id = ${newElder.id}::uuid`;
+    }
+    return newElder;
   }
 
   async findAllElders() {
