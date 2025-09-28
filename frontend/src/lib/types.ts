@@ -35,6 +35,7 @@ export interface TimeSlot {
     name: string;
     birthDate: Date;
     photo?: string;
+    avatarFile:File | null;
     conditions: string[]; // Health conditions like ["Diabetes", "Hypertension"]
     medications: string[];
     address: {
@@ -42,6 +43,7 @@ export interface TimeSlot {
       city: string;
       state: string;
       zipCode: string;
+      number:string
     };
     preferences: {
       gender?: 'male' | 'female' | 'any';

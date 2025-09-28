@@ -14,7 +14,6 @@ import {
 
 import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ptBR } from "date-fns/locale"; // precisa instalar: npm i date-fns
@@ -36,6 +35,8 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { createElder } from "@/lib/api/elders";
+import { AvatarInput } from "@/components/avatar-input";
+import { getAdressByCEP } from "@/lib/api/getAdressByCEP";
 
 const commonConditions = [
   "Diabetes",
@@ -73,6 +74,7 @@ export default function ElderRegistration() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<Elder>>({
     name: "",
+    avatarFile: null,
     birthDate: new Date(),
     conditions: [],
     medications: [],
@@ -81,6 +83,7 @@ export default function ElderRegistration() {
       city: "",
       state: "",
       zipCode: "",
+      number: "",
     },
     preferences: {
       gender: "any",
@@ -92,6 +95,21 @@ export default function ElderRegistration() {
   const [newCondition, setNewCondition] = useState("");
   const [newMedication, setNewMedication] = useState("");
 
+  const handleGetAdress = async (cep: string) => {
+    const endereco = await getAdressByCEP(cep);
+    if (endereco?.address) {
+      setFormData((prev) => ({
+        ...prev,
+        address: {
+          city: endereco.city,
+          state: endereco.state,
+          street: endereco.address,
+          zipCode: endereco.cep,
+          number: "",
+        },
+      }));
+    }
+  };
   const addCondition = (condition: string) => {
     if (condition && !formData.conditions?.includes(condition)) {
       setFormData((prev) => ({
@@ -128,8 +146,7 @@ export default function ElderRegistration() {
 
   const handleSubmit = async () => {
     try {
-
-      console.log(formData)
+      console.log(formData);
       if (!formData.name || !formData.birthDate) {
         toast({
           title: "Erro",
@@ -138,18 +155,18 @@ export default function ElderRegistration() {
         });
         return;
       }
-  
+
       const data = await createElder(formData);
-      console.log(data)
+      console.log(data);
       setSelectedElder(data);
-  
+
       toast({
         title: "Cadastro realizado!",
         description: "Informações do idoso salvas com sucesso",
       });
-  
+
       // navigate("/");
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Falha ao salvar informações",
@@ -157,7 +174,6 @@ export default function ElderRegistration() {
       });
     }
   };
-  
 
   const isStep1Valid = formData.name && formData.birthDate;
   const isStep2Valid = formData.address?.street && formData.address?.city;
@@ -206,6 +222,12 @@ export default function ElderRegistration() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                <AvatarInput
+                  value={formData.avatarFile}
+                  onChange={(file) =>
+                    setFormData((prev) => ({ ...prev, avatarFile: file }))
+                  }
+                />
                 <div>
                   <Label htmlFor="name">Nome completo *</Label>
                   <Input
@@ -299,55 +321,10 @@ export default function ElderRegistration() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="street">Rua e número *</Label>
-                  <Input
-                    id="street"
-                    value={formData.address?.street}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        address: { ...prev.address!, street: e.target.value },
-                      }))
-                    }
-                    placeholder="Ex: Rua das Flores, 123"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="city">Cidade *</Label>
-                    <Input
-                      id="city"
-                      value={formData.address?.city}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          address: { ...prev.address!, city: e.target.value },
-                        }))
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state">Estado *</Label>
-                    <Input
-                      id="state"
-                      value={formData.address?.state}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          address: { ...prev.address!, state: e.target.value },
-                        }))
-                      }
-                      maxLength={2}
-                      placeholder="SP"
-                    />
-                  </div>
-                </div>
-
-                <div>
                   <Label htmlFor="zipCode">CEP</Label>
                   <Input
                     id="zipCode"
+                    type="number"
                     value={formData.address?.zipCode}
                     onChange={(e) =>
                       setFormData((prev) => ({
@@ -355,7 +332,70 @@ export default function ElderRegistration() {
                         address: { ...prev.address!, zipCode: e.target.value },
                       }))
                     }
+                    onBlur={() =>
+                      handleGetAdress(formData.address?.zipCode || "")
+                    }
                     placeholder="00000-000"
+                  />
+                </div>
+                <div className="flex gap-4">
+                  <div>
+                    <Label htmlFor="street">Rua</Label>
+                    <Input
+                      id="street"
+                      value={formData.address?.street}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          address: { ...prev.address!, street: e.target.value },
+                        }))
+                      }
+                      placeholder="Ex: Rua das Flores"
+                    />
+                  </div>
+                  <div className="w-16">
+                    <Label htmlFor="street">Nº</Label>
+                    <Input
+                      id="street"
+                      type="number"
+                      value={formData.address?.number}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          address: { ...prev.address!, number: e.target.value },
+                        }))
+                      }
+                      placeholder=""
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="city">Cidade *</Label>
+                  <Input
+                    id="city"
+                    value={formData.address?.city}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        address: { ...prev.address!, city: e.target.value },
+                      }))
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="state">Estado *</Label>
+                  <Input
+                    id="state"
+                    value={formData.address?.state}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        address: { ...prev.address!, state: e.target.value },
+                      }))
+                    }
+                    maxLength={2}
+                    placeholder="SP"
                   />
                 </div>
               </CardContent>
@@ -369,6 +409,13 @@ export default function ElderRegistration() {
             >
               <ArrowRight className="w-4 h-4 ml-2" />
               Continuar
+            </Button>
+            <Button
+              onClick={() => setStep(1)}
+              variant="outline"
+              className="w-full"
+            >
+              Voltar
             </Button>
           </div>
         )}
@@ -520,7 +567,7 @@ export default function ElderRegistration() {
                 Finalizar Cadastro
               </Button>
               <Button
-                onClick={() => setStep(3)}
+                onClick={() => setStep(2)}
                 variant="outline"
                 className="w-full"
               >
