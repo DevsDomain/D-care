@@ -2,6 +2,7 @@
 /dist
 /build
 /node_modules
+/uploads/elders/*
 
 # Test coverage
 /coverage

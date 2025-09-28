@@ -7,7 +7,8 @@ import { getCoordinatesFromZipCode } from 'src/common/helper/getCoordinatesFromC
 export class IdososService {
   constructor(private prisma: PrismaService) {}
 
-  async createElder(dto: CreateElderDto) {
+  async createElder(dto: CreateElderDto, file?: Express.Multer.File) {
+    console.log('SERVICE', dto, file);
     const geoData = await getCoordinatesFromZipCode(dto.zipCode);
     const newElder = await this.prisma.elders.create({
       data: {
@@ -24,6 +25,7 @@ export class IdososService {
         city: dto.city,
         state: dto.state,
         zipCode: dto.zipCode,
+        avatarPath: file ? `/uploads/elders/${file.filename}` : null,
       },
     });
     if (geoData?.lat && geoData?.lng) {

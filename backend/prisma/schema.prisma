@@ -5,26 +5,19 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
   schemas  = ["appointments", "auth", "caregiver", "family", "knowledge", "reviews"]
 }
 
-enum UserRole {
-  ADMIN
-  CAREGIVER
-  FAMILY
-
-  @@schema("auth")
-}
-
 model Users {
-  id           String    @id @default(uuid()) @db.Uuid
-  email        String    @unique @db.VarChar(255)
-  passwordHash String    @map("password_hash")
+  id           String                @id @default(uuid()) @db.Uuid
+  email        String                @unique @db.VarChar(255)
+  passwordHash String                @map("password_hash")
   role         UserRole
-  status       String?   @default("active") @db.VarChar(20)
-  createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  deletedAt    DateTime? @map("deleted_at") @db.Timestamp(6)
+  status       String?               @default("active") @db.VarChar(20)
+  createdAt    DateTime?             @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime?             @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  deletedAt    DateTime?             @map("deleted_at") @db.Timestamp(6)
   userProfile  UserProfiles[]        @relation("UserToProfile")
   terms        UserTermsAcceptance[] @relation("UserToTerms")
   caregiver    Caregivers[]          @relation("UserToCaregiver")
@@ -74,19 +67,19 @@ model UserTermsAcceptance {
 }
 
 model Families {
-  id           String        @id @default(uuid()) @db.Uuid
-  userId       String?       @map("user_id") @db.Uuid
+  id           String                    @id @default(uuid()) @db.Uuid
+  userId       String?                   @map("user_id") @db.Uuid
   address      String?
-  city         String?       @db.VarChar(100)
-  state        String?       @db.VarChar(50)
-  zipCode      String?       @map("zip_code") @db.VarChar(20)
+  city         String?                   @db.VarChar(100)
+  state        String?                   @db.VarChar(50)
+  zipCode      String?                   @map("zip_code") @db.VarChar(20)
   location     Unsupported("geography")?
-  createdAt    DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt    DateTime?     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  appointments Appointments[] @relation("FamilyToAppointments")
-  elders       Elders[]       @relation("FamilyToElders")
-  user         Users?         @relation("UserToFamily", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  reviews      Reviews[]      @relation("FamilyToReviews")
+  createdAt    DateTime?                 @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime?                 @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  appointments Appointments[]            @relation("FamilyToAppointments")
+  elders       Elders[]                  @relation("FamilyToElders")
+  user         Users?                    @relation("UserToFamily", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reviews      Reviews[]                 @relation("FamilyToReviews")
 
   @@index([location], map: "idx_families_location", type: Gist)
   @@map("families")
@@ -94,23 +87,23 @@ model Families {
 }
 
 model Elders {
-  id                String   @id @default(uuid()) @db.Uuid
-  familyId          String?  @map("family_id") @db.Uuid
-  name              String?  @db.VarChar(255)
-  birthdate         DateTime? @db.Date
-  medicalConditions Json?    @map("medical_conditions")
+  id                String                    @id @default(uuid()) @db.Uuid
+  familyId          String?                   @map("family_id") @db.Uuid
+  name              String?                   @db.VarChar(255)
+  birthdate         DateTime?                 @db.Date
+  medicalConditions Json?                     @map("medical_conditions")
   medications       Json?
   address           String?
-  city              String?   @db.VarChar(100)
-  state             String?   @db.VarChar(50)
-  zipCode           String?   @map("zip_code") @db.VarChar(20)
+  city              String?                   @db.VarChar(100)
+  state             String?                   @db.VarChar(50)
+  zipCode           String?                   @map("zip_code") @db.VarChar(20)
   location          Unsupported("geography")?
-  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt         DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-
-  appointments   Appointments[]    @relation("ElderToAppointments")
-  family         Families?         @relation("FamilyToElders", fields: [familyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  ivcfResponses  IVCF20Responses[] @relation("ElderToIVCF")
+  avatarPath        String?
+  createdAt         DateTime?                 @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime?                 @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  appointments      Appointments[]            @relation("ElderToAppointments")
+  family            Families?                 @relation("FamilyToElders", fields: [familyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ivcfResponses     IVCF20Responses[]         @relation("ElderToIVCF")
 
   @@map("elders")
   @@schema("family")
@@ -131,20 +124,20 @@ model IVCF20Responses {
 }
 
 model Caregivers {
-  id           String      @id @default(uuid()) @db.Uuid
-  userId       String?     @map("user_id") @db.Uuid
-  crmCoren     String?     @map("crm_coren") @db.VarChar(50)
-  validated    Boolean?    @default(false)
+  id           String                    @id @default(uuid()) @db.Uuid
+  userId       String?                   @map("user_id") @db.Uuid
+  crmCoren     String?                   @map("crm_coren") @db.VarChar(50)
+  validated    Boolean?                  @default(false)
   bio          String?
   location     Unsupported("geography")?
-  createdAt    DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt    DateTime?   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  requests     AppointmentRequests[]   @relation("CaregiverToRequests")
-  appointments Appointments[]          @relation("CaregiverToAppointments")
-  availability CaregiverAvailability[] @relation("CaregiverToAvailability")
-  documents    CaregiverDocuments[]    @relation("CaregiverToDocuments")
-  user         Users?                  @relation("UserToCaregiver", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  reviews      Reviews[]               @relation("CaregiverToReviews")
+  createdAt    DateTime?                 @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt    DateTime?                 @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  requests     AppointmentRequests[]     @relation("CaregiverToRequests")
+  appointments Appointments[]            @relation("CaregiverToAppointments")
+  availability CaregiverAvailability[]   @relation("CaregiverToAvailability")
+  documents    CaregiverDocuments[]      @relation("CaregiverToDocuments")
+  user         Users?                    @relation("UserToCaregiver", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  reviews      Reviews[]                 @relation("CaregiverToReviews")
 
   @@index([crmCoren], map: "idx_caregivers_crm_coren")
   @@index([location], map: "idx_caregivers_location", type: Gist)
@@ -153,16 +146,16 @@ model Caregivers {
 }
 
 model CaregiverAvailability {
-  id          String    @id @default(uuid()) @db.Uuid
-  caregiverId String?   @map("caregiver_id") @db.Uuid
-  date        DateTime? @db.Date
-  timeStart   DateTime? @map("time_start") @db.Time(6)
-  timeEnd     DateTime? @map("time_end") @db.Time(6)
-  emergency   Boolean?  @default(false)
+  id          String                              @id @default(uuid()) @db.Uuid
+  caregiverId String?                             @map("caregiver_id") @db.Uuid
+  date        DateTime?                           @db.Date
+  timeStart   DateTime?                           @map("time_start") @db.Time(6)
+  timeEnd     DateTime?                           @map("time_end") @db.Time(6)
+  emergency   Boolean?                            @default(false)
   status      Unsupported("availability_status")? @default(dbgenerated("'available'::availability_status"))
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  caregiver   Caregivers? @relation("CaregiverToAvailability", fields: [caregiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdAt   DateTime?                           @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt   DateTime?                           @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  caregiver   Caregivers?                         @relation("CaregiverToAvailability", fields: [caregiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("caregiver_availability")
   @@schema("caregiver")
@@ -181,22 +174,21 @@ model CaregiverDocuments {
 }
 
 model Appointments {
-  id            String   @id @default(uuid()) @db.Uuid
-  familyId      String?  @map("family_id") @db.Uuid
-  elderId       String?  @map("elder_id") @db.Uuid
-  caregiverId   String?  @map("caregiver_id") @db.Uuid
-  datetimeStart DateTime @map("datetime_start") @db.Timestamp(6)
-  datetimeEnd   DateTime @map("datetime_end") @db.Timestamp(6)
+  id            String                             @id @default(uuid()) @db.Uuid
+  familyId      String?                            @map("family_id") @db.Uuid
+  elderId       String?                            @map("elder_id") @db.Uuid
+  caregiverId   String?                            @map("caregiver_id") @db.Uuid
+  datetimeStart DateTime                           @map("datetime_start") @db.Timestamp(6)
+  datetimeEnd   DateTime                           @map("datetime_end") @db.Timestamp(6)
   status        Unsupported("appointment_status")? @default(dbgenerated("'pending'::appointment_status"))
-  emergency     Boolean? @default(false)
-  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-
-  requests  AppointmentRequests[] @relation("AppointmentToRequests")
-  caregiver Caregivers?           @relation("CaregiverToAppointments", fields: [caregiverId], references: [id], onUpdate: NoAction)
-  elder     Elders?               @relation("ElderToAppointments", fields: [elderId], references: [id], onUpdate: NoAction)
-  family    Families?             @relation("FamilyToAppointments", fields: [familyId], references: [id], onUpdate: NoAction)
-  review    Reviews[]             @relation("AppointmentToReview")
+  emergency     Boolean?                           @default(false)
+  createdAt     DateTime?                          @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime?                          @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  requests      AppointmentRequests[]              @relation("AppointmentToRequests")
+  caregiver     Caregivers?                        @relation("CaregiverToAppointments", fields: [caregiverId], references: [id], onUpdate: NoAction)
+  elder         Elders?                            @relation("ElderToAppointments", fields: [elderId], references: [id], onUpdate: NoAction)
+  family        Families?                          @relation("FamilyToAppointments", fields: [familyId], references: [id], onUpdate: NoAction)
+  review        Reviews[]                          @relation("AppointmentToReview")
 
   @@index([datetimeStart], map: "idx_appointments_datetime_start")
   @@index([status], map: "idx_appointments_status")
@@ -205,33 +197,31 @@ model Appointments {
 }
 
 model AppointmentRequests {
-  id            String   @id @default(uuid()) @db.Uuid
-  appointmentId String?  @map("appointment_id") @db.Uuid
-  caregiverId   String?  @map("caregiver_id") @db.Uuid
+  id            String                         @id @default(uuid()) @db.Uuid
+  appointmentId String?                        @map("appointment_id") @db.Uuid
+  caregiverId   String?                        @map("caregiver_id") @db.Uuid
   status        Unsupported("request_status")? @default(dbgenerated("'waiting'::request_status"))
-  requestedAt   DateTime? @default(now()) @map("requested_at") @db.Timestamp(6)
-  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-
-  appointment Appointments? @relation("AppointmentToRequests", fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  caregiver   Caregivers?   @relation("CaregiverToRequests", fields: [caregiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  requestedAt   DateTime?                      @default(now()) @map("requested_at") @db.Timestamp(6)
+  updatedAt     DateTime?                      @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  appointment   Appointments?                  @relation("AppointmentToRequests", fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  caregiver     Caregivers?                    @relation("CaregiverToRequests", fields: [caregiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("appointment_requests")
   @@schema("appointments")
 }
 
 model Reviews {
-  id            String   @id @default(uuid()) @db.Uuid
-  appointmentId String?  @map("appointment_id") @db.Uuid
-  familyId      String?  @map("family_id") @db.Uuid
-  caregiverId   String?  @map("caregiver_id") @db.Uuid
+  id            String        @id @default(uuid()) @db.Uuid
+  appointmentId String?       @map("appointment_id") @db.Uuid
+  familyId      String?       @map("family_id") @db.Uuid
+  caregiverId   String?       @map("caregiver_id") @db.Uuid
   rating        Int?
   comment       String?
-  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-
-  appointment Appointments? @relation("AppointmentToReview", fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  caregiver   Caregivers?   @relation("CaregiverToReviews", fields: [caregiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  family      Families?     @relation("FamilyToReviews", fields: [familyId], references: [id], onUpdate: NoAction)
+  createdAt     DateTime?     @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt     DateTime?     @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
+  appointment   Appointments? @relation("AppointmentToReview", fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  caregiver     Caregivers?   @relation("CaregiverToReviews", fields: [caregiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  family        Families?     @relation("FamilyToReviews", fields: [familyId], references: [id], onUpdate: NoAction)
 
   @@map("reviews")
   @@schema("reviews")
@@ -249,4 +239,12 @@ model FAQAIQueries {
   @@index([userId], map: "idx_faq_ai_queries_user_id")
   @@map("faq_ai_queries")
   @@schema("knowledge")
+}
+
+enum UserRole {
+  ADMIN
+  CAREGIVER
+  FAMILY
+
+  @@schema("auth")
 }

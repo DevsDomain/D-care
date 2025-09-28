@@ -15,6 +15,10 @@ export class CreateElderDto {
   @IsOptional()
   name?: string;
 
+  @IsString()
+  @IsOptional()
+  avatarPath?: string;
+
   @IsDateString()
   @IsOptional()
   birthdate?: string;
