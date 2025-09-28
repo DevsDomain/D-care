@@ -1,4 +1,3 @@
-// Mantenha a interface no mesmo arquivo para modularidade
 interface AwesomeapiInterface {
   cep: string;
   address_type: string;
@@ -13,11 +12,6 @@ interface AwesomeapiInterface {
   ddd: number;
 }
 
-/**
- * Busca as coordenadas (latitude e longitude) a partir de um CEP.
- * @param zipcode O CEP brasileiro (ex: '12230879').
- * @returns Os dados completos da API, incluindo lat e lng, ou null em caso de falha.
- */
 export async function getCoordinatesFromZipCode(
   zipcode?: string,
 ): Promise<AwesomeapiInterface | null> {
