@@ -59,10 +59,9 @@ jobs:
           # Mantendo a verificação de memória (free -m) no container rodando a aplicação
           docker compose exec -T backend free -m
           
-          echo "Iniciando prisma db push (usando 'run --rm' para resolver Exit Code 137)..."
-          # 💥 CORREÇÃO PRINCIPAL: Usar 'docker compose run --rm' para iniciar um 
-          # novo container efêmero apenas para o db push.
-          docker compose run --rm backend npx prisma db push --accept-data-loss
+          echo "Iniciando prisma db push (usando 'run --rm' e 'user root' para resolver permissão)..."
+          # 💥 CORREÇÃO PRINCIPAL: Adicionando --user root para resolver o erro EACCES/permission denied durante o prisma generate
+          docker compose run --rm --user root backend npx prisma db push --accept-data-loss
 
       - name: Aguardar o backend ficar saudável
         run: |
