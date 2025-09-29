@@ -65,12 +65,11 @@ jobs:
       - name: Sincronizar Schema do Prisma para Teste (db push)
         run: |
           echo "Verificando memória no container backend antes do db push..."
-          # Mantendo a verificação de memória (free -m) no container rodando a aplicação
           docker compose exec -T backend free -m
-          
-          echo "Iniciando prisma db push (usando 'run --rm' e 'user root' para resolver permissão)..."
-          # 💥 CORREÇÃO PRINCIPAL: Adicionando --user root para resolver o erro EACCES/permission denied durante o prisma generate
-          docker compose run --rm --user root backend npx prisma db push --accept-data-loss
+
+          echo "Iniciando prisma db push dentro do container backend já em execução..."
+          docker compose exec -T backend npx prisma db push --accept-data-loss
+
 
       - name: Aguardar o backend ficar saudável
         run: |
