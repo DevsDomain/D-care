@@ -1,8 +1,9 @@
 name: CI Pipeline - D-Care
 
+# Gatilhos para execução do workflow
 on:
   push:
-    # Mude para 'main' ou 'develop' quando estiver pronto
+    # Mude para os branches principais quando o pipeline estiver estável
     branches:
       - fd-fix-conteineres-ci
       - qas
@@ -11,48 +12,38 @@ on:
 
 jobs:
   build-and-test:
+    # O workflow será executado numa máquina virtual Ubuntu mais recente
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Checkout do código do repositório
       - name: Checkout do Repositório
         uses: actions/checkout@v4
 
+      # 2. Configurar o Docker Buildx para builds otimizadas
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # 3. Criar o ficheiro .env com base nos secrets do GitHub
       - name: Criar arquivo de ambiente (.env)
         run: |
           echo "PG_USER=${{ secrets.PG_USER }}" >> .env
           echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
           echo "PG_DB=${{ secrets.PG_DB }}" >> .env
-          # 💥 CORREÇÃO: Adicionando DB_PORT para que o docker-compose consiga ler
-          # o valor para o mapeamento de portas (ports: - "${DB_PORT}:5432").
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          
-          # 💥 CORREÇÃO: Usando a porta interna 5432 na DATABASE_URL.
-          # Dentro da rede Docker, o contêiner backend acessa o serviço 'pg-care'
-          # sempre na porta padrão 5432.
           echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
-          
-          echo "Conteúdo do .env:"
+          echo "Conteúdo do .env gerado:"
           cat .env
 
-      - name: Build dos containers
+      # 4. Fazer o build das imagens Docker. Os testes são executados automaticamente nesta etapa, conforme definido no Dockerfile.
+      - name: Build dos containers (testes inclusos)
         run: docker compose build
 
+      # 5. Iniciar os contentores em modo "detached" (background)
       - name: Iniciar os containers em background
         run: docker compose up -d
-
-      # 💥 NOVO POSICIONAMENTO: Movendo a correção de permissão para ser executada logo
-      # após o 'docker compose up -d', garantindo que o NestJS não falhe na inicialização.
-      - name: Corrigir Permissão da Pasta Uploads (Prioridade)
-        # Cria e define permissões 777 para a pasta 'uploads' usando 'backend' (nome do serviço).
-        run: |
-          echo "Criando e ajustando permissões 777 para a pasta /app/uploads imediatamente..."
-          # Usamos 'sh -c' para garantir que os comandos sejam executados mesmo que o contêiner
-          # não esteja totalmente inicializado, desde que o shell esteja ativo.
-          docker compose exec -T backend sh -c "mkdir -p /app/uploads && chmod 777 /app/uploads"
           
+      # 6. Aguardar que o contentor do banco de dados (pg-care) esteja saudável
       - name: Aguardar o Banco de Dados (pg-care) ficar pronto
         run: |
           echo "Aguardando o container do banco de dados (pg-care) ficar saudável..."
@@ -63,27 +54,21 @@ jobs:
           fi
           echo "Banco de dados está pronto!"
 
-      - name: Sincronizar Schema do Prisma para Teste (db push)
+      # 7. Sincronizar o schema do Prisma com o banco de dados
+      - name: Sincronizar Schema do Prisma (db push)
         run: |
-          echo "Verificando memória no container backend antes do db push..."
-          # Mantendo a verificação de memória (free -m) no container rodando a aplicação
-          docker compose exec -T backend free -m
-          
-          echo "Iniciando prisma db push (usando 'run --rm' e 'user root' para resolver permissão)..."
-          # 💥 CORREÇÃO PRINCIPAL: Adicionando --user root para resolver o erro EACCES/permission denied durante o prisma generate
+          echo "Iniciando prisma db push..."
           docker compose run --rm --user root backend npx prisma db push --accept-data-loss
+          echo "Schema do Prisma sincronizado."
 
+      # 8. Aguardar que o contentor do backend esteja saudável
       - name: Aguardar o backend ficar saudável
         run: |
           echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
-          
-          # 💥 CORREÇÃO DE DEBUG: Aumentando o sleep e usando o nome do SERVIÇO ('backend')
-          # para puxar os logs de forma mais robusta e debuggar o erro de inicialização.
-          echo "Esperando 45 segundos e verificando logs do backend para erros de inicialização..."
+          echo "Aguardando 45 segundos e verificando logs do backend para erros de inicialização..."
           sleep 45
           docker compose logs backend
 
-          # Inicia o loop de verificação de saúde (mantido em 300s)
           timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
           
           if [ $? -ne 0 ]; then
@@ -93,12 +78,11 @@ jobs:
           echo "Backend está saudável!"
           docker compose ps
 
+      # 9. Exibir logs para depuração (opcional, mas útil)
       - name: Verificar logs dos containers (para depuração)
         run: docker compose logs
 
-      - name: Executar testes de integração/E2E
-        run: docker compose exec -T backend npm test
-
+      # 10. Parar e remover os contentores, redes e volumes
       - name: Parar os containers
         if: always()
         run: docker compose down
