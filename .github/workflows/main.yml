@@ -67,11 +67,11 @@ jobs:
         run: |
           echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
           
-          # 💥 CORREÇÃO DE DEBUG: Espera 30 segundos para o NestJS iniciar (ou falhar) e
-          # força a exibição dos logs para que possamos ver o erro de inicialização.
-          echo "Esperando 30 segundos e verificando logs do backend para erros de inicialização..."
-          sleep 30
-          docker compose logs backend_dcare
+          # 💥 CORREÇÃO DE DEBUG: Aumentando o sleep e usando o nome do SERVIÇO ('backend')
+          # para puxar os logs de forma mais robusta e debuggar o erro de inicialização.
+          echo "Esperando 45 segundos e verificando logs do backend para erros de inicialização..."
+          sleep 45
+          docker compose logs backend
 
           # Inicia o loop de verificação de saúde (mantido em 300s)
           timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
