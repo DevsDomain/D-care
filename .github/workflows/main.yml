@@ -66,9 +66,18 @@ jobs:
       - name: Aguardar o backend ficar saudável
         run: |
           echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
+          
+          # 💥 CORREÇÃO DE DEBUG: Espera 30 segundos para o NestJS iniciar (ou falhar) e
+          # força a exibição dos logs para que possamos ver o erro de inicialização.
+          echo "Esperando 30 segundos e verificando logs do backend para erros de inicialização..."
+          sleep 30
+          docker compose logs backend_dcare
+
+          # Inicia o loop de verificação de saúde (mantido em 300s)
           timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+          
           if [ $? -ne 0 ]; then
-            echo "Erro: O backend não ficou saudável dentro do tempo limite."
+            echo "Erro: O backend não ficou saudável dentro do tempo limite (300s)."
             exit 1
           fi
           echo "Backend está saudável!"
