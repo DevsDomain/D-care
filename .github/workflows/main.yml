@@ -30,11 +30,8 @@ jobs:
           echo "Conteúdo do .env:"
           cat .env
 
-      - name: Build dos containers
-        run: docker compose build
-
       - name: Iniciar os containers em background
-        run: docker compose up -d
+        run: docker compose up -d postgres backend
 
       - name: Aguardar o Banco de Dados (pg-care) ficar pronto
         run: |
