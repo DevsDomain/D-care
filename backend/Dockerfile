@@ -16,8 +16,8 @@ COPY prisma ./prisma
 RUN corepack enable && pnpm install --frozen-lockfile
 
 
-# ---------- Stage 2: Build e Teste ----------
-# Esta fase copia o código-fonte, executa os testes e faz o build da aplicação.
+# ---------- Stage 2: Build ----------
+# Esta fase copia o código-fonte e faz o build da aplicação.
 FROM node:20-alpine AS build
 WORKDIR /app
 
@@ -28,13 +28,12 @@ COPY --from=deps /app/package.json ./package.json
 # Copiar o resto do código-fonte e ficheiros de configuração
 COPY . .
 
-# Habilitar pnpm, executar os testes e, se passarem, fazer o build.
-# Se os testes falharem, o build da imagem irá falhar aqui.
-RUN corepack enable && pnpm test && pnpm build
+# Habilitar pnpm e fazer o build. Os testes serão executados na pipeline de CI, não aqui.
+RUN corepack enable && pnpm build
 
 
-# ---------- Stage 3: Produção ----------
-# Esta é a imagem final, otimizada para ser leve e segura.
+# ---------- Stage 3: Produção & Teste em CI ----------
+# Esta é a imagem final, que contém o necessário para executar E testar a aplicação.
 FROM node:20-alpine AS production
 WORKDIR /app
 
@@ -44,13 +43,17 @@ RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
 # Copiar os manifestos de dependência
 COPY package.json pnpm-lock.yaml* ./
 
-# Instalar APENAS as dependências de produção
-RUN corepack enable && pnpm install --prod --frozen-lockfile
+# Instalar TODAS as dependências (incluindo devDependencies como jest)
+# para que o comando 'npm test' funcione no contentor.
+RUN corepack enable && pnpm install --frozen-lockfile
 
 # Copiar os artefactos do build da fase anterior
 COPY --from=build /app/dist ./dist
 
-# O cliente Prisma gerado está em node_modules, mas precisa do schema.
+# Copiar o código-fonte e ficheiros de configuração necessários para os testes
+COPY --from=build /app/src ./src
+COPY --from=build /app/test ./test
+COPY --from=build /app/tsconfig.json ./
 COPY --from=build /app/prisma ./prisma
 
 # Criar a pasta de uploads e atribuir a propriedade ao utilizador da aplicação
