@@ -8,21 +8,14 @@ import { PrismaService } from '../database/prisma.service';
 
 @Module({
   imports: [
-    // Rate limit
-    ThrottlerModule.forRoot([
-      {
-        name: 'register',
-        ttl: seconds(60),
-        limit: 5,
-      },
-    ]),
-    // JWT para injetar JwtService no AuthService
+    ThrottlerModule.forRoot([{ name: 'register', ttl: seconds(60), limit: 5 }]),
     JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'dev-secret', // use .env
+      secret: process.env.JWT_SECRET ?? 'dev-secret',
       signOptions: { expiresIn: process.env.JWT_EXPIRES_IN ?? '15m' },
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, PrismaService],
+  exports: [AuthService],
 })
 export class AuthModule {}

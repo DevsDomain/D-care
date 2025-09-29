@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../generated/prisma"
 }
 
 datasource db {
@@ -26,13 +25,11 @@ model Users {
   createdAt    DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt    DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   deletedAt    DateTime? @map("deleted_at") @db.Timestamp(6)
-  refreshTokenHash String? @map("refresh_token_hash") @db.VarChar(255)
   userProfile  UserProfiles[]        @relation("UserToProfile")
   terms        UserTermsAcceptance[] @relation("UserToTerms")
   caregiver    Caregivers[]          @relation("UserToCaregiver")
   family       Families[]            @relation("UserToFamily")
   faqQueries   FAQAIQueries[]        @relation("UserToFAQ")
-
 
   @@map("users")
   @@schema("auth")
