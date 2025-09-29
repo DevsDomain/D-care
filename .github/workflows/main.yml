@@ -25,15 +25,7 @@ jobs:
           echo "PG_USER=${{ secrets.PG_USER }}" >> .env
           echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
           echo "PG_DB=${{ secrets.PG_DB }}" >> .env
-          # 💥 CORREÇÃO: Adicionando DB_PORT para que o docker-compose consiga ler
-          # o valor para o mapeamento de portas (ports: - "${DB_PORT}:5432").
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-          
-          # 💥 CORREÇÃO: Usando a porta interna 5432 na DATABASE_URL.
-          # Dentro da rede Docker, o contêiner backend acessa o serviço 'pg-care'
-          # sempre na porta padrão 5432.
           echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
-          
           echo "Conteúdo do .env:"
           cat .env
 
@@ -43,15 +35,6 @@ jobs:
       - name: Iniciar os containers em background
         run: docker compose up -d
 
-      # 💥 NOVO POSICIONAMENTO E CORREÇÃO: Movendo a correção de permissão para ser executada logo
-      # após o 'docker compose up -d' E adicionando --user root.
-      - name: Corrigir Permissão da Pasta Uploads (Prioridade)
-        # Cria e define permissões 777 para a pasta 'uploads' usando 'backend' (nome do serviço).
-        run: |
-          echo "Criando e ajustando permissões 777 para a pasta /app/uploads imediatamente..."
-          # 💥 CORREÇÃO: Adicionando --user root para ter permissão de escrita/criação na pasta /app.
-          docker compose exec -T --user root backend sh -c "mkdir -p /app/uploads && chmod 777 /app/uploads"
-          
       - name: Aguardar o Banco de Dados (pg-care) ficar pronto
         run: |
           echo "Aguardando o container do banco de dados (pg-care) ficar saudável..."
@@ -63,29 +46,15 @@ jobs:
           echo "Banco de dados está pronto!"
 
       - name: Sincronizar Schema do Prisma para Teste (db push)
-        run: |
-          echo "Verificando memória no container backend antes do db push..."
-          docker compose exec -T backend free -m
-
-          echo "Iniciando prisma db push dentro do container backend já em execução..."
-          docker compose exec -T backend npx prisma db push --accept-data-loss
-
+        # CORREÇÃO: Removido --force, mantido apenas --accept-data-loss
+        run: docker compose exec -T backend npx prisma db push --accept-data-loss
 
       - name: Aguardar o backend ficar saudável
         run: |
           echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
-          
-          # 💥 CORREÇÃO DE DEBUG: Aumentando o sleep e usando o nome do SERVIÇO ('backend')
-          # para puxar os logs de forma mais robusta e debuggar o erro de inicialização.
-          echo "Esperando 45 segundos e verificando logs do backend para erros de inicialização..."
-          sleep 45
-          docker compose logs backend
-
-          # Inicia o loop de verificação de saúde (mantido em 300s)
           timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
-          
           if [ $? -ne 0 ]; then
-            echo "Erro: O backend não ficou saudável dentro do tempo limite (300s)."
+            echo "Erro: O backend não ficou saudável dentro do tempo limite."
             exit 1
           fi
           echo "Backend está saudável!"
