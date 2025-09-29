@@ -25,6 +25,7 @@ jobs:
           echo "PG_USER=${{ secrets.PG_USER }}" >> .env
           echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
           echo "PG_DB=${{ secrets.PG_DB }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env          
           echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:${{secrets.DB_PORT}}/${{ secrets.PG_DB }}" >> .env
           echo "Conteúdo do .env:"
           cat .env
