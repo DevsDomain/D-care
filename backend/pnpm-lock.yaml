@@ -38,9 +38,6 @@ dependencies:
   axios:
     specifier: ^1.11.0
     version: 1.12.2
-  bcryptjs:
-    specifier: ^3.0.2
-    version: 3.0.2
   class-transformer:
     specifier: ^0.5.1
     version: 0.5.1
@@ -3629,11 +3626,6 @@ packages:
       node-addon-api: 8.5.0
       node-gyp-build: 4.8.4
     dev: true
-
-  /bcryptjs@3.0.2:
-    resolution: {integrity: sha512-k38b3XOZKv60C4E2hVsXTolJWfkGRMbILBIe2IBITXciy5bOsTKot5kDrf3ZfufQtQOUN5mXceUEpU1rTl9Uog==}
-    hasBin: true
-    dev: false
 
   /bl@4.1.0:
     resolution: {integrity: sha512-1W07cM9gS6DcLperZfFSj+bWLtaPGSOHWhPiGzXmvVJbRLdG82sH/Kn8EtW1VqWVA54AKf2h5k5BbnIbwF3h6w==}

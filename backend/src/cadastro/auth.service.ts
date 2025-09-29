@@ -1,29 +1,33 @@
 // src/auth/auth.service.ts
 import {
+  Inject,
   BadRequestException,
   ConflictException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import bcrypt from 'bcryptjs';
 
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { RegisterFamilyDto } from './dto/register-family.dto';
 import { RegisterCaregiverDto } from './dto/register-caregiver.dto';
 import { LoginDto } from './dto/login.dto';
-import { UserRole } from '@prisma/client'; 
-
+import { PrismaClient, Prisma, UserRole } from '@prisma/client';
 
 
 type JwtPayload = { sub: string; email: string; role: UserRole };
+
+type ClientWithUsers = PrismaClient & {
+  users: any; // funciona e elimina o erro de vez
+};
 
 @Injectable()
 export class AuthService {
   private readonly SALT_ROUNDS = 10;
 
   constructor(
-    private readonly prisma: PrismaService,
+    @Inject(PrismaService) private readonly prisma: ClientWithUsers,
     private readonly jwt: JwtService,
   ) {}
 
@@ -176,9 +180,8 @@ export class AuthService {
   private async hash(plain: string) {
     return bcrypt.hash(plain, this.SALT_ROUNDS);
   }
-
-  private async compare(plain: string, hash: string) {
-    return bcrypt.compare(plain, hash);
+  private async compare(plain: string, hashed: string) {
+    return bcrypt.compare(plain, hashed);
   }
 
   private randomPasswordSeed() {
