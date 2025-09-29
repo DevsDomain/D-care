@@ -7,7 +7,8 @@ import {
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { RegisterFamilyDto } from './register-family.dto';
-import { Prisma, UserRole } from '../../generated/prisma';
+import { Prisma, $Enums } from '@prisma/client';
+type UserRole = $Enums.UserRole;
 import { JwtService } from '@nestjs/jwt';
 import { randomUUID } from 'crypto';
 
@@ -72,7 +73,7 @@ export class AuthService {
           data: {
             email,
             passwordHash,
-            role: UserRole.FAMILY,
+            role: $Enums.UserRole.FAMILY,
             status: 'active',
             userProfile: {
               create: {
@@ -86,7 +87,7 @@ export class AuthService {
         });
 
         // Sanity checks: role e ownership
-        if (user.role !== UserRole.FAMILY) {
+        if (user.role !== $Enums.UserRole.FAMILY) {
           throw new InternalServerErrorException('Role mismatch: expected FAMILY');
         }
         const createdFamily = user.family?.[0];
