@@ -48,7 +48,7 @@ jobs:
 
       - name: Sincronizar Schema do Prisma para Teste (db push)
         # CORREÇÃO: Removido --force, mantido apenas --accept-data-loss
-        run: docker compose exec -T --user root backend npx prisma db push --accept-data-loss
+        run: docker compose exec -T --user root backend npx prisma db push --accept-data-loss --skip-generate
 
       - name: Aguardar o backend ficar saudável
         run: |
