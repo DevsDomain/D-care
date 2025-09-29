@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateElderDto } from './dto/create-elder.dto';
 import { UpdateElderDto } from './dto/update-elder.dto';
-import { getCoordinatesFromZipCode } from 'src/common/helper/getCoordinatesFromCep';
+import { getCoordinatesFromZipCode } from '../common/helper/getCoordinatesFromCep';
 @Injectable()
 export class IdososService {
   constructor(private prisma: PrismaService) {}

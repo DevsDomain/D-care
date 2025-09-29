@@ -45,7 +45,7 @@ describe('EldersController (e2e)', () => {
   });
 
   it('/api/v1/idosos (POST) → 400 Bad Request (invalid date)', async () => {
-    const invalidPayload = { ...validPayload, birthdate: 'not-a-date' };
+    const invalidPayload = { ...validPayload, birthdate: 'invalid' };
 
     await request(app.getHttpServer())
       .post('/api/v1/idosos')

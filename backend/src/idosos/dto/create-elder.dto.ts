@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsString,
   IsUUID,
@@ -5,6 +6,7 @@ import {
   IsDateString,
   IsArray,
 } from 'class-validator';
+import safeParseArray from '../../common/pipes/safe-parse-array.pipe';
 
 export class CreateElderDto {
   @IsUUID()
@@ -23,14 +25,16 @@ export class CreateElderDto {
   @IsOptional()
   birthdate?: string;
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsOptional()
+  @Transform(({ value }) => safeParseArray(value))
   conditions?: string[];
 
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsOptional()
+  @Transform(({ value }) => safeParseArray(value))
   medications?: string[];
 
   @IsString()

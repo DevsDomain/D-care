@@ -14,7 +14,6 @@ import { UpdateElderDto } from './dto/update-elder.dto';
 import { diskStorage } from 'multer';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateElderDto } from './dto/create-elder.dto';
-import safeParseArray from 'src/common/pipes/safe-parse-array.pipe';
 
 @Controller('idosos')
 export class IdososController {
@@ -35,26 +34,16 @@ export class IdososController {
     }),
   )
   async create(
-    @Body() body: Record<string, any>, // temporário, vamos converter
+    @Body() createElderDto: CreateElderDto, // temporário, vamos converter
     @UploadedFile() file?: Express.Multer.File,
   ): Promise<any> {
     // converte string para tipos corretos
-    const dto: CreateElderDto = {
-      familyId: body.familyId as string,
-      name: body.name as string,
+    const finalDto: CreateElderDto = {
+      ...createElderDto,
       avatarPath: file ? `/uploads/elders/${file.filename}` : undefined,
-      birthdate: body.birthdate
-        ? new Date(body.birthdate).toISOString()
-        : undefined,
-      conditions: safeParseArray(body.conditions),
-      medications: safeParseArray(body.medications),
-      address: body.address as string,
-      city: body.city as string,
-      state: body.state as string,
-      zipCode: body.zipCode as string,
     };
 
-    return this.idososService.createElder(dto, file);
+    return this.idososService.createElder(finalDto, file);
   }
 
   @Get()
