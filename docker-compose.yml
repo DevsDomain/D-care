@@ -1,67 +1,89 @@
-services:
-  backend:
-    mem_limit: 1g
-    build: ./backend
-    container_name: backend_dcare
-    networks:
-      - dcare_network
-    hostname: backend_dcare
-    ports:
-      - "3000:3000"
-    env_file:
-      - .env
-    # Correct placement of depends_on
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/v1/"]
-      interval: 10s
-      timeout: 15s
-      retries: 5
-      start_period: 60s
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    networks:
-      - dcare_network
-    env_file:
-      - .env
-    ports:
-      - "5173:8080"
-    depends_on:
-      - backend
+name: CI Pipeline - D-Care
 
-  postgres:
-    image: postgis/postgis:16-3.4
-    container_name: pg-care
-    env_file:
-      - .env
-    # Note: The variables below are also set from your .env.docker file.
-    # This environment section is only needed if you want to override them
-    # or if they aren't in the env_file.
-    environment:
-      POSTGRES_USER: ${PG_USER}
-      POSTGRES_PASSWORD: ${PG_PASS}
-      POSTGRES_DB: ${PG_DB}
-    ports:
-      - "${DB_PORT}:5432"
-    networks:
-      - dcare_network
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-      - ./bd/init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${PG_USER} -d $${PG_DB}"]
-      interval: 5s
-      timeout: 15s
-      retries: 5
+on:
+push:
+# Mude para 'main' ou 'develop' quando estiver pronto
+branches:
+- fd-fix-conteineres-ci
+- qas
+- teste_ci_docker
+pull_request:
 
-# Top-level declaration for the named volume
-volumes:
-  pgdata:
+jobs:
+build-and-test:
+runs-on: ubuntu-latest
 
-# Top-level declaration for the network
-networks:
-  dcare_network:
-    driver: bridge
+steps:
+  - name: Checkout do Repositório
+    uses: actions/checkout@v4
+
+  - name: Configurar Docker Buildx
+    uses: docker/setup-buildx-action@v3
+
+  - name: Criar arquivo de ambiente (.env)
+    run: |
+      echo "PG_USER=${{ secrets.PG_USER }}" >> .env
+      echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
+      echo "PG_DB=${{ secrets.PG_DB }}" >> .env
+      echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+      echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
+      echo "Conteúdo do .env:"
+      cat .env
+
+  - name: Iniciar os containers em background
+    run: docker compose up -d postgres backend
+
+  - name: Aguardar o Banco de Dados (pg-care) ficar pronto
+    run: |
+      echo "Aguardando o container do banco de dados (pg-care) ficar saudável..."
+      timeout 120 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} pg-care)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+      if [ $? -ne 0 ]; then
+        echo "Erro: O banco de dados (pg-care) não ficou saudável dentro do tempo limite."
+        # Adiciona logs do postgres se falhar
+        docker compose logs postgres
+        exit 1
+      fi
+      echo "Banco de dados está pronto!"
+
+  - name: DEBUG: Logs e Status dos Containers
+    run: |
+      echo "--- 1. Status Geral dos Containers (incluindo parados) ---"
+      docker compose ps -a
+      
+      echo "--- 2. Detalhes de Saúde/Estado do Container 'backend' ---"
+      # Checa o estado do backend ANTES de rodar o db push
+      docker inspect backend_dcare --format '{{json .State}}' | jq .
+      
+      echo "--- 3. Tentando comando simples de ECHO no backend ---"
+      # Comando simples para verificar se o 'exec' funciona sem OOM/memória
+      docker compose exec -T backend echo "Backend está acessível para exec"
+      
+      # Se o comando acima falhar com exit code 137, ele confirmará o problema de OOM/acessibilidade
+      
+  - name: Sincronizar Schema do Prisma para Teste (db push)
+    # CORREÇÃO: Removido --force, mantido apenas --accept-data-loss
+    run: docker compose exec -T --user root backend npx prisma db push --accept-data-loss --skip-generate
+
+  - name: Aguardar o backend ficar saudável
+    run: |
+      echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
+      # O nome do container deve ser 'backend_dcare' conforme docker-compose.yml
+      timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+      if [ $? -ne 0 ]; then
+        echo "Erro: O backend não ficou saudável dentro do tempo limite."
+        # Adiciona logs do backend se falhar
+        docker compose logs backend
+        exit 1
+      fi
+      echo "Backend está saudável!"
+      docker compose ps
+
+  - name: Verificar logs dos containers (para depuração)
+    run: docker compose logs
+
+  - name: Executar testes de integração/E2E
+    run: docker compose exec -T backend npm test
+
+  - name: Parar os containers
+    if: always()
+    run: docker compose down
