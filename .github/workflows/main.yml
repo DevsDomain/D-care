@@ -10,7 +10,7 @@ on:
   pull_request:
 
 jobs:
-  build-and-test:
+    build-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -62,6 +62,14 @@ jobs:
           echo "Iniciando prisma db push (usando 'run --rm' e 'user root' para resolver permissão)..."
           # 💥 CORREÇÃO PRINCIPAL: Adicionando --user root para resolver o erro EACCES/permission denied durante o prisma generate
           docker compose run --rm --user root backend npx prisma db push --accept-data-loss
+
+      - name: Corrigir Permissão da Pasta Uploads
+        # 💥 NOVA CORREÇÃO: Cria e define permissões 777 para a pasta 'uploads' para
+        # resolver o erro EACCES durante a inicialização do NestJS (multer).
+        run: |
+          echo "Criando e ajustando permissões para a pasta /app/uploads..."
+          docker compose exec -T backend mkdir -p /app/uploads
+          docker compose exec -T backend chmod 777 /app/uploads
 
       - name: Aguardar o backend ficar saudável
         run: |
