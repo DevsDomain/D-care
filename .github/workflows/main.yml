@@ -25,8 +25,9 @@ jobs:
           echo "PG_USER=${{ secrets.PG_USER }}" >> .env
           echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
           echo "PG_DB=${{ secrets.PG_DB }}" >> .env
-          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env          
-          echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:${{secrets.DB_PORT}}/${{ secrets.PG_DB }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
+          
           echo "Conteúdo do .env:"
           cat .env
 
@@ -47,8 +48,13 @@ jobs:
           echo "Banco de dados está pronto!"
 
       - name: Sincronizar Schema do Prisma para Teste (db push)
-        # CORREÇÃO: Removido --force, mantido apenas --accept-data-loss
-        run: docker compose exec -T backend npx prisma db push --accept-data-loss
+        # ⚠️ Adicionado um comando de debug para verificar o uso de memória 
+        # antes do db push (a causa provável do Exit Code 137).
+        run: |
+          echo "Verificando memória no container backend antes do db push..."
+          docker compose exec -T backend free -m
+          echo "Iniciando prisma db push..."
+          docker compose exec -T backend npx prisma db push --accept-data-loss
 
       - name: Aguardar o backend ficar saudável
         run: |
