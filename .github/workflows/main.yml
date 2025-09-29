@@ -25,7 +25,13 @@ jobs:
           echo "PG_USER=${{ secrets.PG_USER }}" >> .env
           echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
           echo "PG_DB=${{ secrets.PG_DB }}" >> .env
+          # 💥 CORREÇÃO: Adicionando DB_PORT para que o docker-compose consiga ler
+          # o valor para o mapeamento de portas (ports: - "${DB_PORT}:5432").
           echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          
+          # 💥 CORREÇÃO: Usando a porta interna 5432 na DATABASE_URL.
+          # Dentro da rede Docker, o contêiner backend acessa o serviço 'pg-care'
+          # sempre na porta padrão 5432.
           echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
           
           echo "Conteúdo do .env:"
@@ -48,13 +54,15 @@ jobs:
           echo "Banco de dados está pronto!"
 
       - name: Sincronizar Schema do Prisma para Teste (db push)
-        # ⚠️ Adicionado um comando de debug para verificar o uso de memória 
-        # antes do db push (a causa provável do Exit Code 137).
         run: |
           echo "Verificando memória no container backend antes do db push..."
+          # Mantendo a verificação de memória (free -m) no container rodando a aplicação
           docker compose exec -T backend free -m
-          echo "Iniciando prisma db push..."
-          docker compose exec -T backend npx prisma db push --accept-data-loss
+          
+          echo "Iniciando prisma db push (usando 'run --rm' para resolver Exit Code 137)..."
+          # 💥 CORREÇÃO PRINCIPAL: Usar 'docker compose run --rm' para iniciar um 
+          # novo container efêmero apenas para o db push.
+          docker compose run --rm backend npx prisma db push --accept-data-loss
 
       - name: Aguardar o backend ficar saudável
         run: |
