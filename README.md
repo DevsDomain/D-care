@@ -23,27 +23,40 @@ O Product Backlog segue o padrão de priorização:
 - *B* Baixa
 
 
-## 📌 Backlog e Requisitos do Projeto
+# 📋 Requisitos Funcionais (User Stories Refinadas)
 
-### 1. Requisitos Funcionais
+## 👤 Usuário / Sistema
+| ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
+| ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
+| US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 7            | 5               | In Progress  |
+| US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | In Progress  |
+| US13 | Como usuário, quero consultar uma cartilha com IA                            | Alta         | 10           | 10              | In Progress  |
+| US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | In Progress  |
+| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | In Progress  |
 
-| ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status |
-| ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------ |
-| US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 5            | 5               | To Do  |
-| US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 5            | 5               | To Do  |
-| US03 | Como família, quero registrar o idoso (dados pessoais/saúde)                | Média        | 5            | 4               | To Do  |
-| US04 | Como cuidador, quero editar meu perfil (dados, CRM/COREN, agenda)           | Média        | 4            | 5               | To Do  |
-| US05 | Como família, quero preencher o IVCF-20 digital                             | Média        | 4            | 4               | To Do  |
-| US06 | Como cuidador, quero definir disponibilidade e emergências                  | Média        | 5            | 5               | To Do  |
-| US07 | Como família, quero buscar cuidadores com filtros                           | Alta         | 5            | 5               | To Do  |
-| US08 | Como família, quero visualizar perfil do cuidador                           | Média        | 4            | 5               | To Do  |
-| US09 | Como família, quero agendar um cuidador em data/hora                        | Alta         | 5            | 5               | To Do  |
-| US10 | Como cuidador, quero aceitar/recusar solicitações de agendamento            | Média        | 4            | 5               | To Do  |
-| US11 | Como família, quero avaliar o cuidador após atendimento                     | Média        | 4            | 5               | To Do  |
-| US12 | Como usuário, quero visualizar avaliações dos cuidadores                    | Baixa        | 3            | 4               | To Do  |
-| US13 | Como usuário, quero consultar uma cartilha com IA                           | Alta         | 4            | 5               | To Do  |
-| US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD              | Baixa        | 5            | 4               | To Do  |
-| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                       | Média        | 4            | 4               | To Do  |
+---
+
+## 🧑‍⚕️ Cuidador
+| ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
+| ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
+| US04 | Como cuidador, quero editar meu perfil (dados, geolocalização, CRM/COREN, agenda) | Alta        | 8            | 8               | To Do        |
+| US06 | Como cuidador, quero definir disponibilidade (agenda) e emergências          | Alta        | 7            | 7               | To Do        |
+| US10 | Como cuidador, quero aceitar/recusar solicitações de agendamento             | Baixa       | 7            | 8               | To Do        |
+
+---
+
+## 👨‍👩‍👧 Família
+| ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
+| ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
+| US03 | Como família, quero registrar um idoso (dados pessoais/saúde)                | Média        | 7            | 7               | Done         |
+| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | To Do        |
+| US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | To Do        |
+| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | To Do        |
+| US09 | Como família, quero agendar um cuidador em data/hora                         | Alta         | 6            | 9               | To Do        |
+| US11 | Como família, quero avaliar o cuidador após atendimento                      | Baixa        | 4            | 5               | To Do        |
+| US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | To Do        |
+| US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | To Do        |
+| US17 | Como família, quero visualizar meus agendamentos (futuros e passados)        | Média        | 7            | 8               | To Do        |
 
 
 ### 2. Requisitos Não Funcionais
@@ -59,9 +72,9 @@ O Product Backlog segue o padrão de priorização:
 
 | Prioridade    | Histórias de Usuário                          |
 | ------------- | --------------------------------------------- |
-| *A (Alta)*    | US01, US02, US03, US04, US05, US06, US07, US09 |
-| *M (Média)*   | US08, US10, US11, US13, US15                   |
-| *B (Baixa)*   | US12, US14                                    |
+| *A (Alta)*    | US01, US02, US03, US04, US06, US07, US09, US13, US17 |
+| *M (Média)*   | US05, US08, US10, US11, US12, US15, US16       |
+| *B (Baixa)*   | US14                                           |
 
 ## 👾⋆˚ Tecnologias utilizadas ˖°👾
 

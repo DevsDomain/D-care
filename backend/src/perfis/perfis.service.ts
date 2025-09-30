@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CreateCareGiverDto } from './dto/create-caregiver.dto';
 
 @Injectable()
 export class PerfisService {
@@ -15,6 +16,17 @@ export class PerfisService {
         phone: dto.phone,
         birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
         gender: dto.gender,
+      },
+    });
+  }
+
+  async createCaregiver(dto: CreateCareGiverDto, userId: string) {
+    return this.prisma.caregivers.create({
+      data: {
+        userId,
+        crmCoren: dto.crm_coren,
+        bio: dto.bio,
+        validated: false,
       },
     });
   }

@@ -8,19 +8,20 @@ VALUES (uuid_generate_v4(), '1.0', 'Termos de uso do sistema D-Care, versão ini
 -- ===== USERS & PROFILES =====
 -- 5 Families
 INSERT INTO auth.users (id, email, password_hash, role) VALUES
-(uuid_generate_v4(), 'maria.silva@exemplo.com', '$2a$10$hashFakeSenha1', 'family'),
-(uuid_generate_v4(), 'joao.oliveira@exemplo.com', '$2a$10$hashFakeSenha2', 'family'),
-(uuid_generate_v4(), 'ana.costa@exemplo.com', '$2a$10$hashFakeSenha3', 'family'),
-(uuid_generate_v4(), 'carlos.souza@exemplo.com', '$2a$10$hashFakeSenha4', 'family'),
-(uuid_generate_v4(), 'fernanda.alves@exemplo.com', '$2a$10$hashFakeSenha5', 'family');
+(uuid_generate_v4(), 'maria.silva@exemplo.com', '$2a$10$hashFakeSenha1', 'FAMILY'),
+(uuid_generate_v4(), 'joao.oliveira@exemplo.com', '$2a$10$hashFakeSenha2', 'FAMILY'),
+(uuid_generate_v4(), 'ana.costa@exemplo.com', '$2a$10$hashFakeSenha3', 'FAMILY'),
+(uuid_generate_v4(), 'carlos.souza@exemplo.com', '$2a$10$hashFakeSenha4', 'FAMILY'),
+(uuid_generate_v4(), 'fernanda.alves@exemplo.com', '$2a$10$hashFakeSenha5', 'FAMILY');
 
 -- 5 Caregivers
 INSERT INTO auth.users (id, email, password_hash, role) VALUES
-(uuid_generate_v4(), 'cintia.enfermeira@exemplo.com', '$2a$10$hashFakeSenha6', 'caregiver'),
-(uuid_generate_v4(), 'roberto.medico@exemplo.com', '$2a$10$hashFakeSenha7', 'caregiver'),
-(uuid_generate_v4(), 'aline.fisioterapeuta@exemplo.com', '$2a$10$hashFakeSenha8', 'caregiver'),
-(uuid_generate_v4(), 'lucas.tecnico@exemplo.com', '$2a$10$hashFakeSenha9', 'caregiver'),
-(uuid_generate_v4(), 'juliana.psicologa@exemplo.com', '$2a$10$hashFakeSenha10', 'caregiver');
+(uuid_generate_v4(), 'cintia.enfermeira@exemplo.com', '$2a$10$hashFakeSenha6', 'CAREGIVER'),
+(uuid_generate_v4(), 'roberto.medico@exemplo.com', '$2a$10$hashFakeSenha7', 'CAREGIVER'),
+(uuid_generate_v4(), 'aline.fisioterapeuta@exemplo.com', '$2a$10$hashFakeSenha8', 'CAREGIVER'),
+(uuid_generate_v4(), 'lucas.tecnico@exemplo.com', '$2a$10$hashFakeSenha9', 'CAREGIVER'),
+(uuid_generate_v4(), 'juliana.psicologa@exemplo.com', '$2a$10$hashFakeSenha10', 'CAREGIVER');
+
 
 -- perfis
 INSERT INTO auth.user_profiles (user_id, name, phone, birthdate, gender)

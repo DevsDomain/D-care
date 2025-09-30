@@ -5,9 +5,10 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableCors();
 
   // Prefixo global da API (ex.: /api/v1)
-  const prefix = process.env.API_GLOBAL_PREFIX || '/api/v1';
+  const prefix = process.env.API_GLOBAL_PREFIX || 'api/v1';
   app.setGlobalPrefix(prefix);
 
   // Validação global (class-validator)
@@ -27,6 +28,6 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT || 3000);
   await app.listen(port);
-  console.log(`API on http://localhost:${port}${prefix}`);
+  console.log(`API on http://localhost:${port}/${prefix}`);
 }
 bootstrap();
