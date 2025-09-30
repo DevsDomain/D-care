@@ -3,11 +3,12 @@ import {
   IsUUID,
   IsOptional,
   IsDateString,
-  IsJSON,
+  IsArray,
 } from 'class-validator';
 
 export class CreateElderDto {
   @IsUUID()
+  @IsOptional()
   familyId: string;
 
   @IsString()
@@ -18,11 +19,29 @@ export class CreateElderDto {
   @IsOptional()
   birthdate?: string;
 
-  @IsJSON()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  medicalConditions?: string;
+  conditions?: string[];
 
-  @IsJSON()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  medications?: string;
+  medications?: string[];
+
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @IsString()
+  @IsOptional()
+  zipCode?: string;
 }

@@ -13,12 +13,16 @@ export class IdososService {
         familyId: dto.familyId,
         name: dto.name,
         birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
-        medicalConditions: dto.medicalConditions
-          ? (JSON.parse(dto.medicalConditions) as string[])
+        medicalConditions: dto.conditions
+          ? JSON.stringify(dto.conditions)
           : undefined,
         medications: dto.medications
-          ? (JSON.parse(dto.medications) as string[])
+          ? JSON.stringify(dto.medications)
           : undefined,
+        address: dto.address,
+        city: dto.city,
+        state: dto.state,
+        zipCode: dto.zipCode,
       },
     });
   }

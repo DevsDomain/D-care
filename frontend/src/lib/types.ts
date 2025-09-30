@@ -33,15 +33,10 @@ export interface TimeSlot {
   export interface Elder {
     id: string;
     name: string;
-    age: number;
+    birthDate: Date;
     photo?: string;
     conditions: string[]; // Health conditions like ["Diabetes", "Hypertension"]
     medications: string[];
-    emergencyContact: {
-      name: string;
-      phone: string;
-      relation: string;
-    };
     address: {
       street: string;
       city: string;

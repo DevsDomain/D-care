@@ -1,60 +1,66 @@
-
 services:
   backend:
     build: ./backend
+    container_name: backend_dcare
+    networks:
+      - dcare_network
+    hostname: backend_dcare
     ports:
       - "3000:3000"
     env_file:
-      - .env.docker
+      - .env
+    # Correct placement of depends_on
     depends_on:
-      - postgres
-
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/v1/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
   frontend:
     build: ./frontend
-    ports:
-      - "5173:5173"
+    container_name: frontend
+    networks:
+      - dcare_network
     env_file:
-      - .env.docker
+      - .env
+    ports:
+      - "5173:8080"
     depends_on:
       - backend
-
-  # ai-agent:
-  #   build: ./ai-agent
-  #   ports:
-  #     - "5000:5000"
-  #   env_file:
-  #     - ./ai-agent/.env
-  #   depends_on:
-  #     - backend
-
-  # test:
-  #  build: ./test
-  # volumes:
-  #  - testdata:/app/testdata
-  #  depends_on:
-  #   - backend
-  #   - frontend
-  #   - ai-agent
-  #   environment:
-  #     - NODE_ENV=test
 
   postgres:
     image: postgis/postgis:16-3.4
     container_name: pg-care
+    env_file:
+      - .env
+    # Note: The variables below are also set from your .env.docker file.
+    # This environment section is only needed if you want to override them
+    # or if they aren't in the env_file.
     environment:
-      # Alterar os dados para o projeto:
-      POSTGRES_USER: care
-      POSTGRES_PASSWORD: carepass
-      POSTGRES_DB: caredb
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASS}
+      POSTGRES_DB: ${PG_DB}
     ports:
-      - "5433:5432"
+      - "${DB_PORT}:5432"
+    networks:
+      - dcare_network
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./bd/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U care -d caredb"]
+      test: ["CMD-SHELL", "pg_isready -U $${PG_USER} -d $${PG_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
+
+# Top-level declaration for the named volume
 volumes:
-  pgdata: {}
+  pgdata:
+
+# Top-level declaration for the network
+networks:
+  dcare_network:
+    driver: bridge
