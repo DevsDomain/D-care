@@ -12,7 +12,7 @@ Cada entrega será realizada a partir da criação de uma **tag** conforme rela�
 
 | Sprint | Início | Previsão de entrega | Status | Release | Kanban | BurnDown |
 |:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| 01 | 16/09/2025 | 06/10/2025 | 🚧 A iniciar | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care) |
+| 01 | 16/09/2025 | 06/10/2025 | 🌀 Em execução | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care) |
 | 02 | 13/10/2025 | 02/11/2025 | 🚧 A iniciar | [Ver release 2](https://github.com/DevsDomain/D-care) | [Ver Sprint 2](https://github.com/DevsDomain/D-care) | [Ver BurnDown 2](https://github.com/DevsDomain/D-care) |
 | 03 | 06/11/2025 | 23/11/2025 | 🚧 A iniciar | [Ver release 3](https://github.com/DevsDomain/D-care) | [Ver Sprint 3](https://github.com/DevsDomain/D-care) | [Ver BurnDown 3](https://github.com/DevsDomain/D-care) |
 
