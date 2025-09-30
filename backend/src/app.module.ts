@@ -6,6 +6,8 @@ import { IdososModule } from './idosos/idosos.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { AiProxyModule } from './ai-proxy/ai-proxy.module';
 import { DatabaseModule } from './database/database.module';
+import { AuthModule } from './cadastro/auth.module';
+
 
 @Module({
   imports: [
@@ -14,6 +16,7 @@ import { DatabaseModule } from './database/database.module';
     ReviewsModule,
     AiProxyModule,
     DatabaseModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
