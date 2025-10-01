@@ -33,7 +33,7 @@ const App = () => (
             {/* Auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            
+
             {/* Main app routes */}
             <Route path="/" element={<Index />} />
             <Route path="/search" element={<Search />} />
@@ -45,7 +45,8 @@ const App = () => (
             <Route path="/elder/register" element={<ElderRegistration />} />
             <Route path="/ivcf/:elderId" element={<IvcfAssessment />} />
             <Route path="/caregiver-dashboard" element={<CaregiverDashboard />} />
-            
+
+
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
           </Routes>

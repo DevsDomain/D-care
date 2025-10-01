@@ -5,26 +5,27 @@ import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors();
+
+  // CORS correto para o frontend em http://localhost:8080
+  app.enableCors({
+    origin: 'http://localhost:8080',
+    credentials: true, // só use true se realmente precisar mandar cookies
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
   // Prefixo global da API (ex.: /api/v1)
   const prefix = process.env.API_GLOBAL_PREFIX || 'api/v1';
   app.setGlobalPrefix(prefix);
 
-  // Validação global (class-validator)
+  // Validação global
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // remove campos não declarados nos DTOs
+      whitelist: true,
       forbidNonWhitelisted: true,
-      transform: true, // transforma tipos conforme DTOs
+      transform: true,
     }),
   );
-
-  // CORS (ajuste domínios conforme seu frontend)
-  app.enableCors({
-    origin: ['http://localhost:3001', 'https://seu-frontend.vercel.app'],
-    credentials: true,
-  });
 
   const port = Number(process.env.PORT || 3000);
   await app.listen(port);

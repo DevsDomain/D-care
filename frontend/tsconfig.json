@@ -9,7 +9,17 @@
     }
   ],
   "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],   // necessário p/ reconhecer <div>, document, window, etc
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "react-jsx",                         // para JSX moderno (React 17+)
+    "strict": true,                             // bom para segurança de tipos
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
+    "types": ["react", "react-dom"],
     "paths": {
       "@/*": ["./src/*"]
     }
