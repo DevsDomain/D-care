@@ -1,0 +1,489 @@
+[
+  {
+    "id": 201,
+    "topic": "o que é cuidar",
+    "content": "Cuidar significa ofertar atenção, precaução, dedicação e responsabilidade, compreendendo o outro com suas individualidades, limitações e história de vida.",
+    "keywords": [
+      "cuidar",
+      "atenção",
+      "responsabilidade",
+      "limitações",
+      "história de vida"
+    ],
+    "module": "Módulo 2"
+  },
+  {
+    "id": 202,
+    "topic": "papel do cuidador",
+    "content": "O cuidador atua como elo entre a pessoa cuidada, família e equipe de saúde. Deve ajudar em higiene, alimentação, locomoção, lazer, administração de medicamentos e comunicar mudanças de saúde.",
+    "keywords": [
+      "papel",
+      "cuidador",
+      "higiene",
+      "alimentação",
+      "locomoção",
+      "medicação"
+    ],
+    "module": "Módulo 2"
+  },
+  {
+    "id": 203,
+    "topic": "cuidador formal e informal",
+    "content": "O cuidador formal é profissional treinado; o informal é um membro da família ou comunidade que presta cuidados. Ambos podem assumir papel principal ou secundário no auxílio.",
+    "keywords": [
+      "cuidador formal",
+      "cuidador informal",
+      "família",
+      "profissional"
+    ],
+    "module": "Módulo 2"
+  },
+  {
+    "id": 301,
+    "topic": "saúde do cuidador",
+    "content": "O cuidador deve manter alimentação saudável, atividade física, lazer, descanso e pedir ajuda quando necessário. Sintomas comuns de sobrecarga incluem dores, cansaço e distúrbios do sono.",
+    "keywords": [
+      "cuidador",
+      "saúde",
+      "cansaço",
+      "estresse",
+      "descanso"
+    ],
+    "module": "Módulo 3"
+  },
+  {
+    "id": 302,
+    "topic": "exercícios respiratórios",
+    "content": "Exercícios respiratórios ajudam os pulmões, aumentam a tolerância ao esforço e melhoram a qualidade de vida.",
+    "keywords": [
+      "exercício",
+      "respiração",
+      "pulmões",
+      "qualidade de vida"
+    ],
+    "module": "Módulo 3"
+  },
+  {
+    "id": 303,
+    "topic": "exercícios aeróbicos",
+    "content": "Caminhadas são exemplo de exercício aeróbico, melhoram o condicionamento físico e reduzem riscos cardiovasculares.",
+    "keywords": [
+      "exercício",
+      "aeróbico",
+      "caminhada",
+      "condicionamento",
+      "cardiovascular"
+    ],
+    "module": "Módulo 3"
+  },
+  {
+    "id": 304,
+    "topic": "alongamento muscular",
+    "content": "Alongamentos aumentam a flexibilidade e melhoram a mobilidade para atividades diárias.",
+    "keywords": [
+      "alongamento",
+      "flexibilidade",
+      "mobilidade"
+    ],
+    "module": "Módulo 3"
+  },
+  {
+    "id": 305,
+    "topic": "fortalecimento muscular",
+    "content": "Exercícios de fortalecimento preparam o corpo, reduzem risco de lesões e aumentam a resistência física.",
+    "keywords": [
+      "fortalecimento",
+      "músculos",
+      "resistência",
+      "lesão"
+    ],
+    "module": "Módulo 3"
+  },
+  {
+    "id": 401,
+    "topic": "adaptações ambientais",
+    "content": "Remover tapetes, instalar barras de apoio, garantir iluminação adequada, usar móveis firmes e corrimãos em escadas são medidas para prevenir quedas.",
+    "keywords": [
+      "adaptação",
+      "ambiente",
+      "tapetes",
+      "barras",
+      "iluminação",
+      "escadas"
+    ],
+    "module": "Módulo 4"
+  },
+  {
+    "id": 402,
+    "topic": "cuidados com medicação",
+    "content": "Medicamentos devem ser armazenados corretamente, manuseados em local limpo e claro, respeitando horários e prescrições médicas.",
+    "keywords": [
+      "medicação",
+      "armazenamento",
+      "horário",
+      "prescrição",
+      "remédios"
+    ],
+    "module": "Módulo 4"
+  },
+  {
+    "id": 501,
+    "topic": "higiene do idoso acamado",
+    "content": "O banho de leito deve seguir passos como: lavar olhos de dentro para fora, secar bem as dobras, trocar água após lavar a cabeça e hidratar a pele.",
+    "keywords": [
+      "higiene",
+      "banho",
+      "acamado",
+      "leito",
+      "cuidados"
+    ],
+    "module": "Módulo 5"
+  },
+  {
+    "id": 502,
+    "topic": "cuidados com próteses dentárias",
+    "content": "As próteses devem ser limpas fora da boca com escova macia. É importante higienizar gengiva, céu da boca e língua, além de deixar a prótese em água quando não estiver em uso.",
+    "keywords": [
+      "prótese",
+      "dentadura",
+      "higiene bucal",
+      "limpeza"
+    ],
+    "module": "Módulo 5"
+  },
+  {
+    "id": 503,
+    "topic": "assaduras em idosos",
+    "content": "Assaduras são comuns em acamados. Devem-se manter pele limpa e seca, usar hidratantes e, se necessário, cremes de barreira.",
+    "keywords": [
+      "assadura",
+      "pele",
+      "hidratação",
+      "acamado"
+    ],
+    "module": "Módulo 5"
+  },
+  {
+    "id": 504,
+    "topic": "troca de fralda",
+    "content": "Fraldas sujas de urina devem ser trocadas frequentemente e fraldas com fezes imediatamente. Limpeza deve ser feita com água morna e algodão.",
+    "keywords": [
+      "fralda",
+      "troca",
+      "urina",
+      "fezes",
+      "higiene"
+    ],
+    "module": "Módulo 5"
+  },
+  {
+    "id": 505,
+    "topic": "uso de hidratante na pele",
+    "content": "A pele do idoso deve ser hidratada diariamente, preferencialmente após o banho, com creme e óleo corporal.",
+    "keywords": [
+      "pele",
+      "hidratação",
+      "hidratante",
+      "óleo corporal"
+    ],
+    "module": "Módulo 5"
+  },
+  {
+    "id": 601,
+    "topic": "posições do acamado",
+    "content": "O idoso pode ser posicionado de barriga para cima, de lado, de bruços ou semi-sentado, sempre com travesseiros para conforto e alinhamento.",
+    "keywords": [
+      "acamado",
+      "posição",
+      "cama",
+      "conforto"
+    ],
+    "module": "Módulo 6"
+  },
+  {
+    "id": 602,
+    "topic": "mudança de decúbito",
+    "content": "Pessoas acamadas devem mudar de posição a cada 2 horas para prevenir lesões por pressão.",
+    "keywords": [
+      "decúbito",
+      "mudança",
+      "lesão por pressão",
+      "acamado"
+    ],
+    "module": "Módulo 6"
+  },
+  {
+    "id": 603,
+    "topic": "transferência cama para cadeira",
+    "content": "A transferência deve ser feita com apoio do cuidador, posicionando corretamente os pés e mantendo atenção ao equilíbrio.",
+    "keywords": [
+      "transferência",
+      "cama",
+      "cadeira",
+      "equilíbrio"
+    ],
+    "module": "Módulo 6"
+  },
+  {
+    "id": 604,
+    "topic": "ajudar idoso a caminhar",
+    "content": "O cuidador deve apoiar sob a axila ou antebraços, garantindo segurança com calçados adequados.",
+    "keywords": [
+      "caminhada",
+      "apoio",
+      "segurança",
+      "idoso"
+    ],
+    "module": "Módulo 6"
+  },
+  {
+    "id": 605,
+    "topic": "lesão por pressão",
+    "content": "São feridas causadas por imobilidade prolongada. Prevenção: nutrição adequada, hidratação da pele, mudança de posição e higiene correta.",
+    "keywords": [
+      "lesão",
+      "pressão",
+      "ferida",
+      "acamado",
+      "prevenção"
+    ],
+    "module": "Módulo 6"
+  },
+  {
+    "id": 701,
+    "topic": "alimentação saudável do idoso",
+    "content": "A dieta deve ser variada, com frutas, legumes, proteínas magras e grãos integrais. Refeições devem ser regulares e balanceadas.",
+    "keywords": [
+      "alimentação",
+      "dieta",
+      "idoso",
+      "saudável",
+      "refeições"
+    ],
+    "module": "Módulo 7"
+  },
+  {
+    "id": 702,
+    "topic": "hidratação do idoso",
+    "content": "O idoso deve beber água frequentemente, mesmo sem sede, para prevenir desidratação.",
+    "keywords": [
+      "hidratação",
+      "água",
+      "desidratação",
+      "idoso"
+    ],
+    "module": "Módulo 7"
+  },
+  {
+    "id": 703,
+    "topic": "cuidados com sonda alimentar",
+    "content": "A sonda deve ser bem fixada, a dieta administrada lentamente, mantendo o idoso sentado durante e após a alimentação.",
+    "keywords": [
+      "sonda",
+      "alimentação",
+      "enteral",
+      "dieta"
+    ],
+    "module": "Módulo 7"
+  },
+  {
+    "id": 801,
+    "topic": "comunicação com o idoso",
+    "content": "A comunicação deve ser clara, respeitosa e paciente. Usar frases simples, manter contato visual e escutar com atenção.",
+    "keywords": [
+      "comunicação",
+      "idoso",
+      "escuta",
+      "fala"
+    ],
+    "module": "Módulo 8"
+  },
+  {
+    "id": 802,
+    "topic": "comunicação com familiares",
+    "content": "O cuidador deve manter diálogo aberto com familiares, compartilhando informações sobre a saúde do idoso.",
+    "keywords": [
+      "comunicação",
+      "família",
+      "diálogo"
+    ],
+    "module": "Módulo 8"
+  },
+  {
+    "id": 803,
+    "topic": "como agir em caso de óbito",
+    "content": "O cuidador deve manter calma, comunicar familiares e profissionais de saúde e seguir orientações legais.",
+    "keywords": [
+      "óbito",
+      "falecimento",
+      "procedimento",
+      "família"
+    ],
+    "module": "Módulo 8"
+  },
+  {
+    "id": 901,
+    "topic": "engasgo em idosos",
+    "content": "Se houver engasgo, realizar manobra de Heimlich ou chamar imediatamente por ajuda médica.",
+    "keywords": [
+      "engasgo",
+      "heimlich",
+      "emergência",
+      "respiração"
+    ],
+    "module": "Módulo 9"
+  },
+  {
+    "id": 902,
+    "topic": "quedas em idosos",
+    "content": "Prevenir quedas mantendo ambiente seguro. Em caso de queda, verificar consciência e procurar atendimento médico.",
+    "keywords": [
+      "queda",
+      "idoso",
+      "prevenção",
+      "emergência"
+    ],
+    "module": "Módulo 9"
+  },
+  {
+    "id": 903,
+    "topic": "convulsão em idosos",
+    "content": "Deitar o idoso de lado, afastar objetos perigosos, não colocar nada na boca e acionar emergência.",
+    "keywords": [
+      "convulsão",
+      "epilepsia",
+      "emergência"
+    ],
+    "module": "Módulo 9"
+  },
+  {
+    "id": 904,
+    "topic": "vômitos em idosos",
+    "content": "Colocar idoso de lado para evitar aspiração, oferecer líquidos após episódio e buscar orientação médica se persistir.",
+    "keywords": [
+      "vômito",
+      "idoso",
+      "emergência",
+      "aspiração"
+    ],
+    "module": "Módulo 9"
+  },
+  {
+    "id": 1001,
+    "topic": "diabetes mellitus",
+    "content": "O diabetes exige controle alimentar, uso de medicamentos prescritos e monitoramento regular da glicemia.",
+    "keywords": [
+      "diabetes",
+      "glicemia",
+      "alimentação",
+      "insulina"
+    ],
+    "module": "Módulo 10"
+  },
+  {
+    "id": 1002,
+    "topic": "hipertensão arterial",
+    "content": "Hipertensão é pressão alta persistente. Tratamento inclui dieta com pouco sal, exercícios e uso de medicamentos.",
+    "keywords": [
+      "hipertensão",
+      "pressão alta",
+      "tratamento",
+      "sal"
+    ],
+    "module": "Módulo 10"
+  },
+  {
+    "id": 1003,
+    "topic": "hipotensão ortostática",
+    "content": "Caracterizada por queda de pressão ao se levantar. Recomenda-se levantar-se devagar e hidratar-se bem.",
+    "keywords": [
+      "hipotensão",
+      "pressão baixa",
+      "postural"
+    ],
+    "module": "Módulo 10"
+  },
+  {
+    "id": 1004,
+    "topic": "dificuldade de memória",
+    "content": "Estimular atividades cognitivas, manter rotina organizada e buscar avaliação médica em casos de piora.",
+    "keywords": [
+      "memória",
+      "esquecimento",
+      "demência"
+    ],
+    "module": "Módulo 10"
+  },
+  {
+    "id": 1005,
+    "topic": "problemas de sono",
+    "content": "Recomenda-se higiene do sono: ambiente tranquilo, rotina regular e evitar estimulantes antes de dormir.",
+    "keywords": [
+      "sono",
+      "insônia",
+      "rotina",
+      "higiene do sono"
+    ],
+    "module": "Módulo 10"
+  },
+  {
+    "id": 1006,
+    "topic": "demência em idosos",
+    "content": "A demência causa perda progressiva de memória e autonomia. Cuidados incluem segurança, rotina estável e acompanhamento médico.",
+    "keywords": [
+      "demência",
+      "alzheimer",
+      "memória",
+      "rotina"
+    ],
+    "module": "Módulo 10"
+  },
+  {
+    "id": 1007,
+    "topic": "curativos em idosos",
+    "content": "Curativos devem seguir passo a passo: limpeza com técnica asséptica, aplicação de cobertura adequada e observação de sinais de infecção.",
+    "keywords": [
+      "curativo",
+      "ferida",
+      "infecção",
+      "cicatrização"
+    ],
+    "module": "Módulo 10"
+  },
+  {
+    "id": 1101,
+    "topic": "autonomia do idoso",
+    "content": "A autonomia é fundamental para autoestima e bem-estar. Estimular que o idoso realize atividades conforme suas capacidades.",
+    "keywords": [
+      "autonomia",
+      "idoso",
+      "independência",
+      "bem-estar"
+    ],
+    "module": "Módulo 11"
+  },
+  {
+    "id": 1102,
+    "topic": "maus tratos ao idoso",
+    "content": "Maus tratos incluem violência física, psicológica, negligência e exploração financeira. Devem ser denunciados ao Disque 100 ou autoridades locais.",
+    "keywords": [
+      "maus tratos",
+      "violência",
+      "denúncia",
+      "idoso"
+    ],
+    "module": "Módulo 11"
+  },
+  {
+    "id": 1201,
+    "topic": "exercícios de mobilização passiva",
+    "content": "Exercícios de mobilização passiva ajudam a manter mobilidade em acamados, realizados pelo cuidador em braços e pernas.",
+    "keywords": [
+      "exercício",
+      "mobilização passiva",
+      "acamado",
+      "movimento"
+    ],
+    "module": "Módulo 12"
+  }
+]

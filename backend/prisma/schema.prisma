@@ -97,6 +97,7 @@ model Elders {
   id                String   @id @default(uuid()) @db.Uuid
   familyId          String?  @map("family_id") @db.Uuid
   name              String?  @db.VarChar(255)
+  avatarPath        String?
   birthdate         DateTime? @db.Date
   medicalConditions Json?    @map("medical_conditions")
   medications       Json?

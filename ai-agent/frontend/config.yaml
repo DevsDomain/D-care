@@ -1,0 +1,2 @@
+# config.yaml - Configuração para Docker
+backend_url: http://chatbot_backend_dcare:8000/query

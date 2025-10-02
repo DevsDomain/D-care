@@ -2,67 +2,70 @@ name: CI Pipeline - D-Care
 
 on:
   push:
+    # Mude para 'main' ou 'develop' quando estiver pronto
     branches:
-      - fd-fix-conteiners-ci
+      - fd-fix-conteineres-ci
+      - qas
+      - teste_ci_docker
   pull_request:
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: testdb
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
-
     steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
 
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Criar arquivo .env.docker
+      - name: Criar arquivo de ambiente (.env)
         run: |
-          cat <<EOF > .env.docker
-          POSTGRES_USER=care
-          POSTGRES_PASSWORD=carepass
-          POSTGRES_DB=caredb
-          DB_PORT=5432
-          NODE_ENV=development
-          PORT=3000
-          API_GLOBAL_PREFIX=/api/v1    JWT_SECRET=dev-secret
-          JWT_EXPIRES_IN=15m
-          JWT_REFRESH_SECRET=dev-refresh-secret
-          JWT_REFRESH_EXPIRES_IN=30d
-          AWS_REGION=us-east-1
-          AWS_S3_BUCKET=my-care-bucket
-          DATABASE_URL=postgresql://care:carepass@postgres:5432/caredb?schema=public
-          EOF
+          echo "PG_USER=${{ secrets.PG_USER }}" >> .env
+          echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
+          echo "PG_DB=${{ secrets.PG_DB }}" >> .env
+          echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> .env
+          echo "Conteúdo do .env:"
+          cat .env
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+      - name: Build dos containers
+        run: docker compose build
 
-      - name: Build containers
-        run: docker compose -f docker-compose.yml build
+      - name: Iniciar os containers em background
+        run: docker compose up -d
 
-      - name: Start containers
-        run: docker compose -f docker-compose.yml up -d
+      - name: Aguardar o Banco de Dados (pg-care) ficar pronto
+        run: |
+          echo "Aguardando o container do banco de dados (pg-care) ficar saudável..."
+          timeout 120 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} pg-care)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+          if [ $? -ne 0 ]; then
+            echo "Erro: O banco de dados (pg-care) não ficou saudável dentro do tempo limite."
+            exit 1
+          fi
+          echo "Banco de dados está pronto!"
 
-      - name: Wait for services
-        run: sleep 15
+      - name: Sincronizar Schema do Prisma para Teste (db push)
+        # CORREÇÃO: Removido --force, mantido apenas --accept-data-loss
+        run: docker compose exec -T backend npx prisma db push --accept-data-loss
 
-      #- name: Run tests
-      #  run: docker compose -f docker-compose.yml run --rm test
+      - name: Aguardar o backend ficar saudável
+        run: |
+          echo "Aguardando o container do backend ficar saudável (aplicação pronta)..."
+          timeout 300 bash -c 'while [[ "$(docker inspect -f {{.State.Health.Status}} backend_dcare)" != "healthy" ]]; do echo -n "."; sleep 5; done'
+          if [ $? -ne 0 ]; then
+            echo "Erro: O backend não ficou saudável dentro do tempo limite."
+            exit 1
+          fi
+          echo "Backend está saudável!"
+          docker compose ps
 
-      - name: Shutdown
+      - name: Verificar logs dos containers (para depuração)
+        run: docker compose logs
+
+      - name: Executar testes de integração/E2E
+        run: docker compose exec -T backend npm test
+
+      - name: Parar os containers
         if: always()
-        run: docker compose -f docker-compose.yml down
+        run: docker compose down

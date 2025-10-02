@@ -1,0 +1,299 @@
+<!-- templates/index.html - Frontend adaptado ao visual e funcionalidades do index.html original -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBot Cuidar+ Idosos</title>
+    <style>
+        /* Estilo inspirado no index.html original, com design moderno */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 700px;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 85vh;
+        }
+
+        #chat-header {
+            background-color: #2c6fb5;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        #chat-header span {
+            font-size: 1.2em;
+            margin-right: 10px;
+        }
+
+        #chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 12px 18px;
+            border-radius: 12px;
+            line-height: 1.5;
+            font-size: 1em;
+        }
+
+        .user-message {
+            background-color: #d1e7ff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bot-message {
+            background-color: #f5f5f5;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .bot-message strong {
+            color: #2c6fb5;
+        }
+
+        .bot-message em {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        #typing-indicator {
+            display: none;
+            align-self: flex-start;
+            color: #666;
+            font-style: italic;
+            padding: 10px 18px;
+        }
+
+        #chat-input {
+            display: flex;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-top: 1px solid #ddd;
+        }
+
+        #user-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 25px;
+            font-size: 1em;
+            outline: none;
+            margin-right: 10px;
+        }
+
+        #send-button {
+            background-color: #2c6fb5;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background-color 0.3s;
+        }
+
+        #send-button:hover {
+            background-color: #1e4e8c;
+        }
+
+        #suggestions-container {
+            padding: 10px 20px;
+            background-color: #f9f9f9;
+            border-top: 1px solid #ddd;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .suggestion {
+            background-color: #e6f0fa;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s;
+        }
+
+        .suggestion:hover {
+            background-color: #d1e7ff;
+        }
+
+        #chat-footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        /* Scrollbar */
+        #chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #chat-messages::-webkit-scrollbar-thumb {
+            background-color: #ccc;
+            border-radius: 10px;
+        }
+
+        /* Responsividade */
+        @media (max-width: 600px) {
+            #chat-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            #chat-header {
+                font-size: 1.2em;
+            }
+
+            .message {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat-header">
+            <span>👵🏻👴🏻</span> ChatBot D-Care
+            <div style="font-size: 0.9em; font-weight: normal; margin-top: 5px;">
+                Baseado no manual "Amar é Cuidar" - PUC Minas
+            </div>
+        </div>
+        <div id="chat-messages">
+            <div class="bot-message">
+                Olá! Sou seu assistente virtual para tirar dúvidas sobre cuidados com idosos. 
+                Posso ajudar com informações baseadas no manual "Amar é Cuidar" da PUC Minas.
+                Como posso ajudar você hoje?
+            </div>
+        </div>
+        <div id="typing-indicator">Digitando...</div>
+        <div id="suggestions-container">
+            <!-- Sugestões preenchidas via Flask -->
+            {% for suggestion in suggestions %}
+                <div class="suggestion" data-question="{{ suggestion }}">{{ suggestion }}</div>
+            {% endfor %}
+        </div>
+        <div id="chat-input">
+            <input type="text" id="user-input" placeholder="Digite sua dúvida sobre cuidados com idosos...">
+            <button id="send-button">Enviar</button>
+        </div>
+        <div id="chat-footer">
+            Baseado no manual "Amar é Cuidar" - PUC Minas Betim | Solução com embeddings locais
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chat-messages');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const typingIndicator = document.getElementById('typing-indicator');
+        const suggestionsContainer = document.getElementById('suggestions-container');
+
+        // Função para adicionar mensagem
+        function addMessage(text, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.innerHTML = text;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        // Mostrar/esconder indicador de digitação
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'block';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+
+        // Enviar mensagem
+        async function sendMessage(question) {
+            if (!question) return;
+
+            addMessage(question, true);
+            userInput.value = '';
+            showTypingIndicator();
+
+            try {
+                const response = await fetch('/send_message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question })
+                });
+
+                hideTypingIndicator();
+
+                if (!response.ok) throw new Error('Erro na resposta');
+
+                const data = await response.json();
+                const results = data.results;
+
+                let botResponse = '';
+                results.forEach(res => {
+                    botResponse += `<strong>${res.topic}</strong> (${res.module || 'Geral'})<br><br>`;
+                    botResponse += `${res.content}<br><br>`;
+                    if (res.confidence) {
+                        botResponse += `<em>Confiança: ${(res.confidence * 100).toFixed(2)}%</em><br>`;
+                    } else if (res.score) {
+                        botResponse += `<em>Score: ${res.score.toFixed(2)}</em><br>`;
+                    }
+                    botResponse += `<em>Fonte: Manual "Amar é Cuidar" - PUC Minas</em><br><br>`;
+                });
+
+                addMessage(botResponse, false);
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('Desculpe, ocorreu um erro. Tente novamente.', false);
+            }
+        }
+
+        // Evento de envio
+        sendButton.addEventListener('click', () => sendMessage(userInput.value.trim()));
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage(userInput.value.trim());
+        });
+
+        // Evento para sugestões
+        suggestionsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('suggestion')) {
+                const question = e.target.getAttribute('data-question');
+                sendMessage(question);
+            }
+        });
+    </script>
+</body>
+</html>
