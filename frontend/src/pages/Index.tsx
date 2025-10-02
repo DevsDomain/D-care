@@ -9,7 +9,7 @@ import { useAppStore } from '@/lib/stores/appStore';
 import { mockApi } from '@/lib/api/mock';
 import type { Elder, User as UserType } from '@/lib/types';
 import { ListSkeleton } from '@/components/common/LoadingSkeleton';
-import { EmptyState } from '@/components/common/EmptyState';
+
 
 export default function Index() {
   const navigate = useNavigate();
@@ -54,6 +54,18 @@ export default function Index() {
 
   const handleOpenGuide = () => {
     navigate('/guide');
+  };
+
+  const handleLogout = () => {
+    // limpa tokens/sessão
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+  
+    // limpa estado global
+    setCurrentUser(null);
+  
+    // redireciona para login
+    navigate('/login');
   };
 
   if (isLoading) {
@@ -154,23 +166,36 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-to-r from-healthcare-dark to-healthcare-light text-white">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-xl font-bold">Olá, {currentUser.name.split(' ')[0]}!</h1>
-              <p className="text-healthcare-accent text-sm">
-                Como posso ajudar hoje?
-              </p>
-            </div>
-            <Avatar className="border-2 border-white/20">
-              <AvatarImage src={currentUser.photo} alt={currentUser.name} />
-              <AvatarFallback className="bg-white/20 text-white">
-                {currentUser.name.split(' ').map(n => n[0]).join('')}
-              </AvatarFallback>
-            </Avatar>
-          </div>
-        </div>
-      </header>
+  <div className="p-6">
+    <div className="flex items-center justify-between mb-4">
+      <div>
+        <h1 className="text-xl font-bold">Olá, {currentUser.name.split(' ')[0]}!</h1>
+        <p className="text-healthcare-accent text-sm">
+          Como posso ajudar hoje?
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Avatar className="border-2 border-white/20">
+          <AvatarImage src={currentUser.photo} alt={currentUser.name} />
+          <AvatarFallback className="bg-white/20 text-white">
+            {currentUser.name.split(' ').map(n => n[0]).join('')}
+          </AvatarFallback>
+        </Avatar>
+
+        {/* Botão Sair */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLogout}
+          className="text-white hover:bg-white/20"
+        >
+          Sair
+        </Button>
+      </div>
+    </div>
+  </div>
+</header>
 
       <div className="p-4 space-y-6">
         {/* Quick Actions */}
