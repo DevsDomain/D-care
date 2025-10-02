@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { BottomNavigation } from "@/components/common/BottomNavigation";
 
 // Pages
@@ -22,36 +22,50 @@ import CaregiverDashboard from "./pages/caregiver/CaregiverDashboard";
 
 const queryClient = new QueryClient();
 
+// 🔹 Criamos um wrapper para esconder a BottomNav em certas rotas
+function AppLayout() {
+  const location = useLocation();
+
+  // rotas onde NÃO queremos mostrar a barra
+  const hideBottomNav = ["/login", "/register"];
+  const shouldHide = hideBottomNav.includes(location.pathname);
+
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <Routes>
+        {/* Auth routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Main app routes */}
+        <Route path="/" element={<Index />} />
+        <Route path="/search" element={<Search />} />
+        <Route path="/caregiver/:id" element={<CaregiverProfile />} />
+        <Route path="/book/:caregiverId" element={<BookingForm />} />
+        <Route path="/bookings" element={<BookingList />} />
+        <Route path="/guide" element={<Guide />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/elder/register" element={<ElderRegistration />} />
+        <Route path="/ivcf/:elderId" element={<IvcfAssessment />} />
+        <Route path="/caregiver-dashboard" element={<CaregiverDashboard />} />
+
+        {/* Catch-all route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+
+      {/* só renderiza se não for login/register */}
+      {!shouldHide && <BottomNavigation />}
+    </div>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <div className="min-h-screen bg-background pb-20">
-          <Routes>
-            {/* Auth routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-
-            {/* Main app routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/search" element={<Search />} />
-            <Route path="/caregiver/:id" element={<CaregiverProfile />} />
-            <Route path="/book/:caregiverId" element={<BookingForm />} />
-            <Route path="/bookings" element={<BookingList />} />
-            <Route path="/guide" element={<Guide />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/elder/register" element={<ElderRegistration />} />
-            <Route path="/ivcf/:elderId" element={<IvcfAssessment />} />
-            <Route path="/caregiver-dashboard" element={<CaregiverDashboard />} />
-
-
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <BottomNavigation />
-        </div>
+        <AppLayout />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

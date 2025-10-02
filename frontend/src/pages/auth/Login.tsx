@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Heart, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Heart } from "lucide-react";
 
 import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,14 @@ export default function Login() {
     password: "",
   });
 
+  // 🔹 Adiciona classe no body só nesta página
+  useEffect(() => {
+    document.body.classList.add("no-bottomnav");
+    return () => {
+      document.body.classList.remove("no-bottomnav");
+    };
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -43,7 +51,8 @@ export default function Login() {
         password: formData.password,
       });
 
-      const accessToken = (res as any)?.accessToken ?? (res as any)?.tokens?.accessToken;
+      const accessToken =
+        (res as any)?.accessToken ?? (res as any)?.tokens?.accessToken;
       if (!accessToken) {
         throw new Error("Token não retornado pelo servidor");
       }
@@ -78,30 +87,38 @@ export default function Login() {
 
   return (
     <div className="min-h-dvh bg-background overflow-x-hidden flex flex-col">
-      {/* HEADER sticky com safe-area (notch) e alvo de toque maior */}
+      {/* HEADER */}
       <header className="sticky top-0 z-20 bg-gradient-to-r from-healthcare-dark to-healthcare-light text-white pt-[env(safe-area-inset-top)]">
-  <div className="px-3 py-2 sm:px-4 sm:py-3">
-    <div className="flex items-center gap-2 min-w-0">
-      <Heart className="w-6 h-6" />
-      <div className="min-w-0">
-        <h1 className="text-lg sm:text-xl font-semibold truncate">D-care</h1>
-        <p className="text-xs sm:text-sm text-white/90">Acesse sua conta</p>
-      </div>
-    </div>
-  </div>
-</header>
+        <div className="px-3 py-2 sm:px-4 sm:py-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <Heart className="w-6 h-6" />
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-semibold truncate">
+                D-care
+              </h1>
+              <p className="text-xs sm:text-sm text-white/90">
+                Acesse sua conta
+              </p>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {/* CONTEÚDO */}
       <main className="flex-1 px-4 sm:px-6 py-4 pb-[max(env(safe-area-inset-bottom),theme(spacing.6))]">
         <Card className="mx-auto w-full max-w-md healthcare-card">
           <CardHeader className="px-4 sm:px-6 pt-5 sm:pt-6">
-            <CardTitle className="text-2xl sm:text-3xl text-healthcare-dark">Entrar na sua conta</CardTitle>
+            <CardTitle className="text-2xl sm:text-3xl text-healthcare-dark">
+              Entrar na sua conta
+            </CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-6 px-4 sm:px-6 pb-6">
             {errorMsg && (
               <Alert variant="destructive">
-                <AlertDescription className="text-sm">{errorMsg}</AlertDescription>
+                <AlertDescription className="text-sm">
+                  {errorMsg}
+                </AlertDescription>
               </Alert>
             )}
 
@@ -145,7 +162,9 @@ export default function Login() {
                     className="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 rounded-xl"
                     onClick={() => setShowPassword((s) => !s)}
                     disabled={submitting}
-                    aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+                    aria-label={
+                      showPassword ? "Ocultar senha" : "Mostrar senha"
+                    }
                   >
                     {showPassword ? (
                       <EyeOff className="w-4 h-4" />
@@ -167,12 +186,18 @@ export default function Login() {
             </form>
 
             <div className="text-center space-y-3">
-              <Button variant="link" disabled={submitting} className="h-auto p-0">
+              <Button
+                variant="link"
+                disabled={submitting}
+                className="h-auto p-0"
+              >
                 Esqueci minha senha
               </Button>
 
               <div className="border-t border-border pt-4">
-                <p className="text-sm text-muted-foreground mb-2">Ainda não tem conta?</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  Ainda não tem conta?
+                </p>
                 <Button
                   variant="outline"
                   className="w-full h-12 rounded-2xl"
