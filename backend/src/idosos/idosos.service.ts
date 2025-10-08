@@ -2,25 +2,52 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateElderDto } from './dto/create-elder.dto';
 import { UpdateElderDto } from './dto/update-elder.dto';
+import { StorageService } from '../storage/storage.service';
+import { getCoordinatesFromZipCode } from '../common/helper/getCoordinatesFromCep';
 
 @Injectable()
 export class IdososService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storageService: StorageService,
+  ) {}
 
-  async createElder(dto: CreateElderDto) {
-    return this.prisma.elders.create({
+  async createElder(dto: CreateElderDto, file?: Express.Multer.File) {
+    let avatarUrl: string | null = null;
+
+    if (file) {
+      avatarUrl = await this.storageService.uploadFile(file, 'elders');
+    }
+
+    const geoData = await getCoordinatesFromZipCode(dto.zipCode);
+    const newElder = await this.prisma.elders.create({
       data: {
         familyId: dto.familyId,
         name: dto.name,
         birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
-        medicalConditions: dto.medicalConditions
-          ? (JSON.parse(dto.medicalConditions) as string[])
+        medicalConditions: dto.conditions
+          ? JSON.stringify(dto.conditions)
           : undefined,
         medications: dto.medications
-          ? (JSON.parse(dto.medications) as string[])
+          ? JSON.stringify(dto.medications)
           : undefined,
+        address: dto.address,
+        city: dto.city,
+        state: dto.state,
+        zipCode: dto.zipCode,
+        avatarPath: avatarUrl,
       },
     });
+    if (geoData?.lat && geoData?.lng) {
+      const lat = parseFloat(geoData.lat);
+      const lgn = parseFloat(geoData.lng);
+
+      await this.prisma.$executeRaw`
+        UPDATE caredb."family".elders
+        SET location = ST_SetSRID(ST_MakePoint(${lgn}, ${lat}), 4326)
+        WHERE id = ${newElder.id}::uuid`;
+    }
+    return newElder;
   }
 
   async findAllElders() {

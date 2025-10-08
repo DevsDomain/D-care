@@ -10,18 +10,30 @@ import {
 import { PerfisService } from './perfis.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ProfessionalIdValidationPipe } from '../common/pipes/professional-id-validation.pipe';
+import { CreateCareGiverDto } from './dto/create-caregiver.dto';
 
 @Controller('perfis')
 export class PerfisController {
   constructor(private readonly perfisService: PerfisService) {}
 
-  // TODO: Add JwtAuthGuard
+  // Perfil Familia-idoso
   @Post()
   async create(
     @Body() createProfileDto: CreateProfileDto,
     @Param('userId') userId: string,
   ) {
     return this.perfisService.createProfile(createProfileDto, userId);
+  }
+
+  // Perfil cuidador ( com validação de CRM/COREN )
+  @Post('caregiver')
+  async createCaregiver(
+    @Body(new ProfessionalIdValidationPipe())
+    createCaregiverDto: CreateCareGiverDto,
+    @Param('userId') userId: string,
+  ) {
+    return this.perfisService.createCaregiver(createCaregiverDto, userId);
   }
 
   @Get()

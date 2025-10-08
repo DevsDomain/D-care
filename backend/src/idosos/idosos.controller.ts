@@ -6,10 +6,13 @@ import {
   Delete,
   Body,
   Param,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { IdososService } from './idosos.service';
 import { CreateElderDto } from './dto/create-elder.dto';
 import { UpdateElderDto } from './dto/update-elder.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('idosos')
 export class IdososController {
@@ -17,8 +20,12 @@ export class IdososController {
 
   // TODO: Add JwtAuthGuard
   @Post()
-  async create(@Body() createElderDto: CreateElderDto) {
-    return this.idososService.createElder(createElderDto);
+  @UseInterceptors(FileInterceptor('avatar'))
+  async create(
+    @Body() createElderDto: CreateElderDto, // temporário, vamos converter
+    @UploadedFile() file?: Express.Multer.File,
+  ): Promise<any> {
+    return this.idososService.createElder(createElderDto, file);
   }
 
   @Get()

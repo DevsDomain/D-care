@@ -1,0 +1,5 @@
+# Gerados pelo Prisma
+generated/**
+src/generated/**
+**/generated/**
+**/generated/prisma/**
