@@ -72,13 +72,6 @@ O Product Backlog segue o padrão de priorização:
 
 ## *📌 3. Priorização das Histórias de Usuário*
 
-| Prioridade    | Histórias de Usuário                     |
-| ------------- | ---------------------------------------- |
-| *A (Alta)*  | US07, US09, US13 |
-| *M (Média)* | US01, US03, US04, US05, US06, US08, US10, US11, US15 |                         |
-| *B (Baixa)* | US02, US12, US14|
-
-
 | Prioridade    | Histórias de Usuário                          |
 | ------------- | --------------------------------------------- |
 | *A (Alta)*    | US01, US02, US03, US04, US06, US07, US09, US13, US17 |
