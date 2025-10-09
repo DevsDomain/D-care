@@ -135,22 +135,26 @@ export interface IvcfQuestion {
   }[];
 }
 
-export interface User {
+export interface User{
   id: string;
-  name: string;
+  role: "FAMILY" | "CAREGIVER";
   email: string;
-  phone: string;
-  role: "family" | "caregiver";
-  photo?: string;
+  status: string | null;
   createdAt: string;
-  preferences: {
+  updatedAt?: string;
+  deletedAt?: string | null;
+  name: string | null;
+  phone: string | null;
+  birthdate: string | null;
+  gender: string | null;
+  photo?: string;
+  preferences?: {
     notifications: boolean;
     emailUpdates: boolean;
     emergencyAlerts: boolean;
   };
-  // Family-specific fields
+  // Optional relational data
   elders?: Elder[];
-  // Caregiver-specific fields
   caregiverProfile?: Caregiver;
 }
 
@@ -197,4 +201,22 @@ export interface PaginatedResponse<T> {
   page: number;
   limit: number;
   hasMore: boolean;
+}
+
+
+export interface LoginResponse {
+  user: {
+    id: string;
+    role: "FAMILY" | "CAREGIVER";
+    email: string;
+    status: "active" | "inactive";
+    createdAt: string;
+    updatedAt: string;
+    name: string;
+    phone: string;
+    birthdate: string | null;
+    gender: string | null;
+  };
+  accessToken: string;
+  expiresAt: string;
 }

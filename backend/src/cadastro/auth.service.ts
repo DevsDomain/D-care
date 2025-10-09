@@ -13,13 +13,11 @@ import { PrismaService } from '../database/prisma.service';
 import { RegisterFamilyDto } from './dto/register-family.dto';
 import { RegisterCaregiverDto } from './dto/register-caregiver.dto';
 import { LoginDto } from './dto/login.dto';
-import { PrismaClient, Prisma, UserRole } from '@prisma/client';
-
+import { Users, UserProfiles, UserRole } from '@prisma/client';
 
 type JwtPayload = { sub: string; email: string; role: UserRole };
-
-type ClientWithUsers = PrismaClient & {
-  users: any; // funciona e elimina o erro de vez
+type UserWithProfile = Users & {
+  userProfile: UserProfiles[];
 };
 
 @Injectable()
@@ -27,7 +25,7 @@ export class AuthService {
   private readonly SALT_ROUNDS = 10;
 
   constructor(
-    @Inject(PrismaService) private readonly prisma: ClientWithUsers,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
   ) {}
 
@@ -35,26 +33,23 @@ export class AuthService {
 
   async registerFamily(dto: RegisterFamilyDto) {
     this.ensurePasswordsMatch(dto.password, dto.confirmPassword);
-
     await this.ensureEmailIsFree(dto.email);
 
     const passwordHash = await this.hash(dto.password);
 
-
     const user = await this.prisma.users.create({
       data: {
         email: dto.email.toLowerCase(),
-        role: UserRole.FAMILY,              // 👈 enum
+        role: UserRole.FAMILY,
         passwordHash,
-        userProfile: {                      // 👈 cria o perfil (Users ➜ UserProfiles[])
+        userProfile: {
           create: {
-            name: dto.fullName,             // 👈 no schema é "name", não "fullName"
+            name: dto.fullName,
             phone: dto.phone,
           },
         },
-        // se quiser já criar um registro em Families, faça aqui (opcional)
       },
-      include: { userProfile: true },       // opcional, caso queira retornar
+      include: { userProfile: true },
     });
 
     const tokens = this.signTokens(user.id, user.email, user.role);
@@ -70,21 +65,21 @@ export class AuthService {
     const user = await this.prisma.users.create({
       data: {
         email: dto.email.toLowerCase(),
-        role: UserRole.CAREGIVER,           // 👈 enum
+        role: UserRole.CAREGIVER,
         passwordHash,
-        userProfile: {                      // 👈 perfil com nome/telefone
+        userProfile: {
           create: {
             name: dto.fullName,
             phone: dto.phone,
           },
         },
-        caregiver: {                        // 👈 cria o caregiver (Users ➜ Caregivers[])
+        caregiver: {
           create: {
-            crmCoren: dto.crmCoren ?? null, // no schema é String? (nullable)
+            crmCoren: dto.crmCoren ?? null,
           },
         },
       },
-      include: { userProfile: true, caregiver: true }, // opcional
+      include: { userProfile: true, caregiver: true },
     });
 
     const tokens = this.signTokens(user.id, user.email, user.role);
@@ -92,8 +87,10 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.users.findUnique({
+    // The type error is now resolved because UserWithProfile matches the return type.
+    const user: UserWithProfile | null = await this.prisma.users.findUnique({
       where: { email: dto.email.toLowerCase() },
+      include: { userProfile: true },
     });
 
     if (!user) {
@@ -107,26 +104,24 @@ export class AuthService {
     return { user: this.safeUser(user), ...tokens };
   }
 
-  /**
-   * (Opcional) Fluxo de social login.
-   * Use este método se você integrar OAuth (Google, Apple, etc.).
-   * A ideia: se existir usuário por e-mail, retorna token; senão cria um usuário "sem senha" (hash randômico).
-   */
   async socialLogin(params: {
     email: string;
     fullName?: string;
-    role?: UserRole; // 👈 aceita ADMIN também; defina o default abaixo
+    role?: UserRole;
   }) {
     const email = params.email.toLowerCase();
 
-    let user = await this.prisma.users.findUnique({ where: { email } });
+    let user = await this.prisma.users.findUnique({
+      where: { email },
+      include: { userProfile: true },
+    });
 
     if (!user) {
       const randomHash = await this.hash(this.randomPasswordSeed());
       user = await this.prisma.users.create({
         data: {
           email,
-          role: params.role ?? UserRole.FAMILY, // 👈 default
+          role: params.role ?? UserRole.FAMILY,
           passwordHash: randomHash,
           userProfile: {
             create: {
@@ -161,25 +156,44 @@ export class AuthService {
     }
   }
 
-  private signTokens(userId: string, email: string, role: UserRole) { // 👈 enum aqui
+  private signTokens(userId: string, email: string, role: UserRole) {
     const payload: JwtPayload = { sub: userId, email, role };
     const accessToken = this.jwt.sign(payload);
-    const decoded: any = this.jwt.decode(accessToken);
+
+    // Let TypeScript infer the type (string | { [key: string]: any } | null)
+    const decoded = this.jwt.decode(accessToken);
+
+    // Use a runtime check (type guard) to safely narrow the type
     const expiresAt =
-      typeof decoded === 'object' && decoded?.exp
+      typeof decoded === 'object' && decoded && typeof decoded.exp === 'number'
         ? new Date(decoded.exp * 1000).toISOString()
         : null;
+
     return { accessToken, expiresAt };
   }
 
-  private safeUser<T extends { passwordHash?: string }>(u: T) {
-    const { passwordHash, ...rest } = u;
-    return rest;
+  private safeUser(u: Users & { userProfile?: UserProfiles[] }) {
+    const profile = u.userProfile?.[0]; // pega o primeiro perfil (geralmente 1:1)
+
+    return {
+      id: u.id,
+      role: u.role,
+      email: u.email,
+      status: u.status,
+      createdAt: u.createdAt,
+      deletedAt: u.deletedAt,
+      updatedAt: u.updatedAt,
+      name: profile?.name ?? null,
+      phone: profile?.phone ?? null,
+      birthdate: profile?.birthdate ?? null,
+      gender: profile?.gender ?? null,
+    };
   }
 
   private async hash(plain: string) {
     return bcrypt.hash(plain, this.SALT_ROUNDS);
   }
+
   private async compare(plain: string, hashed: string) {
     return bcrypt.compare(plain, hashed);
   }
