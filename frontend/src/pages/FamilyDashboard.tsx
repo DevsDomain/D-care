@@ -1,43 +1,39 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Activity, MessageCircle, Calendar, User, Heart, Shield } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button-variants';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { useAppStore } from '@/lib/stores/appStore';
-import { mockApi } from '@/lib/api/mock';
-import type { Elder, User as UserType } from '@/lib/types';
-import { ListSkeleton } from '@/components/common/LoadingSkeleton';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  Plus,
+  Search,
+  Activity,
+  MessageCircle,
+  Calendar,
+  User,
+  Heart,
+  Shield,
+} from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button-variants";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { useAppStore } from "@/lib/stores/appStore";
+import type { Elder } from "@/lib/types";
+import { ListSkeleton } from "@/components/common/LoadingSkeleton";
+import { useLogout } from "@/components/hooks/use-logout";
 
-
-export default function Index() {
+export default function FamilyDashboard() {
   const navigate = useNavigate();
-  const { currentUser, setCurrentUser } = useAppStore();
-  const [isLoading, setIsLoading] = useState(true);
-  
-  useEffect(() => {
-    // Mock authentication - simulate getting current user
-    const initializeUser = async () => {
-      try {
-        setIsLoading(true);
-        // In a real app, this would check auth state
-        const response = await mockApi.login('maria@email.com', 'password');
-        if (response.success && response.data) {
-          setCurrentUser(response.data);
-        }
-      } catch (error) {
-        console.error('Failed to initialize user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  const { currentUser } = useAppStore();
+  const handleLogout = useLogout();
 
-    initializeUser();
-  }, [setCurrentUser]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (currentUser?.name) {
+      setIsLoading(false);
+    }
+  }, [currentUser?.name]);
 
   const handleAddElder = () => {
-    navigate('/elder/register');
+    navigate("/elder/register");
   };
 
   const handleStartIvcf = (elderId: string) => {
@@ -45,27 +41,15 @@ export default function Index() {
   };
 
   const handleFindCaregiver = () => {
-    navigate('/search');
+    navigate("/search");
   };
 
   const handleViewBookings = () => {
-    navigate('/bookings');
+    navigate("/bookings");
   };
 
   const handleOpenGuide = () => {
-    navigate('/guide');
-  };
-
-  const handleLogout = () => {
-    // limpa tokens/sessão
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('user');
-  
-    // limpa estado global
-    setCurrentUser(null);
-  
-    // redireciona para login
-    navigate('/login');
+    navigate("/guide");
   };
 
   if (isLoading) {
@@ -101,11 +85,12 @@ export default function Index() {
                 Bem-vindo ao D-care
               </h2>
               <p className="text-muted-foreground mb-6">
-                Para começar, vamos cadastrar as informações da pessoa que você cuida
+                Para começar, vamos cadastrar as informações da pessoa que você
+                cuida
               </p>
-              <Button 
-                variant="healthcare" 
-                size="lg" 
+              <Button
+                variant="healthcare"
+                size="lg"
                 onClick={handleAddElder}
                 className="w-full"
               >
@@ -126,7 +111,7 @@ export default function Index() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-healthcare-soft/30 border-healthcare-light/20">
               <CardContent className="p-4 text-center">
                 <Activity className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
@@ -136,7 +121,7 @@ export default function Index() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-healthcare-soft/30 border-healthcare-light/20">
               <CardContent className="p-4 text-center">
                 <MessageCircle className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
@@ -146,7 +131,7 @@ export default function Index() {
                 </p>
               </CardContent>
             </Card>
-            
+
             <Card className="bg-healthcare-soft/30 border-healthcare-light/20">
               <CardContent className="p-4 text-center">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
@@ -166,69 +151,72 @@ export default function Index() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-gradient-to-r from-healthcare-dark to-healthcare-light text-white">
-  <div className="p-6">
-    <div className="flex items-center justify-between mb-4">
-      <div>
-        <h1 className="text-xl font-bold">Olá, {currentUser.name.split(' ')[0]}!</h1>
-        <p className="text-healthcare-accent text-sm">
-          Como posso ajudar hoje?
-        </p>
-      </div>
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-xl font-bold">Olá, {currentUser.name}</h1>
+              <p className="text-healthcare-accent text-sm">
+                Como posso ajudar hoje?
+              </p>
+            </div>
 
-      <div className="flex items-center gap-3">
-        <Avatar className="border-2 border-white/20">
-          <AvatarImage src={currentUser.photo} alt={currentUser.name} />
-          <AvatarFallback className="bg-white/20 text-white">
-            {currentUser.name.split(' ').map(n => n[0]).join('')}
-          </AvatarFallback>
-        </Avatar>
+            <div className="flex items-center gap-3">
+              <Avatar className="border-2 border-white/20">
+                <AvatarImage
+                  src={currentUser.photo}
+                  alt={currentUser.name || "userName"}
+                />
+                <AvatarFallback className="bg-white/20 text-white">
+                  {currentUser.name}
+                </AvatarFallback>
+              </Avatar>
 
-        {/* Botão Sair */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleLogout}
-          className="text-white hover:bg-white/20"
-        >
-          Sair
-        </Button>
-      </div>
-    </div>
-  </div>
-</header>
+              {/* Botão Sair */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="text-white hover:bg-white/20"
+              >
+                Sair
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
 
       <div className="p-4 space-y-6">
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-3">
-          <Button 
-            variant="healthcare" 
+          <Button
+            variant="healthcare"
             className="h-auto py-4 flex-col gap-2"
             onClick={handleFindCaregiver}
           >
             <Search className="w-6 h-6" />
             <span className="text-xs">Buscar Cuidador</span>
           </Button>
-          
-          <Button 
-            variant="trust" 
+
+          <Button
+            variant="trust"
             className="h-auto py-4 flex-col gap-2"
             onClick={handleOpenGuide}
           >
             <MessageCircle className="w-6 h-6" />
             <span className="text-xs">Guia IA</span>
           </Button>
-          
-          <Button 
-            variant="soft" 
+
+          <Button
+            variant="soft"
             className="h-auto py-4 flex-col gap-2"
             onClick={handleViewBookings}
           >
             <Calendar className="w-6 h-6" />
             <span className="text-xs">Agendamentos</span>
           </Button>
-          
-          <Button 
-            variant="soft" 
+
+          <Button
+            variant="soft"
             className="h-auto py-4 flex-col gap-2"
             onClick={handleAddElder}
           >
@@ -256,7 +244,7 @@ export default function Index() {
                   <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
                     <AvatarImage src={elder.photo} alt={elder.name} />
                     <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold text-lg">
-                      {elder.name.split(' ').map(n => n[0]).join('')}
+                      {elder.name}
                     </AvatarFallback>
                   </Avatar>
 
@@ -265,17 +253,23 @@ export default function Index() {
                       {elder.name}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-2">
-                      {elder.age} anos
+                      88 anos
                     </p>
 
                     {/* Health Conditions */}
                     {elder.conditions && elder.conditions.length > 0 && (
                       <div className="flex flex-wrap gap-1 mb-3">
-                        {elder.conditions.slice(0, 3).map((condition, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {condition}
-                          </Badge>
-                        ))}
+                        {elder.conditions
+                          .slice(0, 3)
+                          .map((condition, index) => (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {condition}
+                            </Badge>
+                          ))}
                         {elder.conditions.length > 3 && (
                           <Badge variant="outline" className="text-xs">
                             +{elder.conditions.length - 3}
@@ -286,16 +280,16 @@ export default function Index() {
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      <Button 
-                        variant="healthcare" 
+                      <Button
+                        variant="healthcare"
                         size="sm"
                         onClick={() => handleStartIvcf(elder.id)}
                       >
                         <Activity className="w-4 h-4 mr-1" />
                         IVCF-20
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => navigate(`/elder/${elder.id}/edit`)}
                       >
@@ -315,7 +309,7 @@ export default function Index() {
           <h2 className="text-lg font-semibold text-foreground">
             Atividade Recente
           </h2>
-          
+
           <Card className="bg-gradient-to-r from-medical-success/10 to-healthcare-soft/30 border-medical-success/20">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">

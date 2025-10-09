@@ -3,10 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { BottomNavigation } from "@/components/common/BottomNavigation";
 import { Toaster } from "@/components/ui/sonner";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 
 // Pages
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -18,7 +16,8 @@ import Guide from "./pages/guide/Guide";
 import Profile from "./pages/profile/Profile";
 import ElderRegistration from "./pages/elder/ElderRegistration";
 import IvcfAssessment from "./pages/ivcf/IvcfAssessment";
-import CaregiverDashboard from "./pages/caregiver/CaregiverDashboard";
+import { PrivateRoute } from "./components/private-route";
+import DashboardRouter from "./pages/DashboardRouter";
 
 const queryClient = new QueryClient();
 
@@ -37,19 +36,73 @@ function AppLayout() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Main app routes */}
-        <Route path="/" element={<Index />} />
+        {/* Rotas abertas */}
         <Route path="/search" element={<Search />} />
         <Route path="/caregiver/:id" element={<CaregiverProfile />} />
-        <Route path="/book/:caregiverId" element={<BookingForm />} />
-        <Route path="/bookings" element={<BookingList />} />
-        <Route path="/guide" element={<Guide />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/elder/register" element={<ElderRegistration />} />
-        <Route path="/ivcf/:elderId" element={<IvcfAssessment />} />
-        <Route path="/caregiver-dashboard" element={<CaregiverDashboard />} />
 
-        {/* Catch-all route */}
+        {/* Rotas FAMILY */}
+        <Route
+          path="/book/:caregiverId"
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <BookingForm />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/bookings"
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <BookingList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/elder/register"
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <ElderRegistration />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/ivcf/:elderId"
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <IvcfAssessment />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Rotas CAREGIVER */}
+        <Route
+          path="/"
+          element={
+              <DashboardRouter />
+          }
+        />
+
+        {/* Perfil (ambos podem acessar) */}
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute roles={["FAMILY", "CAREGIVER"]}>
+              <Profile />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Guia (ambos podem acessar) */}
+        <Route
+          path="/guide"
+          element={
+            <PrivateRoute roles={["FAMILY", "CAREGIVER"]}>
+              <Guide />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Catch-all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
 
@@ -62,8 +115,7 @@ function AppLayout() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
+      <Toaster richColors position="top-right" />
       <BrowserRouter>
         <AppLayout />
       </BrowserRouter>
