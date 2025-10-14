@@ -135,8 +135,13 @@ model Caregivers {
   id           String      @id @default(uuid()) @db.Uuid
   userId       String?     @map("user_id") @db.Uuid
   crmCoren     String?     @map("crm_coren") @db.VarChar(50)
+  avatarPath   String?
   validated    Boolean?    @default(false)
   bio          String?
+  address      String?
+  city         String?   @db.VarChar(100)
+  state        String?   @db.VarChar(50)
+  zipCode      String?   @map("zip_code") @db.VarChar(20)
   location     Unsupported("geography")?
   createdAt    DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt    DateTime?   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)

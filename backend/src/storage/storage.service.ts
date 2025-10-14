@@ -10,7 +10,7 @@ export class StorageService {
 
   async uploadFile(
     file: Express.Multer.File,
-    folder = 'elders',
+    folder = 'dcare',
   ): Promise<string> {
     const key = `${folder}/${randomUUID()}-${file.originalname.replace(/\s+/g, '-')}`;
 
