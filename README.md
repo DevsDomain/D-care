@@ -32,7 +32,7 @@ O Product Backlog segue o padrão de priorização:
 | US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | Done  |
 | US13 | Como usuário, quero consultar uma cartilha com IA                            | Alta         | 10           | 10              | In Progress  |
 | US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | In Progress  |
-| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | In Progress  |
+| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | To Do  |
 
 ---
 
