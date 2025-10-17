@@ -28,8 +28,8 @@ O Product Backlog segue o padrão de priorização:
 ## 👤 Usuário / Sistema
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
-| US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 7            | 5               | In Progress  |
-| US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | In Progress  |
+| US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 7            | 5              | Done  |
+| US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | Done  |
 | US13 | Como usuário, quero consultar uma cartilha com IA                            | Alta         | 10           | 10              | In Progress  |
 | US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | In Progress  |
 | US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | In Progress  |
@@ -39,7 +39,7 @@ O Product Backlog segue o padrão de priorização:
 ## 🧑‍⚕️ Cuidador
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
-| US04 | Como cuidador, quero editar meu perfil (dados, geolocalização, CRM/COREN, agenda) | Alta        | 8            | 8               | To Do        |
+| US04 | Como cuidador, quero editar meu perfil (dados, geolocalização, CRM/COREN, agenda) | Alta        | 8            | 8          | In Progress   |
 | US06 | Como cuidador, quero definir disponibilidade (agenda) e emergências          | Alta        | 7            | 7               | To Do        |
 | US10 | Como cuidador, quero aceitar/recusar solicitações de agendamento             | Baixa       | 7            | 8               | To Do        |
 
@@ -49,13 +49,13 @@ O Product Backlog segue o padrão de priorização:
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
 | US03 | Como família, quero registrar um idoso (dados pessoais/saúde)                | Média        | 7            | 7               | Done         |
-| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | To Do        |
-| US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | To Do        |
-| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | To Do        |
+| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | In Progress  |
+| US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | In Progress  |
+| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | In Progress  |
 | US09 | Como família, quero agendar um cuidador em data/hora                         | Alta         | 6            | 9               | To Do        |
 | US11 | Como família, quero avaliar o cuidador após atendimento                      | Baixa        | 4            | 5               | To Do        |
 | US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | To Do        |
-| US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | To Do        |
+| US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | In Progress  |
 | US17 | Como família, quero visualizar meus agendamentos (futuros e passados)        | Média        | 7            | 8               | To Do        |
 
 
