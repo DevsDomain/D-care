@@ -18,6 +18,7 @@ import ElderRegistration from "./pages/elder/ElderRegistration";
 import IvcfAssessment from "./pages/ivcf/IvcfAssessment";
 import { PrivateRoute } from "./components/private-route";
 import DashboardRouter from "./pages/DashboardRouter";
+import CaregiverEdition from "./pages/caregiver/CaregiverEdition";
 
 const queryClient = new QueryClient();
 
@@ -79,6 +80,17 @@ function AppLayout() {
           path="/"
           element={
               <DashboardRouter />
+          }
+        />
+        
+
+             {/* Perfil (ambos podem acessar) */}
+             <Route
+          path="/editCaregiver"
+          element={
+            <PrivateRoute roles={["CAREGIVER"]}>
+              <CaregiverEdition />
+            </PrivateRoute>
           }
         />
 

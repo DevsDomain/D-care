@@ -31,11 +31,14 @@ import { useAppStore } from "@/lib/stores/appStore";
 import { mockApi } from "@/lib/api/mock";
 import { AgeCalculator } from "@/components/hooks/useAge";
 import { useLogout } from "@/components/hooks/use-logout";
+import { AvatarInput } from "@/components/avatar-input";
 
 export default function Profile() {
   const { toast } = useToast();
   const { currentUser, setCurrentUser } = useAppStore();
-  const logout = useLogout()
+  const logout = useLogout();
+
+  console.log("USER",currentUser)
 
   const [isEditing, setIsEditing] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
@@ -44,6 +47,8 @@ export default function Profile() {
     name: currentUser?.name || "",
     phone: currentUser?.phone || "",
     email: currentUser?.email || "",
+    avatar: currentUser?.photo || "",
+    orgao: currentUser?.caregiverProfile?.crm_coren || "",
   });
   const [preferences, setPreferences] = useState({
     notifications: currentUser?.preferences?.notifications ?? true,
@@ -83,10 +88,11 @@ export default function Profile() {
       name: currentUser?.name || "",
       phone: currentUser?.phone || "",
       email: currentUser?.email || "",
+      avatar: currentUser?.photo || "",
+      orgao: currentUser?.caregiverProfile?.crm_coren || "",
     });
     setIsEditing(false);
   };
-
 
   if (!currentUser) {
     return (
@@ -143,7 +149,7 @@ export default function Profile() {
               <Avatar className="w-20 h-20">
                 <AvatarImage src={currentUser.photo} />
                 <AvatarFallback className="text-lg">
-                  {currentUser.name || ""}
+                  {currentUser.name?.split(" ")[0] || ""}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -170,6 +176,15 @@ export default function Profile() {
             {/* Editable Fields */}
             <div className="space-y-4">
               <div>
+                {isEditing && (
+                  <AvatarInput
+                    value={formData.avatar}
+                    label="Foto de Perfil"
+                    onChange={(file) =>
+                      setFormData((prev) => ({ ...prev, avatarFile: file }))
+                    }
+                  />
+                )}
                 <Label htmlFor="name">Nome completo</Label>
                 {isEditing ? (
                   <Input
@@ -221,6 +236,27 @@ export default function Profile() {
                   <p className="text-foreground mt-1">{currentUser.email}</p>
                 )}
               </div>
+
+              <Label htmlFor="crmCoren">Orgão regulador</Label>
+              {currentUser.role === "CAREGIVER" && isEditing ? (
+                <>
+                  <Input
+                    id="crmCoren"
+                    value={formData.orgao}
+                    type="string"
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        orgao: e.target.value,
+                      }))
+                    }
+                  />
+                </>
+              ) : (
+                <p className="text-foreground mt-1">
+                  {currentUser.caregiverProfile?.crm_coren || "CRM xxxx-SP"}
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>

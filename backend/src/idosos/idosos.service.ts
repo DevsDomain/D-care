@@ -16,7 +16,7 @@ export class IdososService {
     let avatarUrl: string | null = null;
 
     if (file) {
-      avatarUrl = await this.storageService.uploadFile(file, 'elders');
+      avatarUrl = await this.storageService.uploadFile(file, 'dcare/elders');
     }
 
     const geoData = await getCoordinatesFromZipCode(dto.zipCode);

@@ -23,6 +23,7 @@ import { useToast } from "@/components/hooks/use-toast";
 import { mockApi } from "@/lib/api/mock";
 import type { Booking } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
+import { useNavigate } from "react-router-dom";
 
 export default function CaregiverDashboard() {
   const [bookingRequests, setBookingRequests] = useState<Booking[]>([]);
@@ -32,6 +33,8 @@ export default function CaregiverDashboard() {
   const [activeToday, setActiveToday] = useState(true);
   const { toast } = useToast();
   const { currentUser } = useAppStore();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadDashboardData();
@@ -209,7 +212,7 @@ export default function CaregiverDashboard() {
             </p>
           </div>
           <Button variant="outline" size="icon">
-            <Settings className="w-5 h-5" />
+            <Settings className="w-5 h-5"  onClick={()=>navigate("/editCaregiver")}/>
           </Button>
         </div>
 
