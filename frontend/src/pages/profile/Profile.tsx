@@ -1,4 +1,5 @@
-import { useState } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from "react";
 import {
   User,
   Settings,
@@ -29,17 +30,28 @@ import {
 import { useToast } from "@/components/hooks/use-toast";
 import { useAppStore } from "@/lib/stores/appStore";
 import { mockApi } from "@/lib/api/mock";
-import { AgeCalculator } from "@/components/hooks/useAge";
 import { useLogout } from "@/components/hooks/use-logout";
 
 export default function Profile() {
   const { toast } = useToast();
   const { currentUser, setCurrentUser } = useAppStore();
-  const logout = useLogout()
+  const logout = useLogout();
+
+  // Nome e iniciais para o header e avatar grande
+  const firstName = (currentUser?.name ?? "").trim().split(/\s+/)[0] || "";
+  const getInitials = (name?: string) =>
+    (name ?? "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((p) => p[0]!.toUpperCase())
+      .slice(0, 3)
+      .join("");
 
   const [isEditing, setIsEditing] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+
   const [formData, setFormData] = useState({
     name: currentUser?.name || "",
     phone: currentUser?.phone || "",
@@ -50,6 +62,20 @@ export default function Profile() {
     emailUpdates: currentUser?.preferences?.emailUpdates ?? true,
     emergencyAlerts: currentUser?.preferences?.emergencyAlerts ?? true,
   });
+
+  // Mantém os campos do formulário sincronizados se o usuário mudar
+  useEffect(() => {
+    setFormData({
+      name: currentUser?.name || "",
+      phone: currentUser?.phone || "",
+      email: currentUser?.email || "",
+    });
+    setPreferences({
+      notifications: currentUser?.preferences?.notifications ?? true,
+      emailUpdates: currentUser?.preferences?.emailUpdates ?? true,
+      emergencyAlerts: currentUser?.preferences?.emergencyAlerts ?? true,
+    });
+  }, [currentUser?.id]);
 
   const handleSave = async () => {
     try {
@@ -63,6 +89,11 @@ export default function Profile() {
 
       if (response.success && response.data) {
         setCurrentUser(response.data);
+        try {
+          localStorage.setItem("user", JSON.stringify(response.data));
+        } catch {
+          /* ignore */
+        }
         setIsEditing(false);
         toast({
           title: "Perfil atualizado",
@@ -87,50 +118,72 @@ export default function Profile() {
     setIsEditing(false);
   };
 
-
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-dvh bg-background overflow-x-hidden flex items-center justify-center">
         <p className="text-muted-foreground">Usuário não encontrado</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Perfil</h1>
-            <p className="text-muted-foreground">
-              Gerencie suas informações e preferências
-            </p>
-          </div>
-          {!isEditing ? (
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setIsEditing(true)}
-            >
-              <Edit3 className="w-5 h-5" />
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button variant="outline" size="icon" onClick={handleCancel}>
-                <X className="w-5 h-5" />
-              </Button>
-              <Button variant="healthcare" size="icon" onClick={handleSave}>
-                <Save className="w-5 h-5" />
-              </Button>
+    <div className="min-h-dvh bg-background overflow-x-hidden flex flex-col">
+      {/* HEADER (sem avatar, só saudação + editar) */}
+      <header className="sticky top-0 z-20 bg-gradient-to-r from-healthcare-dark to-healthcare-light text-white pt-[env(safe-area-inset-top)]">
+        <div className="px-3 py-2 sm:px-4 sm:py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Heart className="w-6 h-6" />
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-semibold truncate">
+                  {firstName ? `Olá, ${firstName}!` : "Olá!"}
+                </h1>
+                <p className="text-xs sm:text-sm text-white/90">
+                  Como posso ajudar hoje?
+                </p>
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      <div className="p-4 space-y-6">
+            {!isEditing ? (
+              <Button
+                variant="outline"
+                size="icon"
+                className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+                onClick={() => setIsEditing(true)}
+                aria-label="Editar perfil"
+              >
+                <Edit3 className="w-5 h-5" />
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="bg-white/10 hover:bg-white/20 text-white border-white/30"
+                  onClick={handleCancel}
+                  aria-label="Cancelar edição"
+                >
+                  <X className="w-5 h-5" />
+                </Button>
+                <Button
+                  variant="healthcare"
+                  size="icon"
+                  className="shadow-md"
+                  onClick={handleSave}
+                  aria-label="Salvar alterações"
+                >
+                  <Save className="w-5 h-5" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* CONTEÚDO */}
+      <main className="flex-1 px-4 sm:px-6 py-4 pb-[max(env(safe-area-inset-bottom),theme(spacing.6))]">
         {/* Profile Info */}
-        <Card>
+        <Card className="mb-6 healthcare-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="w-5 h-5 text-healthcare-light" />
@@ -138,12 +191,12 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Avatar */}
+            {/* Avatar grande + dados */}
             <div className="flex items-center gap-4">
               <Avatar className="w-20 h-20">
                 <AvatarImage src={currentUser.photo} />
                 <AvatarFallback className="text-lg">
-                  {currentUser.name || ""}
+                  {getInitials(currentUser.name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
@@ -167,7 +220,7 @@ export default function Profile() {
 
             <Separator />
 
-            {/* Editable Fields */}
+            {/* Campos editáveis */}
             <div className="space-y-4">
               <div>
                 <Label htmlFor="name">Nome completo</Label>
@@ -225,47 +278,8 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Elder Info (for family users) */}
-        {currentUser.role === "FAMILY" &&
-          currentUser.elders &&
-          currentUser.elders.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-healthcare-light" />
-                  Idosos Cadastrados
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {currentUser.elders.map((elder) => (
-                    <div
-                      key={elder.id}
-                      className="flex items-center justify-between p-3 bg-muted rounded-xl"
-                    >
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {elder.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {AgeCalculator(elder.birthDate)} anos
-                        </p>
-                      </div>
-                      <Badge
-                        variant="secondary"
-                        className="bg-healthcare-soft text-healthcare-dark"
-                      >
-                        {elder.conditions.length} condições
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-        {/* Notifications */}
-        <Card>
+        {/* Notificações */}
+        <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="w-5 h-5 text-healthcare-light" />
@@ -293,9 +307,7 @@ export default function Profile() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">
-                  E-mails informativos
-                </p>
+                <p className="font-medium text-foreground">E-mails informativos</p>
                 <p className="text-sm text-muted-foreground">
                   Dicas de cuidados e novidades
                 </p>
@@ -310,9 +322,7 @@ export default function Profile() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">
-                  Alertas de emergência
-                </p>
+                <p className="font-medium text-foreground">Alertas de emergência</p>
                 <p className="text-sm text-muted-foreground">
                   Notificações urgentes importantes
                 </p>
@@ -330,7 +340,7 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* Settings & Legal */}
+        {/* Configurações / Legal */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -371,9 +381,7 @@ export default function Profile() {
               <HelpCircle className="w-5 h-5 mr-3 text-muted-foreground" />
               <div className="flex-1 text-left">
                 <p className="font-medium">Ajuda e Suporte</p>
-                <p className="text-sm text-muted-foreground">
-                  Central de ajuda
-                </p>
+                <p className="text-sm text-muted-foreground">Central de ajuda</p>
               </div>
             </Button>
 
@@ -394,7 +402,7 @@ export default function Profile() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </main>
 
       {/* Privacy Dialog */}
       <Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
@@ -421,8 +429,8 @@ export default function Profile() {
               </ul>
             </div>
             <p className="text-muted-foreground">
-              Para exercer seus direitos ou esclarecer dúvidas sobre
-              privacidade, entre em contato conosco através do e-mail:
+              Para exercer seus direitos ou esclarecer dúvidas sobre privacidade,
+              entre em contato conosco através do e-mail:
               privacidade@dcare.com.br
             </p>
           </div>

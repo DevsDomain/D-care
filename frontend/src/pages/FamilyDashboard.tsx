@@ -15,42 +15,221 @@ import { Button } from "@/components/ui/button-variants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/lib/stores/appStore";
-import type { Elder } from "@/lib/types";
 import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 import { useLogout } from "@/components/hooks/use-logout";
+import { AgeCalculator } from "@/components/hooks/useAge";
+import { api } from "@/lib/api/api";
+
+/** Helper: iniciais do nome */
+const getInitials = (name?: string) => {
+  const n = (name ?? "").trim();
+  if (!n) return "?";
+  const parts = n.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  const first = parts[0][0] ?? "";
+  const last = parts[parts.length - 1][0] ?? "";
+  return (first + last).toUpperCase();
+};
+
+/** Tipagem compatível com variações do backend dos idosos */
+type ElderApi = {
+  id: string;
+  familyId?: string | null;
+  family_id?: string | null;
+  family?: { id?: string | null } | null;
+
+  name: string;
+  birthdate?: string;
+  birthDate?: string;
+  avatarPath?: string | null;
+  photo?: string | null;
+
+  // variações possíveis para condições
+  conditions?: any[] | string | null;
+  healthConditions?: any[] | string | null;
+  medicalConditions?: any[] | string | null;
+  clinicalConditions?: any[] | string | null;
+  comorbidities?: any[] | string | null;
+  medicalHistory?: { conditions?: any[] | string | null } | null;
+  health?: { conditions?: any[] | string | null } | null;
+  medical?: { conditions?: any[] | string | null } | null;
+};
+
+function pickFamilyIdFromUser(u: any): string | null {
+  return (
+    u?.familyId ??
+    u?.family?.id ??
+    (Array.isArray(u?.family) ? u.family[0]?.id : null) ??
+    u?.family_id ??
+    null
+  );
+}
+
+function pickFamilyIdFromElder(e: ElderApi): string | null {
+  return e?.familyId ?? e?.family_id ?? e?.family?.id ?? null;
+}
+
+/** Converte diferentes formatos (array, JSON string, CSV) para array */
+function toArray(val: any): any[] {
+  if (!val && val !== 0) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === "string") {
+    const s = val.trim();
+    if (!s) return [];
+    try {
+      const parsed = JSON.parse(s);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      /* not json, tenta CSV */
+    }
+    return s
+      .split(/[;,]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+  }
+  return [val];
+}
+
+/** Extrai condições de várias chaves possíveis e normaliza */
+function extractConditions(e: ElderApi): any[] {
+  const candidates: any[] = [
+    e.conditions,
+    e.healthConditions,
+    e.medicalConditions,
+    e.clinicalConditions,
+    e.comorbidities,
+    e.medicalHistory?.conditions,
+    e.health?.conditions,
+    e.medical?.conditions,
+  ].filter((v) => v != null);
+
+  for (const c of candidates) {
+    const arr = toArray(c);
+    if (arr.length) return arr;
+  }
+  return [];
+}
+
+/** Pega um label amigável para a condição */
+function getConditionLabel(c: any): string {
+  if (typeof c === "string") return c;
+  return (
+    c?.name ??
+    c?.label ??
+    c?.description ??
+    c?.title ??
+    c?.condition ??
+    c?.condicao ??
+    String(c ?? "")
+  );
+}
+
+/** Normalização final do idoso */
+function normalizeElder(e: ElderApi) {
+  return {
+    ...e,
+    familyId: pickFamilyIdFromElder(e), // garante presença
+    birthDate: e.birthDate ?? e.birthdate ?? "",
+    photo: e.photo ?? e.avatarPath ?? null,
+    conditions: extractConditions(e),
+  };
+}
 
 export default function FamilyDashboard() {
   const navigate = useNavigate();
-  const { currentUser } = useAppStore();
+  const { currentUser, setCurrentUser } = useAppStore();
   const handleLogout = useLogout();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingElders, setLoadingElders] = useState(false);
 
+  // tira o skeleton do topo quando já temos o nome
   useEffect(() => {
-    if (currentUser?.name) {
-      setIsLoading(false);
-    }
+    if (currentUser?.name) setIsLoading(false);
   }, [currentUser?.name]);
 
-  const handleAddElder = () => {
-    navigate("/elder/register");
-  };
+  // Busca a lista de idosos (inclui condições normalizadas)
+  useEffect(() => {
+    const fetchElders = async () => {
+      if (!currentUser || (currentUser.role !== "FAMILY" && currentUser.role !== "family")) return;
 
-  const handleStartIvcf = (elderId: string) => {
-    navigate(`/ivcf/${elderId}`);
-  };
+      // familyId do usuário logado (tenta múltiplas formas)
+      const familyId = pickFamilyIdFromUser(currentUser);
+      const userId = (currentUser as any)?.id ?? (currentUser as any)?.userId ?? null;
 
-  const handleFindCaregiver = () => {
-    navigate("/search");
-  };
+      try {
+        setLoadingElders(true);
 
-  const handleViewBookings = () => {
-    navigate("/bookings");
-  };
+        // (Opcional) tenta filtrar via query; se o backend ignorar, filtramos no front
+        const url = familyId ? `/idosos?familyId=${encodeURIComponent(familyId)}` : `/idosos`;
+        const { data } = await api.get<ElderApi[]>(url);
+        const all = (data ?? []).map(normalizeElder);
 
-  const handleOpenGuide = () => {
-    navigate("/guide");
-  };
+        let onlyMine: any[] = [];
+
+        if (familyId) {
+          // ✅ caminho ideal
+          onlyMine = all.filter((e) => e.familyId === familyId);
+        } else {
+          // 🔄 Fallback sem familyId: usa a lista local deste usuário
+          const key = userId ? `elders:${userId}` : null;
+          if (key) {
+            try {
+              const saved = JSON.parse(localStorage.getItem(key) || "[]");
+              const idSet = new Set((Array.isArray(saved) ? saved : []).map((x: any) => x?.id));
+
+              // pega da API apenas os que constam no localStorage
+              onlyMine = all.filter((e) => idSet.has(e.id));
+
+              // se algum salvo não veio da API, completa com o salvo local
+              const missing = (Array.isArray(saved) ? saved : []).filter(
+                (s: any) => s?.id && !onlyMine.some((e) => e.id === s.id)
+              );
+              // normaliza os que vieram do localStorage antes de exibir
+              onlyMine = [
+                ...onlyMine,
+                ...missing.map((m: any) =>
+                  normalizeElder({
+                    id: m.id,
+                    name: m.name,
+                    birthdate: m.birthdate,
+                    birthDate: m.birthDate,
+                    avatarPath: m.avatarPath,
+                    photo: m.photo,
+                    familyId: m.familyId,
+                    family_id: m.family_id,
+                    conditions: m.conditions,
+                  } as ElderApi)
+                ),
+              ];
+            } catch {
+              onlyMine = [];
+            }
+          }
+        }
+
+        const updatedUser = { ...currentUser, elders: onlyMine };
+        setCurrentUser(updatedUser);
+        try {
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        } catch {
+          /* ignore */
+        }
+      } catch (err: any) {
+        console.error("Falha ao buscar idosos:", err?.message ?? err);
+      } finally {
+        setLoadingElders(false);
+      }
+    };
+
+    fetchElders();
+  }, [currentUser?.id, currentUser?.role, setCurrentUser]);
+
+  const handleAddElder = () => navigate("/elder/register");
+  const handleStartIvcf = (elderId: string) => navigate(`/ivcf/${elderId}`);
+  const handleFindCaregiver = () => navigate("/search");
+  const handleViewBookings = () => navigate("/bookings");
+  const handleOpenGuide = () => navigate("/guide");
 
   if (isLoading) {
     return (
@@ -167,11 +346,10 @@ export default function FamilyDashboard() {
                   alt={currentUser.name || "userName"}
                 />
                 <AvatarFallback className="bg-white/20 text-white">
-                  {currentUser.name}
+                  {getInitials(currentUser.name)}
                 </AvatarFallback>
               </Avatar>
 
-              {/* Botão Sair */}
               <Button
                 variant="ghost"
                 size="sm"
@@ -186,7 +364,7 @@ export default function FamilyDashboard() {
       </header>
 
       <div className="p-4 space-y-6">
-        {/* Quick Actions */}
+        {/* Ações rápidas */}
         <div className="grid grid-cols-2 gap-3">
           <Button
             variant="healthcare"
@@ -221,90 +399,115 @@ export default function FamilyDashboard() {
             onClick={handleAddElder}
           >
             <Plus className="w-6 h-6" />
-            <span className="text-xs">Nova Pessoa</span>
+            <span className="text-xs">Cadastrar Idoso</span>
           </Button>
         </div>
 
-        {/* Elderly Cards */}
+        {/* Cards de Idosos */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-foreground">
               Pessoas sob seus cuidados
             </h2>
-            <Button variant="ghost" size="sm" onClick={handleAddElder}>
-              <Plus className="w-4 h-4 mr-1" />
-              Adicionar
-            </Button>
           </div>
 
-          {currentUser.elders.map((elder: Elder) => (
-            <Card key={elder.id} className="healthcare-card">
-              <CardContent className="p-6">
-                <div className="flex items-start gap-4">
-                  <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
-                    <AvatarImage src={elder.photo} alt={elder.name} />
-                    <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold text-lg">
-                      {elder.name}
-                    </AvatarFallback>
-                  </Avatar>
-
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg text-foreground mb-1">
-                      {elder.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      88 anos
-                    </p>
-
-                    {/* Health Conditions */}
-                    {elder.conditions && elder.conditions.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {elder.conditions
-                          .slice(0, 3)
-                          .map((condition, index) => (
-                            <Badge
-                              key={index}
-                              variant="outline"
-                              className="text-xs"
-                            >
-                              {condition}
-                            </Badge>
-                          ))}
-                        {elder.conditions.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{elder.conditions.length - 3}
-                          </Badge>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <Button
-                        variant="healthcare"
-                        size="sm"
-                        onClick={() => handleStartIvcf(elder.id)}
-                      >
-                        <Activity className="w-4 h-4 mr-1" />
-                        IVCF-20
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => navigate(`/elder/${elder.id}/edit`)}
-                      >
-                        <User className="w-4 h-4 mr-1" />
-                        Editar
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
+          {loadingElders ? (
+            <Card className="p-4">
+              <p className="text-sm text-muted-foreground">Carregando...</p>
             </Card>
-          ))}
+          ) : (
+            (currentUser.elders ?? []).map((elder: any) => {
+              const age =
+                elder?.birthDate || elder?.birthdate
+                  ? `${AgeCalculator(elder.birthDate ?? elder.birthdate)} anos`
+                  : "Idade não informada";
+
+              const conditions = Array.isArray(elder?.conditions)
+                ? elder.conditions
+                : [];
+
+              return (
+                <Card key={elder.id} className="healthcare-card">
+                  <CardContent className="p-6">
+                    <div className="flex items-start gap-4">
+                      <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
+                        <AvatarImage
+                          src={elder.photo || elder.avatarPath}
+                          alt={elder.name}
+                        />
+                        <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold text-lg">
+                          {getInitials(elder.name)}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg text-foreground mb-1 truncate">
+                          {elder.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {age}
+                        </p>
+
+                        {/* Condições (até 3 + “+N”) */}
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {conditions.length ? (
+                            <>
+                              {conditions.slice(0, 3).map((c: any, idx: number) => (
+                                <Badge
+                                  key={idx}
+                                  variant="outline"
+                                  className="text-xs rounded-full px-3 py-1"
+                                >
+                                  {getConditionLabel(c)}
+                                </Badge>
+                              ))}
+                              {conditions.length > 3 && (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-xs rounded-full px-3 py-1"
+                                >
+                                  +{conditions.length - 3}
+                                </Badge>
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              Sem condições cadastradas
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Ações */}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="healthcare"
+                            size="sm"
+                            onClick={() => handleStartIvcf(elder.id)}
+                          >
+                            <Activity className="w-4 h-4 mr-1" />
+                            IVCF-20
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              navigate(`/elder/register?elderId=${elder.id}`)
+                            }
+                          >
+                            <User className="w-4 h-4 mr-1" />
+                            Editar
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
 
-        {/* Recent Activity / Status Cards */}
+        {/* Status */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
             Atividade Recente
