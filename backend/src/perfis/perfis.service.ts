@@ -62,6 +62,8 @@ export class PerfisService {
         city: dto.city,
         state: dto.state,
         zipCode: dto.zipCode,
+        specializations: dto.specializations,
+        skills: dto.skills,
       },
     });
 

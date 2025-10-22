@@ -1,9 +1,16 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  MaxLength,
+  IsBoolean,
+  IsNumber,
+  IsArray,
+} from 'class-validator';
 
 export class CreateCareGiverDto {
   @IsOptional()
   @IsString()
-  userId: string;
+  userId?: string;
 
   @IsOptional()
   @IsString()
@@ -14,23 +21,73 @@ export class CreateCareGiverDto {
   @IsString()
   bio?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   avatarPath?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   address?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   city?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   state?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   zipCode?: string;
+
+  // Numeric cache fields
+  @IsOptional()
+  @IsNumber()
+  rating?: number;
+
+  @IsOptional()
+  @IsNumber()
+  reviewCount?: number;
+
+  @IsOptional()
+  @IsNumber()
+  distanceKm?: number;
+
+  // Profile info
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skills?: string[];
+
+  @IsOptional()
+  @IsString()
+  experience?: string;
+
+  @IsOptional()
+  @IsString()
+  priceRange?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  emergency?: boolean;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  languages?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  specializations?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  verificationBadges?: string[];
 }

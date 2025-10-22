@@ -143,6 +143,16 @@ model Caregivers {
   state        String?   @db.VarChar(50)
   zipCode      String?   @map("zip_code") @db.VarChar(20)
   location     Unsupported("geography")?
+  rating             Float?  @default(0)
+  reviewCount        Int?    @default(0)
+  experience         String? @db.VarChar(100)
+  priceRange         String? @map("price_range") @db.VarChar(50)
+  emergency          Boolean? @default(false)
+  skills             Json?
+  languages          Json?
+  specializations    Json?
+  verificationBadges Json?
+
   createdAt    DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt    DateTime?   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   requests     AppointmentRequests[]   @relation("CaregiverToRequests")
