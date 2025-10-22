@@ -5,12 +5,14 @@ import {
   Clock,
   MapPin,
   User,
-  Settings,
+  BriefcaseMedical,
   Bell,
   CheckCircle,
   XCircle,
   AlertCircle,
   TrendingUp,
+  Hospital,
+  UserRoundPen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
 import { Card, CardContent } from "@/components/ui/card";
@@ -211,8 +213,12 @@ export default function CaregiverDashboard() {
               Bem-vindo de volta, {currentUser?.name}
             </p>
           </div>
-          <Button variant="outline" size="icon">
-            <Settings className="w-5 h-5"  onClick={()=>navigate("/editCaregiver")}/>
+          <Button variant="outline" size="icon" title="Editar Cuidador">
+            <UserRoundPen
+              className="w-5 h-5"
+              onClick={() => navigate("/editCaregiver")}
+              
+            />
           </Button>
         </div>
 

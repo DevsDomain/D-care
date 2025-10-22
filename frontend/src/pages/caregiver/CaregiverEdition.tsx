@@ -11,6 +11,7 @@ import { getAdressByCEP } from "@/lib/api/getAdressByCEP";
 import { useAppStore } from "@/lib/stores/appStore";
 import type { Caregiver } from "@/lib/types";
 import { api } from "@/lib/api/api";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function CaregiverEdition() {
   const navigate = useNavigate();
@@ -45,18 +46,18 @@ export default function CaregiverEdition() {
           state: data.caregiver[0].state,
           zipCode: data.caregiver[0].zipCode,
           avatarPath: data.caregiver[0].avatarPath,
-          userId:data.caregiver[0].id,
+          userId: data.caregiver[0].id,
           avatarUrl: data.caregiver[0].avatarPath,
         });
 
-        console.log("RESULTADO",data)
+        console.log("RESULTADO", data);
       } catch (error) {
         console.error("Error loading caregiver:", error);
       }
     };
 
-    if(currentUser?.role === 'CAREGIVER'){
-      fetchCaregiver()
+    if (currentUser?.role === "CAREGIVER") {
+      fetchCaregiver();
     }
   }, []);
 
@@ -177,7 +178,9 @@ export default function CaregiverEdition() {
                   defaultUrl={formData.avatarUrl || undefined}
                 />
                 <div>
-                  <Label htmlFor="crm_coren">CRM/COREN</Label>
+                  <Label htmlFor="crm_coren" className="mb-2">
+                    CRM/COREN
+                  </Label>
                   <Input
                     id="crm_coren"
                     value={formData.crm_coren || ""}
@@ -191,14 +194,17 @@ export default function CaregiverEdition() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bio">Biografia</Label>
-                  <Input
+                  <Label htmlFor="bio" className="mb-2">
+                    Biografia
+                  </Label>
+                  <Textarea
                     id="bio"
                     value={formData.bio || ""}
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, bio: e.target.value }))
                     }
                     placeholder="Fale um pouco sobre você"
+                    className="h-32  text-wrap"
                   />
                 </div>
               </CardContent>

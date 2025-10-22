@@ -3,7 +3,7 @@
  * Mobile-first navigation bar for the D-care app
  */
 
-import { Home, Search, Calendar, MessageCircle, User } from 'lucide-react';
+import { Home, Search, Calendar, UserCog, BotMessageSquare } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAppStore } from '@/lib/stores/appStore';
@@ -40,13 +40,13 @@ const navItems: NavItem[] = [
   {
     id: 'guide',
     label: 'Guia IA',
-    icon: MessageCircle,
+    icon: BotMessageSquare,
     path: '/guide',
   },
   {
     id: 'profile',
     label: 'Perfil',
-    icon: User,
+    icon: UserCog,
     path: '/profile',
   },
 ];
