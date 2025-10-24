@@ -18,10 +18,17 @@ export interface TimeSlot {
 
 export interface Caregiver {
   id: string;
+  userId: string;
   name: string;
+  avatarUrl?: string;
   photo: string;
   verified: boolean;
-  crmCorem?: string; // CRM/COREM professional registration number
+  address: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  avatarPath: File | null;
+  crm_coren?: string; // CRM/COREM professional registration number
   rating: number; // 0-5 stars
   reviewCount: number;
   distanceKm: number;
@@ -135,7 +142,7 @@ export interface IvcfQuestion {
   }[];
 }
 
-export interface User{
+export interface User {
   id: string;
   role: "FAMILY" | "CAREGIVER";
   email: string;
@@ -202,7 +209,6 @@ export interface PaginatedResponse<T> {
   limit: number;
   hasMore: boolean;
 }
-
 
 export interface LoginResponse {
   user: {

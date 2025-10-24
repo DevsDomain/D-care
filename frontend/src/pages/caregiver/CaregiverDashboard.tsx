@@ -5,12 +5,14 @@ import {
   Clock,
   MapPin,
   User,
-  Settings,
+  BriefcaseMedical,
   Bell,
   CheckCircle,
   XCircle,
   AlertCircle,
   TrendingUp,
+  Hospital,
+  UserRoundPen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,6 +25,7 @@ import { useToast } from "@/components/hooks/use-toast";
 import { mockApi } from "@/lib/api/mock";
 import type { Booking } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
+import { useNavigate } from "react-router-dom";
 
 export default function CaregiverDashboard() {
   const [bookingRequests, setBookingRequests] = useState<Booking[]>([]);
@@ -32,6 +35,8 @@ export default function CaregiverDashboard() {
   const [activeToday, setActiveToday] = useState(true);
   const { toast } = useToast();
   const { currentUser } = useAppStore();
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadDashboardData();
@@ -208,8 +213,12 @@ export default function CaregiverDashboard() {
               Bem-vindo de volta, {currentUser?.name}
             </p>
           </div>
-          <Button variant="outline" size="icon">
-            <Settings className="w-5 h-5" />
+          <Button variant="outline" size="icon" title="Editar Cuidador">
+            <UserRoundPen
+              className="w-5 h-5"
+              onClick={() => navigate("/editCaregiver")}
+              
+            />
           </Button>
         </div>
 

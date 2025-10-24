@@ -18,7 +18,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,16 +36,7 @@ export default function Profile() {
   const { currentUser, setCurrentUser } = useAppStore();
   const logout = useLogout();
 
-  // Nome e iniciais para o header e avatar grande
-  const firstName = (currentUser?.name ?? "").trim().split(/\s+/)[0] || "";
-  const getInitials = (name?: string) =>
-    (name ?? "")
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((p) => p[0]!.toUpperCase())
-      .slice(0, 3)
-      .join("");
+  console.log("USER", currentUser);
 
   const [isEditing, setIsEditing] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
@@ -136,7 +126,9 @@ export default function Profile() {
               <Heart className="w-6 h-6" />
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-xl font-semibold truncate">
-                  {firstName ? `Olá, ${firstName}!` : "Olá!"}
+                  {currentUser.name
+                    ? `Olá, ${currentUser.name.split(" ")[0]}!`
+                    : "Olá!"}
                 </h1>
                 <p className="text-xs sm:text-sm text-white/90">
                   Como posso ajudar hoje?
@@ -193,12 +185,6 @@ export default function Profile() {
           <CardContent className="space-y-6">
             {/* Avatar grande + dados */}
             <div className="flex items-center gap-4">
-              <Avatar className="w-20 h-20">
-                <AvatarImage src={currentUser.photo} />
-                <AvatarFallback className="text-lg">
-                  {getInitials(currentUser.name)}
-                </AvatarFallback>
-              </Avatar>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="font-semibold text-foreground">
@@ -223,6 +209,7 @@ export default function Profile() {
             {/* Campos editáveis */}
             <div className="space-y-4">
               <div>
+          
                 <Label htmlFor="name">Nome completo</Label>
                 {isEditing ? (
                   <Input
@@ -307,7 +294,9 @@ export default function Profile() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">E-mails informativos</p>
+                <p className="font-medium text-foreground">
+                  E-mails informativos
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Dicas de cuidados e novidades
                 </p>
@@ -322,7 +311,9 @@ export default function Profile() {
 
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">Alertas de emergência</p>
+                <p className="font-medium text-foreground">
+                  Alertas de emergência
+                </p>
                 <p className="text-sm text-muted-foreground">
                   Notificações urgentes importantes
                 </p>
@@ -381,7 +372,9 @@ export default function Profile() {
               <HelpCircle className="w-5 h-5 mr-3 text-muted-foreground" />
               <div className="flex-1 text-left">
                 <p className="font-medium">Ajuda e Suporte</p>
-                <p className="text-sm text-muted-foreground">Central de ajuda</p>
+                <p className="text-sm text-muted-foreground">
+                  Central de ajuda
+                </p>
               </div>
             </Button>
 
@@ -429,8 +422,8 @@ export default function Profile() {
               </ul>
             </div>
             <p className="text-muted-foreground">
-              Para exercer seus direitos ou esclarecer dúvidas sobre privacidade,
-              entre em contato conosco através do e-mail:
+              Para exercer seus direitos ou esclarecer dúvidas sobre
+              privacidade, entre em contato conosco através do e-mail:
               privacidade@dcare.com.br
             </p>
           </div>

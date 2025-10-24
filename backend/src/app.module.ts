@@ -8,7 +8,6 @@ import { AiProxyModule } from './ai-proxy/ai-proxy.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './cadastro/auth.module';
 
-
 @Module({
   imports: [
     PerfisModule,

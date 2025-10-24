@@ -6,12 +6,15 @@ import {
   Delete,
   Body,
   Param,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { PerfisService } from './perfis.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfessionalIdValidationPipe } from '../common/pipes/professional-id-validation.pipe';
 import { CreateCareGiverDto } from './dto/create-caregiver.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('perfis')
 export class PerfisController {
@@ -34,6 +37,18 @@ export class PerfisController {
     @Param('userId') userId: string,
   ) {
     return this.perfisService.createCaregiver(createCaregiverDto, userId);
+  }
+
+  // Perfil cuidador ( com validação de CRM/COREN )
+  @Patch('caregiver/:userId')
+  @UseInterceptors(FileInterceptor('avatar'))
+  async updateCaregiver(
+    @Param('userId') userId: string,
+    @Body(new ProfessionalIdValidationPipe())
+    createCaregiverDto: CreateCareGiverDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.perfisService.updateCaregiver(userId, createCaregiverDto, file);
   }
 
   @Get()
