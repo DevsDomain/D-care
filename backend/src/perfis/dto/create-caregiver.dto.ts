@@ -5,6 +5,7 @@ import {
   IsBoolean,
   IsNumber,
   IsArray,
+  IsJSON,
 } from 'class-validator';
 
 export class CreateCareGiverDto {
@@ -55,10 +56,9 @@ export class CreateCareGiverDto {
   distanceKm?: number;
 
   // Profile info
+  @IsJSON()
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  skills?: string[];
+  skills?: string;
 
   @IsOptional()
   @IsString()
@@ -81,10 +81,9 @@ export class CreateCareGiverDto {
   @IsString({ each: true })
   languages?: string[];
 
+  @IsJSON()
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  specializations?: string[];
+  specializations?: string;
 
   @IsOptional()
   @IsArray()

@@ -5,6 +5,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateCareGiverDto } from './dto/create-caregiver.dto';
 import { getCoordinatesFromZipCode } from 'src/common/helper/getCoordinatesFromCep';
 import { StorageService } from 'src/storage/storage.service';
+import safeParseArray from 'src/common/pipes/safe-parse-array.pipe';
 
 @Injectable()
 export class PerfisService {
@@ -62,8 +63,10 @@ export class PerfisService {
         city: dto.city,
         state: dto.state,
         zipCode: dto.zipCode,
-        specializations: dto.specializations,
-        skills: dto.skills,
+        specializations: safeParseArray(dto.specializations),
+        skills: safeParseArray(dto.skills),
+        priceRange: dto.priceRange,
+        experience: dto.experience,
       },
     });
 

@@ -4,6 +4,7 @@ import { CreateElderDto } from './dto/create-elder.dto';
 import { UpdateElderDto } from './dto/update-elder.dto';
 import { StorageService } from '../storage/storage.service';
 import { getCoordinatesFromZipCode } from '../common/helper/getCoordinatesFromCep';
+import safeParseArray from 'src/common/pipes/safe-parse-array.pipe';
 
 @Injectable()
 export class IdososService {
@@ -26,10 +27,10 @@ export class IdososService {
         name: dto.name,
         birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
         medicalConditions: dto.conditions
-          ? JSON.stringify(dto.conditions)
+          ? safeParseArray(dto.conditions)
           : undefined,
         medications: dto.medications
-          ? JSON.stringify(dto.medications)
+          ? safeParseArray(dto.medications)
           : undefined,
         address: dto.address,
         city: dto.city,
