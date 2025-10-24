@@ -4,7 +4,7 @@ import { CreateElderDto } from './dto/create-elder.dto';
 import { UpdateElderDto } from './dto/update-elder.dto';
 import { StorageService } from '../storage/storage.service';
 import { getCoordinatesFromZipCode } from '../common/helper/getCoordinatesFromCep';
-import safeParseArray from 'src/common/pipes/safe-parse-array.pipe';
+import safeParseArray from '../common/pipes/safe-parse-array.pipe';
 
 @Injectable()
 export class IdososService {

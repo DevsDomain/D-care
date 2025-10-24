@@ -3,9 +3,9 @@ import { PrismaService } from '../database/prisma.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateCareGiverDto } from './dto/create-caregiver.dto';
-import { getCoordinatesFromZipCode } from 'src/common/helper/getCoordinatesFromCep';
-import { StorageService } from 'src/storage/storage.service';
-import safeParseArray from 'src/common/pipes/safe-parse-array.pipe';
+import { getCoordinatesFromZipCode } from '../common/helper/getCoordinatesFromCep';
+import { StorageService } from '../storage/storage.service';
+import safeParseArray from '../common/pipes/safe-parse-array.pipe';
 
 @Injectable()
 export class PerfisService {
