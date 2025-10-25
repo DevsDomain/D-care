@@ -1,3 +1,4 @@
+// src/pages/family/FamilyDashboard.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -487,12 +488,12 @@ export default function FamilyDashboard() {
                             <Activity className="w-4 h-4 mr-1" />
                             IVCF-20
                           </Button>
+
+                          {/* 👉 EDITAR: vai para /elder/:elderId/edit */}
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              navigate(`/elder/register?elderId=${elder.id}`)
-                            }
+                            onClick={() => navigate(`/elder/${elder.id}/edit`)}
                           >
                             <User className="w-4 h-4 mr-1" />
                             Editar
