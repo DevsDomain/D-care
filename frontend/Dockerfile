@@ -11,8 +11,17 @@ WORKDIR /app
 # Copiar apenas arquivos de manifesto primeiro (melhor pro cache)
 COPY package.json pnpm-lock.yaml* ./
 
-# Habilitar pnpm e instalar dependências
-RUN corepack enable && pnpm install --frozen-lockfile
+# Habilitar pnpm e configurar timeouts/retries mais altos
+RUN corepack enable && \
+    pnpm config set fetch-retries 10 && \
+    pnpm config set fetch-retry-factor 10 && \
+    pnpm config set fetch-retry-mintimeout 30000 && \
+    pnpm config set fetch-retry-maxtimeout 300000 && \
+    pnpm config set fetch-timeout 300000
+
+# Instalar dependências com lockfile congelado
+RUN pnpm install --frozen-lockfile
+
 
 # Copiar o resto do código da aplicação
 COPY . .
