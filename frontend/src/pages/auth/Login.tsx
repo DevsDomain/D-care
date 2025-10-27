@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Heart } from "lucide-react";
@@ -10,13 +11,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { useToast } from "@/components/hooks/use-toast";
 import { api } from "@/lib/api/api";
-
-type LoginResponse =
-  | { accessToken: string; expiresAt?: string; user?: any }
-  | { tokens: { accessToken: string; refreshToken?: string }; user?: any };
+import { useAppStore } from "@/lib/stores/appStore";
+import type { LoginResponse } from "@/lib/types";
 
 export default function Login() {
   const navigate = useNavigate();
+  const setCurrentUser = useAppStore((state) => state.setCurrentUser);
+
   const { toast } = useToast();
 
   const [showPassword, setShowPassword] = useState(false);
@@ -46,29 +47,30 @@ export default function Login() {
     setSubmitting(true);
 
     try {
-      const res = await api.post<LoginResponse>("/auth/login", {
+      const { data } = await api.post<LoginResponse>("/auth/login", {
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
       });
 
-      const accessToken =
-        (res as any)?.accessToken ?? (res as any)?.tokens?.accessToken;
-      if (!accessToken) {
+      const { accessToken, user } = data;
+
+      if (!accessToken || !user) {
         throw new Error("Token não retornado pelo servidor");
       }
 
       localStorage.setItem("accessToken", accessToken);
-      if ((res as any)?.user) {
-        localStorage.setItem("user", JSON.stringify((res as any).user));
-      }
+      localStorage.setItem("user", JSON.stringify(user));
+
+      setCurrentUser(user);
 
       toast({
-        title: "Bem-vindo(a)!",
+        title: `Bem-vindo(a), ${user.name}!`, // Customized welcome message
         description: "Login realizado com sucesso.",
       });
 
       navigate("/");
     } catch (err: any) {
+      console.log("ERRO", err.message);
       const msg =
         err?.response?.data?.message ??
         err?.message ??

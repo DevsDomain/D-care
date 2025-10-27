@@ -1,72 +1,68 @@
-"use client";
-
-import { useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState, useEffect } from "react";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ImagePlus, X } from "lucide-react";
 
 type AvatarInputProps = {
-  value?: File | null;
+  value: File | null;
+  label?: string;
+  defaultUrl?: string;   // 👈 new prop
   onChange: (file: File | null) => void;
-  fallback?: string; // ex: iniciais do usuário
 };
 
-export function AvatarInput({
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  value,
-  onChange,
-  fallback = "?",
-}: AvatarInputProps) {
+export function AvatarInput({ value, label, defaultUrl, onChange }: AvatarInputProps) {
   const [preview, setPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    onChange(file);
-
-    if (file) {
-      const url = URL.createObjectURL(file);
-      setPreview(url);
+  // create preview when a file is selected
+  useEffect(() => {
+    if (value) {
+      const objectUrl = URL.createObjectURL(value);
+      setPreview(objectUrl);
+      return () => URL.revokeObjectURL(objectUrl);
+    } else {
+      setPreview(null);
     }
-  };
+  }, [value]);
 
-  const triggerFileSelect = () => {
-    fileInputRef.current?.click();
-  };
+  const imageSrc = preview || defaultUrl || null;
 
   return (
-    <div className="flex flex-col items-center space-y-2">
-      <Label>Foto do Idoso</Label>
+    <div className="space-y-2">
+      {label && <Label>{label}</Label>}
 
-      <Avatar className="w-24 h-24 border-2 border-healthcare-light">
-        {preview ? (
-          <AvatarImage src={preview} alt="Avatar preview" />
-        ) : (
-          <AvatarFallback>
-            <User className="w-6 h-6" />
-            {fallback}
-          </AvatarFallback>
-        )}
-      </Avatar>
+      <div className="flex items-center gap-4">
+        <div className="w-20 h-20 rounded-full overflow-hidden bg-muted flex items-center justify-center">
+          {imageSrc ? (
+            <img
+              src={imageSrc}
+              alt="Avatar preview"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <ImagePlus className="w-6 h-6 text-muted-foreground" />
+          )}
+        </div>
 
-      <input
-        type="file"
-        accept="image/*"
-        className="hidden"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-      />
-
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        onClick={triggerFileSelect}
-      >
-        <Camera className="w-4 h-4 mr-2" />
-        Alterar Foto
-      </Button>
+        <div className="flex flex-col gap-2">
+          <Input
+            id="avatar"
+            type="file"
+            accept="image/*"
+            onChange={(e) => onChange(e.target.files?.[0] || null)}
+          />
+          {value && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => onChange(null)}
+            >
+              <X className="w-4 h-4 mr-1" /> Remover
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

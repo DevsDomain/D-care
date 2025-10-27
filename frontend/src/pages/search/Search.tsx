@@ -3,13 +3,10 @@ import { useNavigate } from "react-router-dom";
 import {
   Search as SearchIcon,
   Filter,
-  MapPin,
-  Clock,
   Shield,
   Star,
   AlertTriangle,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +31,8 @@ import { EmptyState } from "@/components/common/EmptyState";
 import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 import { mockApi } from "@/lib/api/mock";
 import type { Caregiver, SearchFilters } from "@/lib/types";
-import { useSearchFilters } from "@/lib/stores/appStore";
+import { useAppStore } from "@/lib/stores/appStore";
+
 
 export default function Search() {
   const navigate = useNavigate();
@@ -42,7 +40,8 @@ export default function Search() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const globalFilters = useSearchFilters();
+  const useSearchFilters = useAppStore((state) => state.searchFilters);
+  const globalFilters = useSearchFilters || {};
 
   const [filters, setFilters] = useState<SearchFilters>({
     distanceKm: 10,
@@ -71,7 +70,7 @@ export default function Search() {
     }
   };
 
-  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
+  const handleFilterChange = (key: keyof SearchFilters, value: unknown) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,

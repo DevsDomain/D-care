@@ -1,3 +1,5 @@
+
+//pages/ElderRegistration FOR EXAMPLE OF HOW TO CREATE AN EDIT PAGE
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -224,6 +226,7 @@ export default function ElderRegistration() {
               <CardContent className="space-y-4">
                 <AvatarInput
                   value={formData.avatarFile}
+                  label="Foto do Idoso"
                   onChange={(file) =>
                     setFormData((prev) => ({ ...prev, avatarFile: file }))
                   }

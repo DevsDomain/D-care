@@ -1,18 +1,21 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
   MapPin,
   User,
-  Settings,
+  BriefcaseMedical,
   Bell,
   CheckCircle,
   XCircle,
   AlertCircle,
   TrendingUp,
+  Hospital,
+  UserRoundPen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +25,7 @@ import { useToast } from "@/components/hooks/use-toast";
 import { mockApi } from "@/lib/api/mock";
 import type { Booking } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
+import { useNavigate } from "react-router-dom";
 
 export default function CaregiverDashboard() {
   const [bookingRequests, setBookingRequests] = useState<Booking[]>([]);
@@ -32,19 +36,20 @@ export default function CaregiverDashboard() {
   const { toast } = useToast();
   const { currentUser } = useAppStore();
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     loadDashboardData();
-  }, []);
+  }, [currentUser?.name]);
 
   const loadDashboardData = async () => {
-    if (!currentUser) return;
-
+    console.log(currentUser);
     try {
       // Mock data for caregiver dashboard
       const mockRequests: Booking[] = [
         {
           id: "3",
-          caregiverId: currentUser.id,
+          caregiverId: currentUser!.id,
           elderId: "1",
           dateISO: "2024-09-10T14:00:00Z",
           duration: 4,
@@ -64,19 +69,17 @@ export default function CaregiverDashboard() {
           elder: {
             id: "1",
             name: "José da Silva",
-            age: 78,
             conditions: ["Diabetes", "Hypertension"],
             medications: ["Metformin", "Losartan"],
-            emergencyContact: {
-              name: "Maria da Silva",
-              phone: "+55 11 98888-0001",
-              relation: "Daughter",
-            },
+            avatarFile: null,
+            birthDate: new Date(),
+
             address: {
               street: "Rua das Flores, 123",
               city: "São Paulo",
               state: "SP",
               zipCode: "01234-567",
+              number: "123",
             },
             preferences: {
               gender: "female",
@@ -90,7 +93,7 @@ export default function CaregiverDashboard() {
       const mockUpcoming: Booking[] = [
         {
           id: "4",
-          caregiverId: currentUser.id,
+          caregiverId: currentUser!.id,
           elderId: "1",
           dateISO: "2024-09-11T09:00:00Z",
           duration: 3,
@@ -109,19 +112,16 @@ export default function CaregiverDashboard() {
           elder: {
             id: "1",
             name: "José da Silva",
-            age: 78,
             conditions: ["Diabetes"],
             medications: ["Metformin"],
-            emergencyContact: {
-              name: "Maria da Silva",
-              phone: "+55 11 98888-0001",
-              relation: "Daughter",
-            },
+            avatarFile: null,
+            birthDate: new Date(),
             address: {
               street: "Rua das Flores, 123",
               city: "São Paulo",
               state: "SP",
               zipCode: "01234-567",
+              number: "123",
             },
             preferences: {},
             createdAt: "2024-01-15T10:00:00Z",
@@ -194,7 +194,7 @@ export default function CaregiverDashboard() {
     return (
       <div className="min-h-screen bg-background pb-24">
         <div className="p-4">
-          <CaregiverCardSkeleton  />
+          <CaregiverCardSkeleton />
         </div>
       </div>
     );
@@ -213,8 +213,12 @@ export default function CaregiverDashboard() {
               Bem-vindo de volta, {currentUser?.name}
             </p>
           </div>
-          <Button variant="outline" size="icon">
-            <Settings className="w-5 h-5" />
+          <Button variant="outline" size="icon" title="Editar Cuidador">
+            <UserRoundPen
+              className="w-5 h-5"
+              onClick={() => navigate("/editCaregiver")}
+              
+            />
           </Button>
         </div>
 
@@ -314,7 +318,7 @@ export default function CaregiverDashboard() {
                       <div className="flex-1 space-y-3">
                         <div>
                           <h3 className="font-semibold text-foreground">
-                            {booking.elder?.name}, {booking.elder?.age} anos
+                            {booking.elder?.name},88 anos
                           </h3>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                             <Calendar className="w-4 h-4" />

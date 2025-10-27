@@ -8,7 +8,7 @@ export const api = axios.create({
 
 // Desembrulha data (api.post(...)-> retorna data direto)
 api.interceptors.response.use(
-  (res) => res.data,
+  (res) => res,
   (err) => {
     const msg =
       err?.response?.data?.message ??
