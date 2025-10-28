@@ -22,9 +22,12 @@ import { AvatarInput } from "@/components/avatar-input";
 import { getAdressByCEP } from "@/lib/api/getAdressByCEP";
 import { useAppStore } from "@/lib/stores/appStore";
 import type { Caregiver } from "@/lib/types";
-import { api } from "@/lib/api/api";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  fetchCaregiverProfile,
+  updateCaregiverProfile,
+} from "@/lib/api/caregiver";
 
 export default function CaregiverEdition() {
   const navigate = useNavigate();
@@ -117,25 +120,23 @@ export default function CaregiverEdition() {
   useEffect(() => {
     const fetchCaregiver = async () => {
       try {
-        const { data } = await api.get(`/perfis/${currentUser?.id}`);
-        console.log(data);
+        const caregiver = await fetchCaregiverProfile(currentUser!.id);
+        console.log("CAREGIVER", caregiver);
         setFormData({
-          crm_coren: data.caregiver[0].crmCoren,
-          bio: data.caregiver[0].bio,
-          address: data.caregiver[0].address,
-          city: data.caregiver[0].city,
-          state: data.caregiver[0].state,
-          zipCode: data.caregiver[0].zipCode,
-          avatarPath: data.caregiver[0].avatarPath,
-          userId: data.caregiver[0].id,
-          avatarUrl: data.caregiver[0].avatarPath,
-          skills: data.caregiver[0].skills || [],
-          specializations: data.caregiver[0].specializations || [],
-          priceRange: data.caregiver[0].priceRange || "",
-          experience: data.caregiver[0].experience || "",
+          crm_coren: caregiver.crm_coren || "",
+          bio: caregiver.bio,
+          address: caregiver.address,
+          city: caregiver.city,
+          state: caregiver.state,
+          zipCode: caregiver.zipCode,
+          avatarPath: caregiver.avatarPath,
+          userId: caregiver.userId,
+          avatarUrl: caregiver.avatarUrl,
+          skills: caregiver.skills || [],
+          specializations: caregiver.specializations || [],
+          priceRange: caregiver.priceRange || "",
+          experience: caregiver.experience || "",
         });
-
-        console.log("RESULTADO", data);
       } catch (error) {
         console.error("Error loading caregiver:", error);
       }
@@ -195,9 +196,11 @@ export default function CaregiverEdition() {
 
       if (avatarFile) form.append("avatar", avatarFile);
 
-      await api.patch(`/perfis/caregiver/${formData.userId}`, form, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await updateCaregiverProfile(
+        formData.userId!,
+        formData,
+        avatarFile || undefined
+      );
 
       toast({
         title: "Perfil atualizado!",
