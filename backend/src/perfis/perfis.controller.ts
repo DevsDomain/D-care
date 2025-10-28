@@ -51,6 +51,25 @@ export class PerfisController {
     return this.perfisService.updateCaregiver(userId, createCaregiverDto, file);
   }
 
+  @Patch('caregiver/:id/availability')
+  async toggleCaregiverAvailability(
+    @Param('id') id: string,
+    @Body('available') available: boolean,
+  ) {
+    return this.perfisService.toggleCaregiverAvailabilityService(id, available);
+  }
+
+  @Patch('caregiver/:id/emergency-availability')
+  async toggleCaregiverEmergencyAvailability(
+    @Param('id') id: string,
+    @Body('available') available: boolean,
+  ) {
+    return this.perfisService.toggleCaregiverEmergencyAvailabilityService(
+      id,
+      available,
+    );
+  }
+
   @Get()
   async findAll() {
     return this.perfisService.findAllProfiles();
