@@ -1,4 +1,3 @@
-// src/App.tsx
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
@@ -20,11 +19,10 @@ import IvcfAssessment from "./pages/ivcf/IvcfAssessment";
 import { PrivateRoute } from "./components/private-route";
 import DashboardRouter from "./pages/DashboardRouter";
 import CaregiverEdition from "./pages/caregiver/CaregiverEdition";
-import ElderEditWizard from "@/pages/elder/ElderEditWizard";
 
 const queryClient = new QueryClient();
 
-// 🔹 Wrapper para esconder a BottomNav em certas rotas
+// 🔹 Criamos um wrapper para esconder a BottomNav em certas rotas
 function AppLayout() {
   const location = useLocation();
 
@@ -69,14 +67,6 @@ function AppLayout() {
           }
         />
         <Route
-          path="/elder/:elderId/edit"
-          element={
-            <PrivateRoute roles={["FAMILY"]}>
-              <ElderEditWizard />
-            </PrivateRoute>
-          }
-        />
-        <Route
           path="/ivcf/:elderId"
           element={
             <PrivateRoute roles={["FAMILY"]}>
@@ -85,11 +75,17 @@ function AppLayout() {
           }
         />
 
-        {/* Dashboard raiz (decide por role) */}
-        <Route path="/" element={<DashboardRouter />} />
-
         {/* Rotas CAREGIVER */}
         <Route
+          path="/"
+          element={
+              <DashboardRouter />
+          }
+        />
+        
+
+             {/* Perfil (ambos podem acessar) */}
+             <Route
           path="/editCaregiver"
           element={
             <PrivateRoute roles={["CAREGIVER"]}>
@@ -98,7 +94,7 @@ function AppLayout() {
           }
         />
 
-        {/* Perfil (ambos) */}
+        {/* Perfil (ambos podem acessar) */}
         <Route
           path="/profile"
           element={
@@ -108,7 +104,7 @@ function AppLayout() {
           }
         />
 
-        {/* Guia (ambos) */}
+        {/* Guia (ambos podem acessar) */}
         <Route
           path="/guide"
           element={
@@ -118,7 +114,7 @@ function AppLayout() {
           }
         />
 
-        {/* 404 */}
+        {/* Catch-all */}
         <Route path="*" element={<NotFound />} />
       </Routes>
 

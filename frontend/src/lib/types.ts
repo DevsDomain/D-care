@@ -36,7 +36,7 @@ export interface Caregiver {
   experience: string; // e.g., "5+ years"
   priceRange: string; // e.g., "R$ 25-35/hora"
   emergency: boolean; // Available for emergency calls
-  availability: TimeSlot[];
+  availability: boolean;
   bio: string;
   phone: string;
   languages: string[];
