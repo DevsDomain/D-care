@@ -1,13 +1,7 @@
+// src/idosos/idosos.controller.ts
 import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  UseInterceptors,
-  UploadedFile,
+  Controller, Post, Get, Patch, Delete, Body, Param,
+  UseInterceptors, UploadedFile,
 } from '@nestjs/common';
 import { IdososService } from './idosos.service';
 import { CreateElderDto } from './dto/create-elder.dto';
@@ -18,38 +12,34 @@ import { FileInterceptor } from '@nestjs/platform-express';
 export class IdososController {
   constructor(private readonly idososService: IdososService) {}
 
-  // TODO: Add JwtAuthGuard
   @Post()
   @UseInterceptors(FileInterceptor('avatar'))
-  async create(
-    @Body() createElderDto: CreateElderDto, // temporário, vamos converter
-    @UploadedFile() file?: Express.Multer.File,
-  ): Promise<any> {
-    return this.idososService.createElder(createElderDto, file);
+  create(@Body() dto: CreateElderDto, @UploadedFile() file?: Express.Multer.File) {
+    return this.idososService.createElder(dto, file);
   }
 
   @Get()
-  async findAll() {
+  findAll() {
     return this.idososService.findAllElders();
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  findOne(@Param('id') id: string) {
     return this.idososService.findElderById(id);
   }
 
-  // TODO: Add JwtAuthGuard
   @Patch(':id')
-  async update(
+  @UseInterceptors(FileInterceptor('avatar'))
+  update(
     @Param('id') id: string,
-    @Body() updateElderDto: UpdateElderDto,
+    @Body() dto: UpdateElderDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
-    return this.idososService.updateElder(id, updateElderDto);
+    return this.idososService.updateElder(id, dto, file);
   }
 
-  // TODO: Add JwtAuthGuard
   @Delete(':id')
-  async delete(@Param('id') id: string) {
+  delete(@Param('id') id: string) {
     return this.idososService.deleteElder(id);
   }
 }
