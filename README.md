@@ -12,9 +12,9 @@ Cada entrega será realizada a partir da criação de uma **tag** conforme rela�
 
 | Sprint | Início | Previsão de entrega | Status | Release | Kanban | BurnDown |
 |:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| 01 | 16/09/2025 | 06/10/2025 | ​​​​☑️ Concluído | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://private-user-images.githubusercontent.com/126696706/498062319-be351a9f-1055-462e-aa08-881a9113c934.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NTk3OTg2NjcsIm5iZiI6MTc1OTc5ODM2NywicGF0aCI6Ii8xMjY2OTY3MDYvNDk4MDYyMzE5LWJlMzUxYTlmLTEwNTUtNDYyZS1hYTA4LTg4MWE5MTEzYzkzNC5wbmc_WC1BbXotQWxnb3JpdGhtPUFXUzQtSE1BQy1TSEEyNTYmWC1BbXotQ3JlZGVudGlhbD1BS0lBVkNPRFlMU0E1M1BRSzRaQSUyRjIwMjUxMDA3JTJGdXMtZWFzdC0xJTJGczMlMkZhd3M0X3JlcXVlc3QmWC1BbXotRGF0ZT0yMDI1MTAwN1QwMDUyNDdaJlgtQW16LUV4cGlyZXM9MzAwJlgtQW16LVNpZ25hdHVyZT04YjIzNzRkMjMxNDdhYzAwODdhZjRiOTlkMDg5YjY3MzAxY2FlYjhmMTU0OTExNThlY2U1MDM2OTBhNzUyZjA1JlgtQW16LVNpZ25lZEhlYWRlcnM9aG9zdCJ9.eCbZlPmtL8B5R0a4jGL_Y8h7irohyuN-omstv695POc) |
-| 02 | 13/10/2025 | 02/11/2025 | 🚧 A iniciar | [Ver release 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | [Ver BurnDown 2](https://github.com/DevsDomain/D-care) |
-| 03 | 06/11/2025 | 23/11/2025 | 🚧 A iniciar | [Ver release 3](https://github.com/DevsDomain/D-care) | [Ver Sprint 3](https://github.com/DevsDomain/D-care) | [Ver BurnDown 3](https://github.com/DevsDomain/D-care) |
+| 01 | 16/09/2025 | 06/10/2025 | ​​​​☑️ Concluído | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint1.png?raw=true) |
+| 02 | 13/10/2025 | 02/11/2025 | ⏳ Em andamento | [Ver release 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | Ver BurnDown 2 |
+| 03 | 06/11/2025 | 23/11/2025 | 🚧 A iniciar | Ver release 3 | Ver Sprint 3 | Ver BurnDown 3 |
 
 ## ✍️ Product Backlog
 O Product Backlog segue o padrão de priorização:
@@ -28,18 +28,18 @@ O Product Backlog segue o padrão de priorização:
 ## 👤 Usuário / Sistema
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
-| US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 7            | 5               | In Progress  |
-| US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | In Progress  |
+| US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 7            | 5              | Done  |
+| US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | Done  |
 | US13 | Como usuário, quero consultar uma cartilha com IA                            | Alta         | 10           | 10              | In Progress  |
 | US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | In Progress  |
-| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | In Progress  |
+| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | To Do  |
 
 ---
 
 ## 🧑‍⚕️ Cuidador
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
-| US04 | Como cuidador, quero editar meu perfil (dados, geolocalização, CRM/COREN, agenda) | Alta        | 8            | 8               | To Do        |
+| US04 | Como cuidador, quero editar meu perfil (dados, geolocalização, CRM/COREN, agenda) | Alta        | 8            | 8          | In Progress   |
 | US06 | Como cuidador, quero definir disponibilidade (agenda) e emergências          | Alta        | 7            | 7               | To Do        |
 | US10 | Como cuidador, quero aceitar/recusar solicitações de agendamento             | Baixa       | 7            | 8               | To Do        |
 
@@ -49,13 +49,13 @@ O Product Backlog segue o padrão de priorização:
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
 | US03 | Como família, quero registrar um idoso (dados pessoais/saúde)                | Média        | 7            | 7               | Done         |
-| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | To Do        |
-| US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | To Do        |
-| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | To Do        |
+| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | In Progress  |
+| US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | In Progress  |
+| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | In Progress  |
 | US09 | Como família, quero agendar um cuidador em data/hora                         | Alta         | 6            | 9               | To Do        |
 | US11 | Como família, quero avaliar o cuidador após atendimento                      | Baixa        | 4            | 5               | To Do        |
 | US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | To Do        |
-| US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | To Do        |
+| US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | In Progress  |
 | US17 | Como família, quero visualizar meus agendamentos (futuros e passados)        | Média        | 7            | 8               | To Do        |
 
 
@@ -72,18 +72,11 @@ O Product Backlog segue o padrão de priorização:
 
 ## *📌 3. Priorização das Histórias de Usuário*
 
-| Prioridade    | Histórias de Usuário                     |
-| ------------- | ---------------------------------------- |
-| *A (Alta)*  | US07, US09, US13 |
-| *M (Média)* | US01, US03, US04, US05, US06, US08, US10, US11, US15 |                         |
-| *B (Baixa)* | US02, US12, US14|
-
-
 | Prioridade    | Histórias de Usuário                          |
 | ------------- | --------------------------------------------- |
-| *A (Alta)*    | US01, US02, US03, US04, US06, US07, US09, US13, US17 |
-| *M (Média)*   | US05, US08, US10, US11, US12, US15, US16       |
-| *B (Baixa)*   | US14                                           |
+| *A (Alta)*    | US04, US06, US07, US09, US13 |
+| *M (Média)*   | US01, US03, US08, US15, US16, US17 |
+| *B (Baixa)*   | US02, US05, US10, US11, US12, US14                                           |
 
 ## 👾⋆˚ Tecnologias utilizadas ˖°👾
 

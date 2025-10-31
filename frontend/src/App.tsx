@@ -19,29 +19,33 @@ import IvcfAssessment from "./pages/ivcf/IvcfAssessment";
 import { PrivateRoute } from "./components/private-route";
 import DashboardRouter from "./pages/DashboardRouter";
 import CaregiverEdition from "./pages/caregiver/CaregiverEdition";
+import ElderEdit from "./pages/elder/ElderEdit"; // ✅ edição do idoso
 
 const queryClient = new QueryClient();
 
-// 🔹 Criamos um wrapper para esconder a BottomNav em certas rotas
+// Wrapper que controla onde esconder a BottomNavigation
 function AppLayout() {
   const location = useLocation();
 
-  // rotas onde NÃO queremos mostrar a barra
+  // Rotas sem bottom nav (ajuste se quiser esconder também em outras telas)
   const hideBottomNav = ["/login", "/register"];
   const shouldHide = hideBottomNav.includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <Routes>
-        {/* Auth routes */}
+        {/* Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Rotas abertas */}
+        {/* Abertas */}
         <Route path="/search" element={<Search />} />
         <Route path="/caregiver/:id" element={<CaregiverProfile />} />
 
-        {/* Rotas FAMILY */}
+        {/* Raiz resolve para o dashboard (Family ou Caregiver) */}
+        <Route path="/" element={<DashboardRouter />} />
+
+        {/* FAMILY */}
         <Route
           path="/book/:caregiverId"
           element={
@@ -67,6 +71,14 @@ function AppLayout() {
           }
         />
         <Route
+          path="/elders/:id/edit" // ✅ nova rota de edição
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <ElderEdit />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/ivcf/:elderId"
           element={
             <PrivateRoute roles={["FAMILY"]}>
@@ -75,17 +87,12 @@ function AppLayout() {
           }
         />
 
+        {/* CAREGIVER */}
         {/* Rotas CAREGIVER */}
-        <Route
-          path="/"
-          element={
-              <DashboardRouter />
-          }
-        />
-        
+        <Route path="/" element={<DashboardRouter />} />
 
-             {/* Perfil (ambos podem acessar) */}
-             <Route
+        {/* Perfil (ambos podem acessar) */}
+        <Route
           path="/editCaregiver"
           element={
             <PrivateRoute roles={["CAREGIVER"]}>
@@ -94,7 +101,7 @@ function AppLayout() {
           }
         />
 
-        {/* Perfil (ambos podem acessar) */}
+        {/* Ambos */}
         <Route
           path="/profile"
           element={
@@ -103,8 +110,6 @@ function AppLayout() {
             </PrivateRoute>
           }
         />
-
-        {/* Guia (ambos podem acessar) */}
         <Route
           path="/guide"
           element={
@@ -114,11 +119,10 @@ function AppLayout() {
           }
         />
 
-        {/* Catch-all */}
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* só renderiza se não for login/register */}
       {!shouldHide && <BottomNavigation />}
     </div>
   );

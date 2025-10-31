@@ -23,27 +23,63 @@ import { CaregiverCardSkeleton } from "@/components/common/LoadingSkeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { useToast } from "@/components/hooks/use-toast";
 import { mockApi } from "@/lib/api/mock";
-import type { Booking } from "@/lib/types";
+import type { Caregiver, Booking } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
 import { useNavigate } from "react-router-dom";
+import {
+  fetchCaregiverProfile,
+  toggleCaregiverAvailability,
+  toggleCaregiverEmergencyAvailability,
+} from "@/lib/api/caregiver";
 
 export default function CaregiverDashboard() {
   const [bookingRequests, setBookingRequests] = useState<Booking[]>([]);
   const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
+  const [caregiverUser, setCaregiverUser] = useState<Partial<Caregiver>>({});
+  const [emergencyAvailable, setEmergencyAvailable] = useState(
+    caregiverUser.emergency
+  );
+  const [activeToday, setActiveToday] = useState(caregiverUser.availability);
   const [loading, setLoading] = useState(true);
-  const [emergencyAvailable, setEmergencyAvailable] = useState(true);
-  const [activeToday, setActiveToday] = useState(true);
   const { toast } = useToast();
   const { currentUser } = useAppStore();
 
   const navigate = useNavigate();
 
+  // Load existing caregiver data
   useEffect(() => {
-    loadDashboardData();
+    const fetchCaregiver = async () => {
+      try {
+        const caregiver = await fetchCaregiverProfile(currentUser!.id);
+
+        setActiveToday(caregiver.availability);
+        setEmergencyAvailable(caregiver.emergency);
+        setCaregiverUser(caregiver);
+        loadDashboardData();
+      } catch (error) {
+        console.error("Error loading caregiver:", error);
+      }
+    };
+
+    if (currentUser?.role === "CAREGIVER") {
+      fetchCaregiver();
+    }
   }, [currentUser?.name]);
 
+  const handleActive = async () => {
+    await toggleCaregiverAvailability(caregiverUser.userId!, !activeToday);
+    setActiveToday(!activeToday);
+  };
+
+  const handleEmergency = async () => {
+    await toggleCaregiverEmergencyAvailability(
+      caregiverUser.userId!,
+      !emergencyAvailable
+    );
+    setEmergencyAvailable(!emergencyAvailable);
+  };
+
   const loadDashboardData = async () => {
-    console.log(currentUser);
     try {
       // Mock data for caregiver dashboard
       const mockRequests: Booking[] = [
@@ -204,7 +240,18 @@ export default function CaregiverDashboard() {
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-around">
+          <Avatar className="border-2 border-white/20 w-16 h-16">
+            <AvatarImage
+              width={200}
+              height={200}
+              src={caregiverUser.avatarUrl}
+              alt={caregiverUser.name || "userName"}
+            />
+            <AvatarFallback className="bg-white/20 text-white">
+              {caregiverUser.name}
+            </AvatarFallback>
+          </Avatar>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               Painel do Cuidador
@@ -217,7 +264,6 @@ export default function CaregiverDashboard() {
             <UserRoundPen
               className="w-5 h-5"
               onClick={() => navigate("/editCaregiver")}
-              
             />
           </Button>
         </div>
@@ -238,7 +284,7 @@ export default function CaregiverDashboard() {
                 </p>
               </div>
             </div>
-            <Switch checked={activeToday} onCheckedChange={setActiveToday} />
+            <Switch checked={activeToday} onCheckedChange={handleActive} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-medical-critical/10 rounded-2xl border border-medical-critical/20">
@@ -253,7 +299,7 @@ export default function CaregiverDashboard() {
             </div>
             <Switch
               checked={emergencyAvailable}
-              onCheckedChange={setEmergencyAvailable}
+              onCheckedChange={handleEmergency}
             />
           </div>
         </div>

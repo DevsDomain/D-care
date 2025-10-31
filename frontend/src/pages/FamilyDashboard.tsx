@@ -128,7 +128,7 @@ function getConditionLabel(c: any): string {
 function normalizeElder(e: ElderApi) {
   return {
     ...e,
-    familyId: pickFamilyIdFromElder(e), // garante presença
+    familyId: pickFamilyIdFromElder(e),
     birthDate: e.birthDate ?? e.birthdate ?? "",
     photo: e.photo ?? e.avatarPath ?? null,
     conditions: extractConditions(e),
@@ -153,7 +153,6 @@ export default function FamilyDashboard() {
     const fetchElders = async () => {
       if (!currentUser || (currentUser.role !== "FAMILY" && currentUser.role !== "family")) return;
 
-      // familyId do usuário logado (tenta múltiplas formas)
       const familyId = pickFamilyIdFromUser(currentUser);
       const userId = (currentUser as any)?.id ?? (currentUser as any)?.userId ?? null;
 
@@ -185,7 +184,6 @@ export default function FamilyDashboard() {
               const missing = (Array.isArray(saved) ? saved : []).filter(
                 (s: any) => s?.id && !onlyMine.some((e) => e.id === s.id)
               );
-              // normaliza os que vieram do localStorage antes de exibir
               onlyMine = [
                 ...onlyMine,
                 ...missing.map((m: any) =>
@@ -230,6 +228,7 @@ export default function FamilyDashboard() {
   const handleFindCaregiver = () => navigate("/search");
   const handleViewBookings = () => navigate("/bookings");
   const handleOpenGuide = () => navigate("/guide");
+  const handleEditElder = (elderId: string) => navigate(`/elders/${elderId}/edit`);
 
   if (isLoading) {
     return (
@@ -264,8 +263,7 @@ export default function FamilyDashboard() {
                 Bem-vindo ao D-care
               </h2>
               <p className="text-muted-foreground mb-6">
-                Para começar, vamos cadastrar as informações da pessoa que você
-                cuida
+                Para começar, vamos cadastrar as informações da pessoa que você cuida
               </p>
               <Button
                 variant="healthcare"
@@ -285,9 +283,7 @@ export default function FamilyDashboard() {
               <CardContent className="p-4 text-center">
                 <Search className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
                 <h3 className="font-medium text-sm">Buscar Cuidadores</h3>
-                <p className="text-xs text-muted-foreground">
-                  Profissionais verificados
-                </p>
+                <p className="text-xs text-muted-foreground">Profissionais verificados</p>
               </CardContent>
             </Card>
 
@@ -295,9 +291,7 @@ export default function FamilyDashboard() {
               <CardContent className="p-4 text-center">
                 <Activity className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
                 <h3 className="font-medium text-sm">Avaliação IVCF-20</h3>
-                <p className="text-xs text-muted-foreground">
-                  Avalie a independência
-                </p>
+                <p className="text-xs text-muted-foreground">Avalie a independência</p>
               </CardContent>
             </Card>
 
@@ -305,9 +299,7 @@ export default function FamilyDashboard() {
               <CardContent className="p-4 text-center">
                 <MessageCircle className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
                 <h3 className="font-medium text-sm">Guia IA</h3>
-                <p className="text-xs text-muted-foreground">
-                  Orientações especializadas
-                </p>
+                <p className="text-xs text-muted-foreground">Orientações especializadas</p>
               </CardContent>
             </Card>
 
@@ -315,9 +307,7 @@ export default function FamilyDashboard() {
               <CardContent className="p-4 text-center">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
                 <h3 className="font-medium text-sm">Agendamentos</h3>
-                <p className="text-xs text-muted-foreground">
-                  Gerencie consultas
-                </p>
+                <p className="text-xs text-muted-foreground">Gerencie consultas</p>
               </CardContent>
             </Card>
           </div>
@@ -341,10 +331,7 @@ export default function FamilyDashboard() {
 
             <div className="flex items-center gap-3">
               <Avatar className="border-2 border-white/20">
-                <AvatarImage
-                  src={currentUser.photo}
-                  alt={currentUser.name || "userName"}
-                />
+                <AvatarImage src={currentUser.photo} alt={currentUser.name || "userName"} />
                 <AvatarFallback className="bg-white/20 text-white">
                   {getInitials(currentUser.name)}
                 </AvatarFallback>
@@ -444,9 +431,7 @@ export default function FamilyDashboard() {
                         <h3 className="font-semibold text-lg text-foreground mb-1 truncate">
                           {elder.name}
                         </h3>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {age}
-                        </p>
+                        <p className="text-sm text-muted-foreground mb-2">{age}</p>
 
                         {/* Condições (até 3 + “+N”) */}
                         <div className="flex flex-wrap gap-2 mb-3">
@@ -454,7 +439,7 @@ export default function FamilyDashboard() {
                             <>
                               {conditions.slice(0, 3).map((c: any, idx: number) => (
                                 <Badge
-                                  key={idx}
+                                  key={`${elder.id}-cond-${idx}`}
                                   variant="outline"
                                   className="text-xs rounded-full px-3 py-1"
                                 >
@@ -487,12 +472,11 @@ export default function FamilyDashboard() {
                             <Activity className="w-4 h-4 mr-1" />
                             IVCF-20
                           </Button>
+
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() =>
-                              navigate(`/elder/register?elderId=${elder.id}`)
-                            }
+                            onClick={() => handleEditElder(elder.id)}
                           >
                             <User className="w-4 h-4 mr-1" />
                             Editar
@@ -509,9 +493,7 @@ export default function FamilyDashboard() {
 
         {/* Status */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Atividade Recente
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">Atividade Recente</h2>
 
           <Card className="bg-gradient-to-r from-medical-success/10 to-healthcare-soft/30 border-medical-success/20">
             <CardContent className="p-4">

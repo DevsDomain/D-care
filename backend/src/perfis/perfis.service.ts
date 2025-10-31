@@ -38,6 +38,39 @@ export class PerfisService {
     });
   }
 
+  async toggleCaregiverAvailabilityService(id: string, available: boolean) {
+    const caregiver = await this.prisma.caregivers.findUnique({
+      where: { id },
+    });
+
+    if (!caregiver) {
+      throw new NotFoundException(`Caregiver with ID ${id} not found`);
+    }
+
+    return this.prisma.caregivers.update({
+      where: { id },
+      data: { availability: available },
+    });
+  }
+
+  async toggleCaregiverEmergencyAvailabilityService(
+    id: string,
+    available: boolean,
+  ) {
+    const caregiver = await this.prisma.caregivers.findUnique({
+      where: { id },
+    });
+
+    if (!caregiver) {
+      throw new NotFoundException(`Caregiver with ID ${id} not found`);
+    }
+
+    return this.prisma.caregivers.update({
+      where: { id },
+      data: { emergency: available },
+    });
+  }
+
   async updateCaregiver(
     id: string,
     dto: CreateCareGiverDto,
@@ -54,6 +87,7 @@ export class PerfisService {
 
     const geoData = await getCoordinatesFromZipCode(dto.zipCode);
 
+    console.log('ID DO CAREGIVER', id);
     const updateCare = await this.prisma.caregivers.update({
       where: { id },
       data: {
