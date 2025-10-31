@@ -30,9 +30,9 @@ import { CaregiverCard } from "@/components/common/CaregiverCard";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 import { mockApi } from "@/lib/api/mock";
+import { fetchCaregiversFromAPI } from "@/lib/api/search";
 import type { Caregiver, SearchFilters } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
-
 
 export default function Search() {
   const navigate = useNavigate();
@@ -58,13 +58,18 @@ export default function Search() {
   const searchCaregivers = async () => {
     try {
       setIsLoading(true);
-      const response = await mockApi.searchCaregivers(filters);
 
-      if (response.success && response.data) {
-        setCaregivers(response.data.data);
-      }
+      const response = await fetchCaregiversFromAPI({
+        maxDistance: filters.distanceKm ? filters.distanceKm * 1000 : undefined, // km → metros
+        minRating: filters.rating ?? undefined,
+        availableForEmergency: filters.emergency ?? undefined,
+        specialization: searchQuery || undefined,
+      });
+
+      setCaregivers(response);
     } catch (error) {
-      console.error("Failed to search caregivers:", error);
+      console.error("❌ Erro ao buscar cuidadores:", error);
+      setCaregivers([]);
     } finally {
       setIsLoading(false);
     }
@@ -78,11 +83,13 @@ export default function Search() {
   };
 
   const handleCaregiverSelect = (caregiver: Caregiver) => {
-    navigate(`/caregiver/${caregiver.id}`);
+    const userId = caregiver.userId;
+    navigate(`/caregiver/${userId}`);
   };
 
   const handleBookCaregiver = (caregiver: Caregiver) => {
-    navigate(`/book/${caregiver.id}`);
+    const userId = caregiver.userId;
+    navigate(`/book/${userId}`);
   };
 
   const filteredCaregivers = caregivers.filter(
@@ -298,7 +305,7 @@ export default function Search() {
             <div className="space-y-4">
               {filteredCaregivers.map((caregiver) => (
                 <CaregiverCard
-                  key={caregiver.id}
+                  key={caregiver.userId}
                   caregiver={caregiver}
                   onSelect={handleCaregiverSelect}
                   onBook={handleBookCaregiver}

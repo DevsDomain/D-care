@@ -8,6 +8,7 @@ import {
   Param,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { PerfisService } from './perfis.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
@@ -15,6 +16,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfessionalIdValidationPipe } from '../common/pipes/professional-id-validation.pipe';
 import { CreateCareGiverDto } from './dto/create-caregiver.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SearchCaregiversDto } from './dto/search-caregivers.dto';
 
 @Controller('perfis')
 export class PerfisController {
@@ -93,5 +95,13 @@ export class PerfisController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     return this.perfisService.deleteProfile(id);
+  }
+
+  @Get('caregivers/search')
+  async searchCaregivers(
+    @Query() query: SearchCaregiversDto,
+    @Param('userId') userId: string,
+  ) {
+    return await this.perfisService.searchCaregivers(userId, query);
   }
 }

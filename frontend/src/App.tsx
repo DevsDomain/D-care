@@ -88,6 +88,10 @@ function AppLayout() {
         />
 
         {/* CAREGIVER */}
+        {/* Rotas CAREGIVER */}
+        <Route path="/" element={<DashboardRouter />} />
+
+        {/* Perfil (ambos podem acessar) */}
         <Route
           path="/editCaregiver"
           element={

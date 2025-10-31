@@ -8,20 +8,23 @@ VALUES (uuid_generate_v4(), '1.0', 'Termos de uso do sistema D-Care, versão ini
 -- ===== USERS & PROFILES =====
 -- 5 Families
 INSERT INTO auth.users (id, email, password_hash, role) VALUES
-(uuid_generate_v4(), 'maria.silva@exemplo.com', '$2a$10$hashFakeSenha1', 'family'),
-(uuid_generate_v4(), 'joao.oliveira@exemplo.com', '$2a$10$hashFakeSenha2', 'family'),
-(uuid_generate_v4(), 'ana.costa@exemplo.com', '$2a$10$hashFakeSenha3', 'family'),
-(uuid_generate_v4(), 'carlos.souza@exemplo.com', '$2a$10$hashFakeSenha4', 'family'),
-(uuid_generate_v4(), 'fernanda.alves@exemplo.com', '$2a$10$hashFakeSenha5', 'family');
+(uuid_generate_v4(), 'maria.silva@exemplo.com', '$2a$10$hashFakeSenha1', 'FAMILY'),
+(uuid_generate_v4(), 'joao.oliveira@exemplo.com', '$2a$10$hashFakeSenha2', 'FAMILY'),
+(uuid_generate_v4(), 'ana.costa@exemplo.com', '$2a$10$hashFakeSenha3', 'FAMILY'),
+(uuid_generate_v4(), 'carlos.souza@exemplo.com', '$2a$10$hashFakeSenha4', 'FAMILY'),
+(uuid_generate_v4(), 'fernanda.alves@exemplo.com', '$2a$10$hashFakeSenha5', 'FAMILY');
 
--- 5 caregivers
+-- 5 Caregivers
 INSERT INTO auth.users (id, email, password_hash, role) VALUES
-(uuid_generate_v4(), 'cintia.enfermeira@exemplo.com', '$2a$10$hashFakeSenha6', 'caregiver'),
-(uuid_generate_v4(), 'roberto.medico@exemplo.com', '$2a$10$hashFakeSenha7', 'caregiver'),
-(uuid_generate_v4(), 'aline.fisioterapeuta@exemplo.com', '$2a$10$hashFakeSenha8', 'caregiver'),
-(uuid_generate_v4(), 'lucas.tecnico@exemplo.com', '$2a$10$hashFakeSenha9', 'caregiver'),
-(uuid_generate_v4(), 'juliana.psicologa@exemplo.com', '$2a$10$hashFakeSenha10', 'caregiver');
+(uuid_generate_v4(), 'cintia.enfermeira@exemplo.com', '$2a$10$hashFakeSenha6', 'CAREGIVER'),
+(uuid_generate_v4(), 'roberto.medico@exemplo.com', '$2a$10$hashFakeSenha7', 'CAREGIVER'),
+(uuid_generate_v4(), 'aline.fisioterapeuta@exemplo.com', '$2a$10$hashFakeSenha8', 'CAREGIVER'),
+(uuid_generate_v4(), 'lucas.tecnico@exemplo.com', '$2a$10$hashFakeSenha9', 'CAREGIVER'),
+(uuid_generate_v4(), 'juliana.psicologa@exemplo.com', '$2a$10$hashFakeSenha10', 'CAREGIVER');
 
+
+ALTER TABLE auth.user_profiles
+ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
 -- perfis
 INSERT INTO auth.user_profiles (user_id, name, phone, birthdate, gender)
@@ -47,6 +50,8 @@ SELECT id, 'Lucas Martins', '12998889900', '1987-05-27', 'male' FROM auth.users 
 INSERT INTO auth.user_profiles (user_id, name, phone, birthdate, gender)
 SELECT id, 'Juliana Pereira', '12999990011', '1991-08-14', 'female' FROM auth.users WHERE email='juliana.psicologa@exemplo.com';
 
+ALTER TABLE family.families
+ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
 -- ===== FAMILIES =====
 INSERT INTO family.families (user_id, address, city, state, zip_code, location) 
@@ -69,6 +74,8 @@ INSERT INTO family.families (user_id, address, city, state, zip_code, location)
 SELECT id, 'Rua Minas Gerais, 455', 'Jacareí', 'SP', '12322-210', ST_SetSRID(ST_MakePoint(-45.9712, -23.3075),4326)::GEOGRAPHY
 FROM auth.users WHERE email='fernanda.alves@exemplo.com';
 
+ALTER TABLE family.elders
+ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
 -- ===== ELDERS =====
 INSERT INTO family.elders (family_id, name, birthdate, medical_conditions, medications)
@@ -91,8 +98,10 @@ INSERT INTO family.elders (family_id, name, birthdate, medical_conditions, medic
 SELECT f.id, 'Lúcia Alves', '1947-12-05', '{"artrite":"severa"}', '{"ibuprofeno":"400mg"}'
 FROM family.families f JOIN auth.users u ON f.user_id=u.id WHERE u.email='fernanda.alves@exemplo.com';
 
+ALTER TABLE caregiver.caregivers
+ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
--- ===== caregiverS =====
+-- ===== CAREGIVERS =====
 INSERT INTO caregiver.caregivers (user_id, crm_coren, validated, bio, location)
 SELECT id, 'COREN-SP 123456', true, 'Enfermeira com 10 anos de experiência em cuidados domiciliares.', 
 ST_SetSRID(ST_MakePoint(-45.9701, -23.3041),4326)::GEOGRAPHY
@@ -118,6 +127,8 @@ SELECT id, 'CRP 112233', true, 'Psicóloga com foco em saúde mental de idosos.'
 ST_SetSRID(ST_MakePoint(-45.9722, -23.3049),4326)::GEOGRAPHY
 FROM auth.users WHERE email='juliana.psicologa@exemplo.com';
 
+ALTER TABLE caregiver.caregiver_availability 
+ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
 -- ===== AVAILABILITY =====
 INSERT INTO caregiver.caregiver_availability (caregiver_id, date, time_start, time_end, emergency)
@@ -126,6 +137,8 @@ SELECT id, CURRENT_DATE + 1, '08:00', '12:00', false FROM caregiver.caregivers L
 INSERT INTO caregiver.caregiver_availability (caregiver_id, date, time_start, time_end, emergency)
 SELECT id, CURRENT_DATE + 2, '14:00', '18:00', true FROM caregiver.caregivers LIMIT 5;
 
+ALTER TABLE appointments.appointments  
+ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
 -- ===== APPOINTMENTS =====
 -- Maria da Silva (família) marcou com Cíntia (enfermeira)
@@ -169,6 +182,9 @@ JOIN caregiver.caregivers c ON c.crm_coren='CRP 112233'
 JOIN auth.users u ON f.user_id=u.id WHERE u.email='fernanda.alves@exemplo.com';
 
 
+ALTER TABLE reviews.reviews 
+ALTER COLUMN id SET DEFAULT uuid_generate_v4();
+
 -- ===== REVIEWS =====
 INSERT INTO reviews.reviews (appointment_id, family_id, caregiver_id, rating, comment)
 SELECT a.id, a.family_id, a.caregiver_id, 5, 'Atendimento excelente, muito atenciosa!'
@@ -182,6 +198,8 @@ FROM appointments.appointments a
 JOIN caregiver.caregivers c ON a.caregiver_id=c.id
 WHERE c.crm_coren='CRM-SP 654321' LIMIT 1;
 
+ALTER TABLE knowledge.faq_ai_queries
+ALTER COLUMN id SET DEFAULT uuid_generate_v4();
 
 -- ===== FAQ SIMULATION =====
 INSERT INTO knowledge.faq_ai_queries (user_id, question, answer)
