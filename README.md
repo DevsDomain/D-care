@@ -49,9 +49,9 @@ O Product Backlog segue o padrão de priorização:
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
 | US03 | Como família, quero registrar um idoso (dados pessoais/saúde)                | Média        | 7            | 7               | Done         |
-| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | In Progress  |
+| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | To Do        |
 | US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | Done         |
-| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | In Progress  |
+| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | To Do        |
 | US09 | Como família, quero agendar um cuidador em data/hora                         | Alta         | 6            | 9               | To Do        |
 | US11 | Como família, quero avaliar o cuidador após atendimento                      | Baixa        | 4            | 5               | To Do        |
 | US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | Done         |
