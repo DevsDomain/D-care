@@ -1,19 +1,36 @@
-import { IsString, IsOptional, IsDateString, IsJSON } from 'class-validator';
+// src/idosos/dto/update-elder.dto.ts
+import { IsString, IsOptional } from 'class-validator';
 
 export class UpdateElderDto {
-  @IsString()
   @IsOptional()
+  @IsString()
   name?: string;
 
-  @IsDateString()
+  // aceita string ISO, mas não valida formato (evita 400 por formatação)
   @IsOptional()
+  @IsString()
   birthdate?: string;
 
-  @IsJSON()
+  // podem vir como array, JSON string ou CSV — o service normaliza
   @IsOptional()
-  medicalConditions?: string;
+  medicalConditions?: any;
 
-  @IsJSON()
   @IsOptional()
-  medications?: string;
+  medications?: any;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  zipCode?: string;
 }
