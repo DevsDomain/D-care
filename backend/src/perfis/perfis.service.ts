@@ -159,7 +159,7 @@ export class PerfisService {
       console.log('Usuário:', userId);
       console.log('Query recebida:', query);
 
-      // 1️⃣ Buscar o CEP da família do usuário
+      // 1️⃣ Buscar CEP da família
       const family = await this.prisma.families.findFirst({
         where: { userId },
         select: { zipCode: true },
@@ -168,77 +168,90 @@ export class PerfisService {
       const userZip = query.zipCode ?? family?.zipCode;
       if (!userZip) throw new Error('CEP do usuário não encontrado.');
 
-      // 2️⃣ Buscar coordenadas do CEP
+      // 2️⃣ Buscar coordenadas
       const geoData = await getCoordinatesFromZipCode(userZip);
       if (!geoData?.lat || !geoData?.lng)
         throw new Error(`Coordenadas não encontradas para o CEP ${userZip}`);
 
       const lat = parseFloat(geoData.lat);
       const lng = parseFloat(geoData.lng);
-      const maxDistance = query.maxDistance ?? 10000; // 10 km
+      const maxDistance = query.maxDistance ?? 10000; // default 10km
 
-      // 3️⃣ Filtros opcionais
+      // 3️⃣ Filtros SQL dinâmicos
       let whereClause = '';
+
       if (query.minRating) {
         whereClause += ` AND c.id IN (
-        SELECT caregiver_id FROM reviews.reviews
-        GROUP BY caregiver_id
-        HAVING AVG(rating) >= ${query.minRating}
-      )`;
+          SELECT caregiver_id FROM reviews.reviews
+          GROUP BY caregiver_id
+          HAVING AVG(rating) >= ${query.minRating}
+        )`;
       }
+
       if (query.availableForEmergency) {
-        whereClause += ` AND c.id IN (
-        SELECT caregiver_id FROM caregiver.caregiver_availability
-        WHERE emergency = true AND status = 'available'
-      )`;
+        whereClause += ` AND c.emergency = true`;
       }
+
+      if (query.availableForEmergency === false) {
+        whereClause += ` AND c.emergency = false`;
+      }
+
       if (query.specialization) {
-        whereClause += ` AND LOWER(c.bio) LIKE LOWER('%${query.specialization}%')`;
+        whereClause += ` AND (
+          LOWER(c.bio) LIKE LOWER('%${query.specialization}%')
+          OR c.specializations::text ILIKE '%${query.specialization}%'
+        )`;
       }
 
-      // 4️⃣ Consulta com JOIN em auth.user_profiles
+      // 🆕 filtro de disponibilidade geral
+      if (query.available === true) {
+        whereClause += ` AND c.availability = true`;
+      }
+
+      if (query.available === false) {
+        whereClause += ` AND c.availability = false`;
+      }
+
+      // 4️⃣ Query principal
       const caregiversRaw = await this.prisma.$queryRawUnsafe<any[]>(`
-      SELECT 
-        c.id,
-        up.name AS caregiver_name,
-        c.bio,
-        c.crm_coren AS "crmCoren",
-        c.validated,
-        ST_AsText(c.location) AS location_wkt,
-        COALESCE(AVG(r.rating), 0) AS rating,
-        COUNT(r.id) AS review_count,
-        CASE 
-          WHEN EXISTS (
-            SELECT 1 
-            FROM caregiver.caregiver_availability ca 
-            WHERE ca.caregiver_id = c.id 
-              AND ca.emergency = true
-              AND ca.status = 'available'
-          ) THEN true ELSE false 
-        END AS available_for_emergency,
-        ST_Distance(
-          c.location, 
-          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
-        ) AS distance_meters
-      FROM caregiver.caregivers c
-      JOIN auth.user_profiles up ON up.user_id = c.user_id
-      LEFT JOIN reviews.reviews r ON r.caregiver_id = c.id
-      WHERE c.location IS NOT NULL
-        AND ST_DWithin(
-          c.location, 
-          ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, 
-          ${maxDistance}
-        )
-        ${whereClause}
-      GROUP BY c.id, up.name
-      ORDER BY distance_meters ASC;
-    `);
+        SELECT 
+          c.id,
+          c.user_id AS "userId",
+          up.name AS caregiver_name,
+          c.bio,
+          c.crm_coren AS "crmCoren",
+          c.validated,
+          c.availability,
+          c.emergency,
+          ST_AsText(c.location) AS location_wkt,
+          COALESCE(AVG(r.rating), 0) AS rating,
+          COUNT(r.id) AS review_count,
+          ST_Distance(
+            c.location, 
+            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+          ) AS distance_meters
+        FROM caregiver.caregivers c
+        JOIN auth.user_profiles up ON up.user_id = c.user_id
+        LEFT JOIN reviews.reviews r ON r.caregiver_id = c.id
+        WHERE c.location IS NOT NULL
+          AND ST_DWithin(
+            c.location, 
+            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, 
+            ${maxDistance}
+          )
+          ${whereClause}
+        GROUP BY c.id, up.name
+        ORDER BY distance_meters ASC;
+      `);
 
-      console.log('📊 Resultado bruto (antes da formatação):', caregiversRaw);
+      console.log(
+        `🏁 Total de cuidadores encontrados: ${caregiversRaw.length}`,
+      );
 
-      // 5️⃣ Formatar saída no padrão do mock.ts
-      const caregivers = caregiversRaw.map((c) => ({
+      // 5️⃣ Formatar resposta
+      return caregiversRaw.map((c) => ({
         id: c.id,
+        userId: c.userId,
         name: c.caregiver_name,
         photo: `https://randomuser.me/api/portraits/${
           Math.random() > 0.5 ? 'women' : 'men'
@@ -248,26 +261,17 @@ export class PerfisService {
         rating: Number(c.rating),
         reviewCount: Number(c.review_count),
         distanceKm: parseFloat((Number(c.distance_meters) / 1000).toFixed(2)),
-        skills: ['Elderly Care', 'Medication Management', 'Companionship'],
+        availability: c.availability,
+        emergency: c.emergency,
+        skills: ['Elderly Care', 'Medication Management'],
         experience: `${Math.floor(Math.random() * 10) + 1}+ years`,
         priceRange: 'R$ 30-40/hora',
-        emergency: c.available_for_emergency,
-        availability: [
-          { start: '08:00', end: '17:00', day: 'monday' },
-          { start: '08:00', end: '17:00', day: 'tuesday' },
-          { start: '08:00', end: '17:00', day: 'wednesday' },
-        ],
         bio: c.bio,
         phone: '+55 12 99999-0000',
         languages: ['Portuguese'],
         specializations: ['Elderly Care', 'Rehabilitation'],
         verificationBadges: ['Background Check', 'First Aid Certified'],
       }));
-
-      console.log('✅ Resultado final (mock-format):', caregivers);
-      console.log(`🏁 Total de cuidadores encontrados: ${caregivers.length}`);
-
-      return caregivers;
     } catch (error) {
       console.error('❌ Erro ao buscar cuidadores:', error);
       throw new Error(

@@ -18,6 +18,7 @@ export async function fetchCaregiversFromAPI(
     // Ajuste de formato para o frontend
     return caregivers.map((c: any) => ({
       id: c.id,
+      userId: c.userId,
       name: c.name,
       photo: c.photo ?? "https://placehold.co/150x150?text=Caregiver",
       verified: c.verified ?? c.validated ?? false,

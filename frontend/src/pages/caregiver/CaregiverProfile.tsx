@@ -1,60 +1,79 @@
+import { useParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import {
+  ArrowLeft,
+  MapPin,
+  Clock,
+  Star,
+  Shield,
+  Phone,
+  Calendar,
+} from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button-variants";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { RatingStars } from "@/components/common/RatingStars";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 
-import { useParams, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { ArrowLeft, MapPin, Clock, Star, Shield, Phone, MessageCircle, Calendar } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button-variants';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { RatingStars } from '@/components/common/RatingStars';
-import { EmptyState } from '@/components/common/EmptyState';
-import { ListSkeleton } from '@/components/common/LoadingSkeleton';
-import { mockApi } from '@/lib/api/mock';
-import type { Caregiver, Review } from '@/lib/types';
+import type { Caregiver } from "@/lib/types";
+import { fetchCaregiverProfileFromAPI } from "@/lib/api/caregiver";
 
 export default function CaregiverProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+
   const [caregiver, setCaregiver] = useState<Caregiver | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      loadCaregiverData();
-    }
+    if (id) loadCaregiverData();
   }, [id]);
 
   const loadCaregiverData = async () => {
     if (!id) return;
-    
+
     try {
       setIsLoading(true);
-      const [caregiverResponse, reviewsResponse] = await Promise.all([
-        mockApi.getCaregiverById(id),
-        mockApi.getCaregiverReviews(id)
-      ]);
+      const data = await fetchCaregiverProfileFromAPI(id);
+      console.log("Caregiver data:", data);
 
-      if (caregiverResponse.success && caregiverResponse.data) {
-        setCaregiver(caregiverResponse.data);
-      }
+      if (data) {
+        // Normaliza para o tipo Caregiver
+        const caregiverData: Caregiver = {
+          id,
+          name: data.name || "Sem nome",
+          phone: data.phone || "",
+          email: data.email,
+          bio: data.bio || "",
+          crmCorem: data.crm_coren || "",
+          verified: data.validated || false,
+          emergency: data.emergency || false,
+          experience: data.experience || "",
+          priceRange: `R$ ${data.priceRange || "—"}`,
+          rating: data.rating || 0,
+          reviewCount: data.reviewCount || 0,
+          skills: data.skills || [],
+          specializations: data.specializations || [],
+          verificationBadges: data.verificationBadges || [],
+          photo: data.avatarPath || null,
+          distanceKm: 0, // opcional, usado apenas em listagens
+          availability: data.availability || true,
+        };
 
-      if (reviewsResponse.success && reviewsResponse.data) {
-        setReviews(reviewsResponse.data);
+        setCaregiver(caregiverData);
       }
     } catch (error) {
-      console.error('Failed to load caregiver data:', error);
+      console.error("❌ Falha ao carregar cuidador:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleBookCaregiver = () => {
-    if (caregiver) {
-      navigate(`/book/${caregiver.id}`);
-    }
+    if (caregiver) navigate(`/book/${caregiver.id}`);
   };
 
   if (isLoading) {
@@ -72,7 +91,7 @@ export default function CaregiverProfile() {
         title="Cuidador não encontrado"
         description="O perfil solicitado não foi encontrado."
         actionLabel="Voltar à busca"
-        onAction={() => navigate('/search')}
+        onAction={() => navigate("/search")}
         variant="error"
       />
     );
@@ -84,9 +103,9 @@ export default function CaregiverProfile() {
       <header className="bg-gradient-to-r from-healthcare-dark to-healthcare-light text-white sticky top-0 z-40">
         <div className="p-4">
           <div className="flex items-center gap-4">
-            <Button 
-              variant="healthcare" 
-              size="icon-sm" 
+            <Button
+              variant="healthcare"
+              size="icon-sm"
               onClick={() => navigate(-1)}
               className="text-white hover:bg-white/20"
             >
@@ -104,12 +123,18 @@ export default function CaregiverProfile() {
             <div className="flex items-start gap-4 mb-6">
               <div className="relative">
                 <Avatar className="h-20 w-20 border-2 border-healthcare-light/20">
-                  <AvatarImage src={caregiver.photo} alt={caregiver.name} />
+                  <AvatarImage
+                    src={caregiver.photo || undefined}
+                    alt={caregiver.name}
+                  />
                   <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold text-xl">
-                    {caregiver.name.split(' ').map(n => n[0]).join('')}
+                    {caregiver.name
+                      .split(" ")
+                      .map((n) => n[0])
+                      .join("")}
                   </AvatarFallback>
                 </Avatar>
-                
+
                 {caregiver.verified && (
                   <div className="absolute -top-1 -right-1 bg-trust-blue rounded-full p-1">
                     <Shield className="w-4 h-4 text-white" />
@@ -121,7 +146,7 @@ export default function CaregiverProfile() {
                 <h2 className="text-xl font-bold text-foreground mb-1">
                   {caregiver.name}
                 </h2>
-                
+
                 {caregiver.crmCorem && (
                   <p className="text-sm text-muted-foreground mb-2">
                     {caregiver.crmCorem}
@@ -129,7 +154,7 @@ export default function CaregiverProfile() {
                 )}
 
                 <div className="flex items-center gap-4 mb-3">
-                  <RatingStars 
+                  <RatingStars
                     rating={caregiver.rating}
                     reviewCount={caregiver.reviewCount}
                     size="md"
@@ -139,7 +164,7 @@ export default function CaregiverProfile() {
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <MapPin className="w-4 h-4" />
-                    {caregiver.distanceKm.toFixed(1)}km
+                    Jacareí - SP
                   </div>
                   <div className="flex items-center gap-1">
                     <Clock className="w-4 h-4" />
@@ -157,7 +182,7 @@ export default function CaregiverProfile() {
                 </p>
                 <p className="text-sm text-muted-foreground">por hora</p>
               </div>
-              
+
               {caregiver.emergency && (
                 <Badge variant="destructive" className="px-3 py-1">
                   Disponível para emergência
@@ -171,7 +196,11 @@ export default function CaregiverProfile() {
                 <Phone className="w-5 h-5 mr-2" />
                 Ligar
               </Button>
-              <Button variant="healthcare" size="lg" onClick={handleBookCaregiver}>
+              <Button
+                variant="healthcare"
+                size="lg"
+                onClick={handleBookCaregiver}
+              >
                 <Calendar className="w-5 h-5 mr-2" />
                 Contratar
               </Button>
@@ -186,7 +215,7 @@ export default function CaregiverProfile() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground leading-relaxed">
-              {caregiver.bio}
+              {caregiver.bio || "Nenhuma descrição disponível."}
             </p>
           </CardContent>
         </Card>
@@ -201,7 +230,11 @@ export default function CaregiverProfile() {
               <h4 className="font-medium mb-2">Habilidades</h4>
               <div className="flex flex-wrap gap-2">
                 {caregiver.skills.map((skill, index) => (
-                  <Badge key={index} variant="outline" className="bg-healthcare-soft/30">
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="bg-healthcare-soft/30"
+                  >
                     {skill}
                   </Badge>
                 ))}
@@ -214,7 +247,11 @@ export default function CaregiverProfile() {
               <h4 className="font-medium mb-2">Especializações</h4>
               <div className="flex flex-wrap gap-2">
                 {caregiver.specializations.map((spec, index) => (
-                  <Badge key={index} variant="outline" className="bg-trust-blue/10 text-trust-blue border-trust-blue/20">
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className="bg-trust-blue/10 text-trust-blue border-trust-blue/20"
+                  >
                     {spec}
                   </Badge>
                 ))}
@@ -224,63 +261,39 @@ export default function CaregiverProfile() {
         </Card>
 
         {/* Verification Badges */}
-        <Card className="healthcare-card">
-          <CardHeader>
-            <CardTitle>Verificações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {caregiver.verificationBadges.map((badge, index) => (
-                <div key={index} className="flex items-center gap-2 p-3 bg-trust-blue/10 rounded-xl">
-                  <Shield className="w-5 h-5 text-trust-blue" />
-                  <span className="text-sm font-medium">{badge}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Reviews */}
-        <Card className="healthcare-card">
-          <CardHeader>
-            <CardTitle>Avaliações ({reviews.length})</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {reviews.length === 0 ? (
-              <EmptyState
-                icon={Star}
-                title="Nenhuma avaliação ainda"
-                description="Este cuidador ainda não recebeu avaliações."
-                variant="default"
-              />
-            ) : (
-              <div className="space-y-4">
-                {reviews.map((review) => (
-                  <div key={review.id} className="border-b border-border pb-4 last:border-0">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <p className="font-medium text-sm">{review.elderName}</p>
-                        <RatingStars rating={review.rating} size="sm" showNumber={false} />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(review.createdAt).toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
-                    <p className="text-sm text-muted-foreground">{review.comment}</p>
-                    
-                    {review.services.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-2">
-                        {review.services.map((service, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {service}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+        {caregiver.verificationBadges.length > 0 && (
+          <Card className="healthcare-card">
+            <CardHeader>
+              <CardTitle>Verificações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-3">
+                {caregiver.verificationBadges.map((badge, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 p-3 bg-trust-blue/10 rounded-xl"
+                  >
+                    <Shield className="w-5 h-5 text-trust-blue" />
+                    <span className="text-sm font-medium">{badge}</span>
                   </div>
                 ))}
               </div>
-            )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Reviews placeholder */}
+        <Card className="healthcare-card">
+          <CardHeader>
+            <CardTitle>Avaliações</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <EmptyState
+              icon={Star}
+              title="Nenhuma avaliação ainda"
+              description="Este cuidador ainda não recebeu avaliações."
+              variant="default"
+            />
           </CardContent>
         </Card>
       </div>

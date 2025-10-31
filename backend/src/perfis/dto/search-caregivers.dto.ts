@@ -31,4 +31,9 @@ export class SearchCaregiversDto {
   @Type(() => Boolean)
   @IsBoolean()
   availableForEmergency?: boolean;
+
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean()
+  available?: boolean;
 }

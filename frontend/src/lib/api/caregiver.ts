@@ -66,6 +66,39 @@ export async function fetchCaregiverProfile(userId: string) {
     throw err;
   }
 }
+export async function fetchCaregiverProfileFromAPI(userId: string) {
+  try {
+    const { data } = await api.get(`/perfis/${userId}`);
+    const caregiver = data.caregiver?.[0];
+    const profile = data.userProfile?.[0];
+
+    return {
+      name: profile?.name ?? "Sem nome", // ✅ inclui o nome
+      phone: profile?.phone ?? "",
+      email: data.email,
+      crm_coren: caregiver?.crmCoren,
+      bio: caregiver?.bio,
+      address: caregiver?.address,
+      city: caregiver?.city,
+      state: caregiver?.state,
+      zipCode: caregiver?.zipCode,
+      avatarPath: caregiver?.avatarPath,
+      validated: caregiver?.validated,
+      emergency: caregiver?.emergency,
+      availability: caregiver?.availability,
+      experience: caregiver?.experience,
+      priceRange: caregiver?.priceRange,
+      rating: caregiver?.rating,
+      reviewCount: caregiver?.reviewCount,
+      skills: caregiver?.skills,
+      specializations: caregiver?.specializations,
+      verificationBadges: caregiver?.verificationBadges,
+    };
+  } catch (err) {
+    console.error("Error fetching caregiver profile:", err);
+    throw err;
+  }
+}
 
 /**
  * Update caregiver profile.

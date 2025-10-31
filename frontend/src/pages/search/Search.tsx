@@ -83,11 +83,13 @@ export default function Search() {
   };
 
   const handleCaregiverSelect = (caregiver: Caregiver) => {
-    navigate(`/caregiver/${caregiver.id}`);
+    const userId = caregiver.userId;
+    navigate(`/caregiver/${userId}`);
   };
 
   const handleBookCaregiver = (caregiver: Caregiver) => {
-    navigate(`/book/${caregiver.id}`);
+    const userId = caregiver.userId;
+    navigate(`/book/${userId}`);
   };
 
   const filteredCaregivers = caregivers.filter(
@@ -303,7 +305,7 @@ export default function Search() {
             <div className="space-y-4">
               {filteredCaregivers.map((caregiver) => (
                 <CaregiverCard
-                  key={caregiver.id}
+                  key={caregiver.userId}
                   caregiver={caregiver}
                   onSelect={handleCaregiverSelect}
                   onBook={handleBookCaregiver}
