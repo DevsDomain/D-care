@@ -13,8 +13,8 @@ Cada entrega será realizada a partir da criação de uma **tag** conforme rela�
 | Sprint | Início | Previsão de entrega | Status | Release | Kanban | BurnDown |
 |:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | 01 | 16/09/2025 | 06/10/2025 | ​​​​☑️ Concluído | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint1.png?raw=true) |
-| 02 | 13/10/2025 | 02/11/2025 | ⏳ Em andamento | [Ver release 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | Ver BurnDown 2 |
-| 03 | 06/11/2025 | 23/11/2025 | 🚧 A iniciar | Ver release 3 | Ver Sprint 3 | Ver BurnDown 3 |
+| 02 | 13/10/2025 | 02/11/2025 | ☑️ Concluído | [Ver release 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | Ver BurnDown 2 |
+| 03 | 06/11/2025 | 23/11/2025 | ⏳ Em andamento | Ver release 3 | Ver Sprint 3 | Ver BurnDown 3 |
 
 ## ✍️ Product Backlog
 O Product Backlog segue o padrão de priorização:
@@ -31,8 +31,8 @@ O Product Backlog segue o padrão de priorização:
 | US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 7            | 5              | Done        |
 | US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | Done        |
 | US13 | Como usuário, quero consultar uma cartilha com IA                            | Alta         | 10           | 10              | Done        |
-| US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | In Progress |
-| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | In Progress |
+| US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | To Do       |
+| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | To Do       |
 
 ---
 
@@ -51,7 +51,7 @@ O Product Backlog segue o padrão de priorização:
 | US03 | Como família, quero registrar um idoso (dados pessoais/saúde)                | Média        | 7            | 7               | Done         |
 | US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | To Do        |
 | US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | Done         |
-| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | To Do        |
+| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | Done         |
 | US09 | Como família, quero agendar um cuidador em data/hora                         | Alta         | 6            | 9               | To Do        |
 | US11 | Como família, quero avaliar o cuidador após atendimento                      | Baixa        | 4            | 5               | To Do        |
 | US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | Done         |
