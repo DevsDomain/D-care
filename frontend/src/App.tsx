@@ -3,10 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { BottomNavigation } from "@/components/common/BottomNavigation";
 import { Toaster } from "@/components/ui/sonner";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 
 // Pages
-import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -18,42 +16,113 @@ import Guide from "./pages/guide/Guide";
 import Profile from "./pages/profile/Profile";
 import ElderRegistration from "./pages/elder/ElderRegistration";
 import IvcfAssessment from "./pages/ivcf/IvcfAssessment";
-import CaregiverDashboard from "./pages/caregiver/CaregiverDashboard";
+import { PrivateRoute } from "./components/private-route";
+import DashboardRouter from "./pages/DashboardRouter";
+import CaregiverEdition from "./pages/caregiver/CaregiverEdition";
+import ElderEdit from "./pages/elder/ElderEdit"; // ✅ edição do idoso
 
 const queryClient = new QueryClient();
 
-// 🔹 Criamos um wrapper para esconder a BottomNav em certas rotas
+// Wrapper que controla onde esconder a BottomNavigation
 function AppLayout() {
   const location = useLocation();
 
-  // rotas onde NÃO queremos mostrar a barra
+  // Rotas sem bottom nav (ajuste se quiser esconder também em outras telas)
   const hideBottomNav = ["/login", "/register"];
   const shouldHide = hideBottomNav.includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <Routes>
-        {/* Auth routes */}
+        {/* Auth */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Main app routes */}
-        <Route path="/" element={<Index />} />
+        {/* Abertas */}
         <Route path="/search" element={<Search />} />
         <Route path="/caregiver/:id" element={<CaregiverProfile />} />
-        <Route path="/book/:caregiverId" element={<BookingForm />} />
-        <Route path="/bookings" element={<BookingList />} />
-        <Route path="/guide" element={<Guide />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/elder/register" element={<ElderRegistration />} />
-        <Route path="/ivcf/:elderId" element={<IvcfAssessment />} />
-        <Route path="/caregiver-dashboard" element={<CaregiverDashboard />} />
 
-        {/* Catch-all route */}
+        {/* Raiz resolve para o dashboard (Family ou Caregiver) */}
+        <Route path="/" element={<DashboardRouter />} />
+
+        {/* FAMILY */}
+        <Route
+          path="/book/:caregiverId"
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <BookingForm />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/bookings"
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <BookingList />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/elder/register"
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <ElderRegistration />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/elders/:id/edit" // ✅ nova rota de edição
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <ElderEdit />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/ivcf/:elderId"
+          element={
+            <PrivateRoute roles={["FAMILY"]}>
+              <IvcfAssessment />
+            </PrivateRoute>
+          }
+        />
+
+        {/* CAREGIVER */}
+        {/* Rotas CAREGIVER */}
+        <Route path="/" element={<DashboardRouter />} />
+
+        {/* Perfil (ambos podem acessar) */}
+        <Route
+          path="/editCaregiver"
+          element={
+            <PrivateRoute roles={["CAREGIVER"]}>
+              <CaregiverEdition />
+            </PrivateRoute>
+          }
+        />
+
+        {/* Ambos */}
+        <Route
+          path="/profile"
+          element={
+            <PrivateRoute roles={["FAMILY", "CAREGIVER"]}>
+              <Profile />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/guide"
+          element={
+            <PrivateRoute roles={["FAMILY", "CAREGIVER"]}>
+              <Guide />
+            </PrivateRoute>
+          }
+        />
+
+        {/* 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
 
-      {/* só renderiza se não for login/register */}
       {!shouldHide && <BottomNavigation />}
     </div>
   );
@@ -62,8 +131,7 @@ function AppLayout() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
+      <Toaster richColors position="top-right" />
       <BrowserRouter>
         <AppLayout />
       </BrowserRouter>

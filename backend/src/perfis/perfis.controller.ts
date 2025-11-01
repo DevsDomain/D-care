@@ -6,12 +6,17 @@ import {
   Delete,
   Body,
   Param,
+  UseInterceptors,
+  UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { PerfisService } from './perfis.service';
 import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfessionalIdValidationPipe } from '../common/pipes/professional-id-validation.pipe';
 import { CreateCareGiverDto } from './dto/create-caregiver.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { SearchCaregiversDto } from './dto/search-caregivers.dto';
 
 @Controller('perfis')
 export class PerfisController {
@@ -34,6 +39,37 @@ export class PerfisController {
     @Param('userId') userId: string,
   ) {
     return this.perfisService.createCaregiver(createCaregiverDto, userId);
+  }
+
+  // Perfil cuidador ( com validação de CRM/COREN )
+  @Patch('caregiver/:userId')
+  @UseInterceptors(FileInterceptor('avatar'))
+  async updateCaregiver(
+    @Param('userId') userId: string,
+    @Body(new ProfessionalIdValidationPipe())
+    createCaregiverDto: CreateCareGiverDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    return this.perfisService.updateCaregiver(userId, createCaregiverDto, file);
+  }
+
+  @Patch('caregiver/:id/availability')
+  async toggleCaregiverAvailability(
+    @Param('id') id: string,
+    @Body('available') available: boolean,
+  ) {
+    return this.perfisService.toggleCaregiverAvailabilityService(id, available);
+  }
+
+  @Patch('caregiver/:id/emergency-availability')
+  async toggleCaregiverEmergencyAvailability(
+    @Param('id') id: string,
+    @Body('available') available: boolean,
+  ) {
+    return this.perfisService.toggleCaregiverEmergencyAvailabilityService(
+      id,
+      available,
+    );
   }
 
   @Get()
@@ -59,5 +95,13 @@ export class PerfisController {
   @Delete(':id')
   async delete(@Param('id') id: string) {
     return this.perfisService.deleteProfile(id);
+  }
+
+  @Get('caregivers/search')
+  async searchCaregivers(
+    @Query() query: SearchCaregiversDto,
+    @Param('userId') userId: string,
+  ) {
+    return await this.perfisService.searchCaregivers(userId, query);
   }
 }

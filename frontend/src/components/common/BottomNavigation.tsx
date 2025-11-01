@@ -3,17 +3,18 @@
  * Mobile-first navigation bar for the D-care app
  */
 
-import { Home, Search, Calendar, MessageCircle, User } from 'lucide-react';
+import { Home, Search, Calendar, UserCog, BotMessageSquare } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useUserRole } from '@/lib/stores/appStore';
+import { useAppStore } from '@/lib/stores/appStore';
+
 
 interface NavItem {
   id: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   path: string;
-  roles?: ('family' | 'caregiver')[];
+  roles?: ('FAMILY' | 'CAREGIVER')[];
 }
 
 const navItems: NavItem[] = [
@@ -28,7 +29,7 @@ const navItems: NavItem[] = [
     label: 'Buscar',
     icon: Search,
     path: '/search',
-    roles: ['family'],
+    roles: ['FAMILY'],
   },
   {
     id: 'bookings',
@@ -39,13 +40,13 @@ const navItems: NavItem[] = [
   {
     id: 'guide',
     label: 'Guia IA',
-    icon: MessageCircle,
+    icon: BotMessageSquare,
     path: '/guide',
   },
   {
     id: 'profile',
     label: 'Perfil',
-    icon: User,
+    icon: UserCog,
     path: '/profile',
   },
 ];
@@ -53,11 +54,11 @@ const navItems: NavItem[] = [
 export function BottomNavigation() {
   const location = useLocation();
   const navigate = useNavigate();
-  const userRole = useUserRole();
+  const userRole = useAppStore((state) => state.userRole);
 
   // Filter navigation items based on user role
   const filteredNavItems = navItems.filter(item => 
-    !item.roles || item.roles.includes(userRole || 'family')
+    !item.roles || item.roles.includes(userRole || 'FAMILY')
   );
 
   const handleNavClick = (path: string) => {

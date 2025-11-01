@@ -1,18 +1,21 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
   MapPin,
   User,
-  Settings,
+  BriefcaseMedical,
   Bell,
   CheckCircle,
   XCircle,
   AlertCircle,
   TrendingUp,
+  Hospital,
+  UserRoundPen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,31 +23,69 @@ import { CaregiverCardSkeleton } from "@/components/common/LoadingSkeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { useToast } from "@/components/hooks/use-toast";
 import { mockApi } from "@/lib/api/mock";
-import type { Booking } from "@/lib/types";
+import type { Caregiver, Booking } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
+import { useNavigate } from "react-router-dom";
+import {
+  fetchCaregiverProfile,
+  toggleCaregiverAvailability,
+  toggleCaregiverEmergencyAvailability,
+} from "@/lib/api/caregiver";
 
 export default function CaregiverDashboard() {
   const [bookingRequests, setBookingRequests] = useState<Booking[]>([]);
   const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
+  const [caregiverUser, setCaregiverUser] = useState<Partial<Caregiver>>({});
+  const [emergencyAvailable, setEmergencyAvailable] = useState(
+    caregiverUser.emergency
+  );
+  const [activeToday, setActiveToday] = useState(caregiverUser.availability);
   const [loading, setLoading] = useState(true);
-  const [emergencyAvailable, setEmergencyAvailable] = useState(true);
-  const [activeToday, setActiveToday] = useState(true);
   const { toast } = useToast();
   const { currentUser } = useAppStore();
 
+  const navigate = useNavigate();
+
+  // Load existing caregiver data
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    const fetchCaregiver = async () => {
+      try {
+        const caregiver = await fetchCaregiverProfile(currentUser!.id);
+
+        setActiveToday(caregiver.availability);
+        setEmergencyAvailable(caregiver.emergency);
+        setCaregiverUser(caregiver);
+        loadDashboardData();
+      } catch (error) {
+        console.error("Error loading caregiver:", error);
+      }
+    };
+
+    if (currentUser?.role === "CAREGIVER") {
+      fetchCaregiver();
+    }
+  }, [currentUser?.name]);
+
+  const handleActive = async () => {
+    await toggleCaregiverAvailability(caregiverUser.userId!, !activeToday);
+    setActiveToday(!activeToday);
+  };
+
+  const handleEmergency = async () => {
+    await toggleCaregiverEmergencyAvailability(
+      caregiverUser.userId!,
+      !emergencyAvailable
+    );
+    setEmergencyAvailable(!emergencyAvailable);
+  };
 
   const loadDashboardData = async () => {
-    if (!currentUser) return;
-
     try {
       // Mock data for caregiver dashboard
       const mockRequests: Booking[] = [
         {
           id: "3",
-          caregiverId: currentUser.id,
+          caregiverId: currentUser!.id,
           elderId: "1",
           dateISO: "2024-09-10T14:00:00Z",
           duration: 4,
@@ -64,19 +105,17 @@ export default function CaregiverDashboard() {
           elder: {
             id: "1",
             name: "José da Silva",
-            age: 78,
             conditions: ["Diabetes", "Hypertension"],
             medications: ["Metformin", "Losartan"],
-            emergencyContact: {
-              name: "Maria da Silva",
-              phone: "+55 11 98888-0001",
-              relation: "Daughter",
-            },
+            avatarFile: null,
+            birthDate: new Date(),
+
             address: {
               street: "Rua das Flores, 123",
               city: "São Paulo",
               state: "SP",
               zipCode: "01234-567",
+              number: "123",
             },
             preferences: {
               gender: "female",
@@ -90,7 +129,7 @@ export default function CaregiverDashboard() {
       const mockUpcoming: Booking[] = [
         {
           id: "4",
-          caregiverId: currentUser.id,
+          caregiverId: currentUser!.id,
           elderId: "1",
           dateISO: "2024-09-11T09:00:00Z",
           duration: 3,
@@ -109,19 +148,16 @@ export default function CaregiverDashboard() {
           elder: {
             id: "1",
             name: "José da Silva",
-            age: 78,
             conditions: ["Diabetes"],
             medications: ["Metformin"],
-            emergencyContact: {
-              name: "Maria da Silva",
-              phone: "+55 11 98888-0001",
-              relation: "Daughter",
-            },
+            avatarFile: null,
+            birthDate: new Date(),
             address: {
               street: "Rua das Flores, 123",
               city: "São Paulo",
               state: "SP",
               zipCode: "01234-567",
+              number: "123",
             },
             preferences: {},
             createdAt: "2024-01-15T10:00:00Z",
@@ -194,7 +230,7 @@ export default function CaregiverDashboard() {
     return (
       <div className="min-h-screen bg-background pb-24">
         <div className="p-4">
-          <CaregiverCardSkeleton  />
+          <CaregiverCardSkeleton />
         </div>
       </div>
     );
@@ -204,7 +240,18 @@ export default function CaregiverDashboard() {
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-around">
+          <Avatar className="border-2 border-white/20 w-16 h-16">
+            <AvatarImage
+              width={200}
+              height={200}
+              src={caregiverUser.avatarUrl}
+              alt={caregiverUser.name || "userName"}
+            />
+            <AvatarFallback className="bg-white/20 text-white">
+              {caregiverUser.name}
+            </AvatarFallback>
+          </Avatar>
           <div>
             <h1 className="text-2xl font-bold text-foreground">
               Painel do Cuidador
@@ -213,8 +260,11 @@ export default function CaregiverDashboard() {
               Bem-vindo de volta, {currentUser?.name}
             </p>
           </div>
-          <Button variant="outline" size="icon">
-            <Settings className="w-5 h-5" />
+          <Button variant="outline" size="icon" title="Editar Cuidador">
+            <UserRoundPen
+              className="w-5 h-5"
+              onClick={() => navigate("/editCaregiver")}
+            />
           </Button>
         </div>
 
@@ -234,7 +284,7 @@ export default function CaregiverDashboard() {
                 </p>
               </div>
             </div>
-            <Switch checked={activeToday} onCheckedChange={setActiveToday} />
+            <Switch checked={activeToday} onCheckedChange={handleActive} />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-medical-critical/10 rounded-2xl border border-medical-critical/20">
@@ -249,7 +299,7 @@ export default function CaregiverDashboard() {
             </div>
             <Switch
               checked={emergencyAvailable}
-              onCheckedChange={setEmergencyAvailable}
+              onCheckedChange={handleEmergency}
             />
           </div>
         </div>
@@ -314,7 +364,7 @@ export default function CaregiverDashboard() {
                       <div className="flex-1 space-y-3">
                         <div>
                           <h3 className="font-semibold text-foreground">
-                            {booking.elder?.name}, {booking.elder?.age} anos
+                            {booking.elder?.name},88 anos
                           </h3>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                             <Calendar className="w-4 h-4" />

@@ -3,13 +3,10 @@ import { useNavigate } from "react-router-dom";
 import {
   Search as SearchIcon,
   Filter,
-  MapPin,
-  Clock,
   Shield,
   Star,
   AlertTriangle,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,8 +30,9 @@ import { CaregiverCard } from "@/components/common/CaregiverCard";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 import { mockApi } from "@/lib/api/mock";
+import { fetchCaregiversFromAPI } from "@/lib/api/search";
 import type { Caregiver, SearchFilters } from "@/lib/types";
-import { useSearchFilters } from "@/lib/stores/appStore";
+import { useAppStore } from "@/lib/stores/appStore";
 
 export default function Search() {
   const navigate = useNavigate();
@@ -42,7 +40,8 @@ export default function Search() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
-  const globalFilters = useSearchFilters();
+  const useSearchFilters = useAppStore((state) => state.searchFilters);
+  const globalFilters = useSearchFilters || {};
 
   const [filters, setFilters] = useState<SearchFilters>({
     distanceKm: 10,
@@ -59,19 +58,24 @@ export default function Search() {
   const searchCaregivers = async () => {
     try {
       setIsLoading(true);
-      const response = await mockApi.searchCaregivers(filters);
 
-      if (response.success && response.data) {
-        setCaregivers(response.data.data);
-      }
+      const response = await fetchCaregiversFromAPI({
+        maxDistance: filters.distanceKm ? filters.distanceKm * 1000 : undefined, // km → metros
+        minRating: filters.rating ?? undefined,
+        availableForEmergency: filters.emergency ?? undefined,
+        specialization: searchQuery || undefined,
+      });
+
+      setCaregivers(response);
     } catch (error) {
-      console.error("Failed to search caregivers:", error);
+      console.error("❌ Erro ao buscar cuidadores:", error);
+      setCaregivers([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleFilterChange = (key: keyof SearchFilters, value: any) => {
+  const handleFilterChange = (key: keyof SearchFilters, value: unknown) => {
     setFilters((prev) => ({
       ...prev,
       [key]: value,
@@ -79,11 +83,13 @@ export default function Search() {
   };
 
   const handleCaregiverSelect = (caregiver: Caregiver) => {
-    navigate(`/caregiver/${caregiver.id}`);
+    const userId = caregiver.userId;
+    navigate(`/caregiver/${userId}`);
   };
 
   const handleBookCaregiver = (caregiver: Caregiver) => {
-    navigate(`/book/${caregiver.id}`);
+    const userId = caregiver.userId;
+    navigate(`/book/${userId}`);
   };
 
   const filteredCaregivers = caregivers.filter(
@@ -299,7 +305,7 @@ export default function Search() {
             <div className="space-y-4">
               {filteredCaregivers.map((caregiver) => (
                 <CaregiverCard
-                  key={caregiver.id}
+                  key={caregiver.userId}
                   caregiver={caregiver}
                   onSelect={handleCaregiverSelect}
                   onBook={handleBookCaregiver}

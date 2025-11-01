@@ -135,14 +135,29 @@ model Caregivers {
   id           String      @id @default(uuid()) @db.Uuid
   userId       String?     @map("user_id") @db.Uuid
   crmCoren     String?     @map("crm_coren") @db.VarChar(50)
+  avatarPath   String?
   validated    Boolean?    @default(false)
   bio          String?
+  address      String?
+  city         String?   @db.VarChar(100)
+  state        String?   @db.VarChar(50)
+  zipCode      String?   @map("zip_code") @db.VarChar(20)
   location     Unsupported("geography")?
+  rating             Float?  @default(0)
+  reviewCount        Int?    @default(0)
+  experience         String? @db.VarChar(100)
+  priceRange         String? @map("price_range") @db.VarChar(50)
+  availability       Boolean? @default(true)
+  emergency          Boolean? @default(false)
+  skills             Json?
+  languages          Json?
+  specializations    Json?
+  verificationBadges Json?
+
   createdAt    DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt    DateTime?   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
   requests     AppointmentRequests[]   @relation("CaregiverToRequests")
   appointments Appointments[]          @relation("CaregiverToAppointments")
-  availability CaregiverAvailability[] @relation("CaregiverToAvailability")
   documents    CaregiverDocuments[]    @relation("CaregiverToDocuments")
   user         Users?                  @relation("UserToCaregiver", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
   reviews      Reviews[]               @relation("CaregiverToReviews")
@@ -153,21 +168,6 @@ model Caregivers {
   @@schema("caregiver")
 }
 
-model CaregiverAvailability {
-  id          String    @id @default(uuid()) @db.Uuid
-  caregiverId String?   @map("caregiver_id") @db.Uuid
-  date        DateTime? @db.Date
-  timeStart   DateTime? @map("time_start") @db.Time(6)
-  timeEnd     DateTime? @map("time_end") @db.Time(6)
-  emergency   Boolean?  @default(false)
-  status      Unsupported("availability_status")? @default(dbgenerated("'available'::availability_status"))
-  createdAt   DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
-  updatedAt   DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  caregiver   Caregivers? @relation("CaregiverToAvailability", fields: [caregiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("caregiver_availability")
-  @@schema("caregiver")
-}
 
 model CaregiverDocuments {
   id          String      @id @default(uuid()) @db.Uuid
