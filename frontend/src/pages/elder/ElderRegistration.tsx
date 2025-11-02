@@ -72,11 +72,13 @@ export default function ElderRegistration() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { setSelectedElder } = useAppStore();
+  const {currentUser} = useAppStore()
 
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<Partial<Elder>>({
     name: "",
     avatarFile: null,
+    familyId: currentUser?.id,
     birthDate: new Date(),
     conditions: [],
     medications: [],

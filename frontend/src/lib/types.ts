@@ -53,6 +53,7 @@ export interface Elder {
   id: string;
   name: string;
   birthDate: Date;
+  familyId: string;
   photo?: string;
   avatarFile: File | null;
   conditions: string[]; // Health conditions like ["Diabetes", "Hypertension"]

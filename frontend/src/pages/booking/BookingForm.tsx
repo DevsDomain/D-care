@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   CalendarDays,
@@ -7,6 +7,7 @@ import {
   ArrowLeft,
   Check,
   CalendarIcon,
+  Users,
 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 
@@ -23,7 +24,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/hooks/use-toast";
-import { mockApi } from "@/lib/api/mock";
 import { useAppStore } from "@/lib/stores/appStore";
 import {
   Popover,
@@ -31,6 +31,10 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ptBR } from "date-fns/locale/pt-BR";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { api } from "@/lib/api/api";
+import { AgeCalculator } from "@/components/hooks/useAge";
+import { requestAppointment } from "@/lib/api/appointment";
 
 const timeSlots = [
   "08:00",
@@ -55,19 +59,21 @@ export default function BookingForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { selectedElder, setLoading } = useAppStore();
-
+  const { currentUser, setCurrentUser } = useAppStore();
   const { caregiverId } = useParams<{ caregiverId: string }>();
   const { caregiverPrice } = useParams<{ caregiverPrice: string }>();
-
-  console.log(caregiverPrice, "caregiverPrice");
-  console.log(caregiverId, "caregiverId");
-
+  const [loadingElders, setLoadingElders] = useState(false);
+  const [elderSelected, setElderSelected] = useState<ElderApi>();
   const [step, setStep] = useState(1);
+
   const [formData, setFormData] = useState({
     date: new Date(),
     startTime: "",
     duration: 4,
     emergency: false,
+    elderId: selectedElder?.id || "",
+    caregiverId: caregiverId || "",
+    familyId: currentUser?.id || "",
     notes: "",
     address: {
       street: selectedElder?.address.street || "",
@@ -77,8 +83,50 @@ export default function BookingForm() {
     },
   });
 
+  type ElderApi = {
+    id: string;
+    familyId?: string | null;
+    family?: { id?: string | null } | null;
+    name: string;
+    birthdate?: Date | undefined;
+    birthDate?: Date | undefined;
+    avatarPath?: string | undefined;
+  };
+
+  // Busca a lista de idosos (inclui condições normalizadas)
+  useEffect(() => {
+    const fetchElders = async () => {
+      try {
+        setLoadingElders(true);
+
+        // 3. Constroi a URL correta (com query param, como definimos antes)
+        const url = `idosos/family?familyId=${currentUser?.id}`;
+
+        const { data } = await api.get<ElderApi[]>(url);
+
+        // 5. Atualiza o usuário ATUAL com a lista de idosos vinda da API
+        const updatedUser = { ...currentUser, elders: data };
+
+        setCurrentUser(updatedUser);
+
+        // 6. Salva a versão atualizada no localStorage
+        try {
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        } catch (err) {
+          console.warn("Falha ao salvar usuário no localStorage:", err);
+        }
+      } catch (err: any) {
+        console.error("Falha ao buscar idosos:", err?.message ?? err);
+      } finally {
+        setLoadingElders(false);
+      }
+    };
+
+    fetchElders();
+  }, [currentUser?.id, currentUser?.role, setCurrentUser]); // Dependências estão corretas
+
   const handleSubmit = async () => {
-    if (!caregiverId || !selectedElder) {
+    if (!currentUser!.id || !currentUser?.elders) {
       toast({
         title: "Error",
         description: "Missing booking information",
@@ -89,24 +137,25 @@ export default function BookingForm() {
 
     setLoading(true);
     try {
+      console.log("FORM DATA", formData);
       const bookingData = {
-        caregiverId,
-        elderId: selectedElder.id,
-        dateISO: `${formData.date}T${formData.startTime}:00Z`,
+        caregiverId: caregiverId!,
+        elderId: elderSelected!.id,
+        familyId: elderSelected!.familyId!,
+        date: formData.date,
+        startTime: formData.startTime,
         duration: formData.duration,
         emergency: formData.emergency,
         notes: formData.notes,
-        address: formData.address,
-        //services: formData.services,
-        totalPrice: formData.duration * Number(caregiverPrice), // Mock calculation
+        totalPrice: formData.duration * Number(caregiverPrice),
       };
 
-      const response = await mockApi.createBooking(bookingData);
+      const response = await requestAppointment(bookingData);
 
-      if (response.success) {
+      if (response.status === 201) {
         toast({
-          title: "Booking Request Sent",
-          description: "The caregiver will be notified of your request",
+          title: "Solicitação de agendamento enviada",
+          description: "O cuidador será notificado sobre sua solicitação!",
         });
         navigate("/bookings");
       }
@@ -272,35 +321,6 @@ export default function BookingForm() {
               </CardContent>
             </Card>
 
-            {/* Services */}
-            {/*    <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Serviços Necessários</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 gap-3">
-                  {services.map(service => (
-                    <div 
-                      key={service}
-                      className="flex items-center space-x-3 p-3 rounded-xl border border-border hover:bg-muted/50"
-                    >
-                      <Checkbox
-                        id={service}
-                        checked={formData.services.includes(service)}
-                        onCheckedChange={() => handleServiceToggle(service)}
-                      />
-                      <Label 
-                        htmlFor={service}
-                        className="flex-1 cursor-pointer text-sm"
-                      >
-                        {service}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
- */}
             <Button
               onClick={() => setStep(2)}
               disabled={!isStep1Valid}
@@ -314,69 +334,6 @@ export default function BookingForm() {
 
         {step === 2 && (
           <div className="space-y-6">
-            {/* Address */}
-            {/*           <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MapPin className="w-5 h-5 text-healthcare-light" />
-                  Endereço do Atendimento
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="street">Rua e Número</Label>
-                  <Input
-                    id="street"
-                    value={formData.address.street}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      address: { ...prev.address, street: e.target.value }
-                    }))}
-                    placeholder="Ex: Rua das Flores, 123"
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="city">Cidade</Label>
-                    <Input
-                      id="city"
-                      value={formData.address.city}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        address: { ...prev.address, city: e.target.value }
-                      }))}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="state">Estado</Label>
-                    <Input
-                      id="state"
-                      value={formData.address.state}
-                      onChange={(e) => setFormData(prev => ({
-                        ...prev,
-                        address: { ...prev.address, state: e.target.value }
-                      }))}
-                      maxLength={2}
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <Label htmlFor="zipCode">CEP</Label>
-                  <Input
-                    id="zipCode"
-                    value={formData.address.zipCode}
-                    onChange={(e) => setFormData(prev => ({
-                      ...prev,
-                      address: { ...prev.address, zipCode: e.target.value }
-                    }))}
-                    placeholder="00000-000"
-                  />
-                </div>
-              </CardContent>
-            </Card> */}
-
             {/* Notes */}
             <Card>
               <CardHeader>
@@ -396,6 +353,58 @@ export default function BookingForm() {
                 />
               </CardContent>
             </Card>
+
+            <CardHeader className="flex">
+              <Users className="w-5 h-5 text-healthcare-light" />
+              <CardTitle>Selecione um idoso:</CardTitle>
+            </CardHeader>
+            {/* Select Elder */}
+            {loadingElders ? (
+              <Card className="p-4">
+                <p className="text-sm text-muted-foreground">Carregando...</p>
+              </Card>
+            ) : (
+              (currentUser?.elders ?? []).map((elder: ElderApi) => {
+                const age = elder?.birthdate
+                  ? `${AgeCalculator(elder.birthdate)} anos`
+                  : "Idade não informada";
+
+                return (
+                  <Card
+                    key={elder.id}
+                    className={`healthcare-card cursor-pointer ${
+                      elderSelected?.id === elder.id
+                        ? "border-2 border-healthcare-light"
+                        : ""
+                    }`}
+                    onClick={() => setElderSelected(elder)}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4">
+                        <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
+                          <AvatarImage
+                            src={elder.avatarPath}
+                            alt={elder.name}
+                          />
+                          <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold text-lg">
+                            {elder.name}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-lg text-foreground mb-1 truncate">
+                            {elder.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {age}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
 
             <Button
               onClick={() => setStep(3)}

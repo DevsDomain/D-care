@@ -7,12 +7,14 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { AiProxyModule } from './ai-proxy/ai-proxy.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './cadastro/auth.module';
+import { AppointmentModule } from './appointment/appointment.module';
 
 @Module({
   imports: [
     PerfisModule,
     IdososModule,
     ReviewsModule,
+    AppointmentModule,
     AiProxyModule,
     DatabaseModule,
     AuthModule,

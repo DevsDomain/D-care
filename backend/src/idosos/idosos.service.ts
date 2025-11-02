@@ -18,7 +18,10 @@ function toArrayAny(val: any): string[] | undefined {
     } catch {
       // não era JSON; tenta CSV
     }
-    return s.split(/[;,]/).map(x => x.trim()).filter(Boolean);
+    return s
+      .split(/[;,]/)
+      .map((x) => x.trim())
+      .filter(Boolean);
   }
   return [String(val)];
 }
@@ -71,6 +74,13 @@ export class IdososService {
     });
   }
 
+  async findAllByFamily(familyId: string) {
+    console.log('FAMILY ID RECEBIDO:', familyId);
+    return this.prisma.elders.findMany({
+      where: { familyId },
+    });
+  }
+
   async findElderById(id: string) {
     const elder = await this.prisma.elders.findUnique({
       where: { id },
@@ -80,7 +90,11 @@ export class IdososService {
     return elder;
   }
 
-  async updateElder(id: string, dto: UpdateElderDto, file?: Express.Multer.File) {
+  async updateElder(
+    id: string,
+    dto: UpdateElderDto,
+    file?: Express.Multer.File,
+  ) {
     // upload opcional
     let avatarUrl: string | undefined;
     if (file) {

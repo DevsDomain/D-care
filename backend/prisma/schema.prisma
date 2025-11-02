@@ -201,6 +201,7 @@ model Appointments {
   status         AppointmentStatus @default(PENDING)
   emergency     Boolean? @default(false)
   notes          String? @db.Text
+  totalPrice    Float     @default(0)
   createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 

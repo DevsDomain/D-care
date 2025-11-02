@@ -151,67 +151,46 @@ export default function FamilyDashboard() {
   // Busca a lista de idosos (inclui condições normalizadas)
   useEffect(() => {
     const fetchElders = async () => {
-      if (!currentUser || (currentUser.role !== "FAMILY" && currentUser.role !== "family")) return;
+      // 1. Garante que temos um usuário e que ele é um familiar
+      if (
+        !currentUser ||
+        (currentUser.role !== "FAMILY" && currentUser.role !== "family")
+      ) {
+        return;
+      }
 
-      const familyId = pickFamilyIdFromUser(currentUser);
-      const userId = (currentUser as any)?.id ?? (currentUser as any)?.userId ?? null;
+      // 2. Pega o ID da família.
+      // Renomeei 'userId' para 'familyId' para ficar mais claro,
+      // já que é isso que a API espera.
+      const familyId =
+        (currentUser as any)?.id ?? (currentUser as any)?.userId ?? null;
+
+      // Se não tiver um ID de família, não há o que buscar.
+      if (!familyId) return;
 
       try {
         setLoadingElders(true);
 
-        // (Opcional) tenta filtrar via query; se o backend ignorar, filtramos no front
-        const url = familyId ? `/idosos?familyId=${encodeURIComponent(familyId)}` : `/idosos`;
+        // 3. Constroi a URL correta (com query param, como definimos antes)
+        const url = `idosos/family?familyId=${familyId}`;
+        console.log("Buscando idosos em:", url);
+
         const { data } = await api.get<ElderApi[]>(url);
-        const all = (data ?? []).map(normalizeElder);
 
-        let onlyMine: any[] = [];
+        // 4. Normaliza os dados recebidos da API
+        const fetchedElders = (data ?? []).map(normalizeElder);
+        console.log("IDOSOS ENCONTRADOS E NORMALIZADOS:", fetchedElders);
 
-        if (familyId) {
-          // ✅ caminho ideal
-          onlyMine = all.filter((e) => e.familyId === familyId);
-        } else {
-          // 🔄 Fallback sem familyId: usa a lista local deste usuário
-          const key = userId ? `elders:${userId}` : null;
-          if (key) {
-            try {
-              const saved = JSON.parse(localStorage.getItem(key) || "[]");
-              const idSet = new Set((Array.isArray(saved) ? saved : []).map((x: any) => x?.id));
+        // 5. Atualiza o usuário ATUAL com a lista de idosos vinda da API
+        const updatedUser = { ...currentUser, elders: fetchedElders };
 
-              // pega da API apenas os que constam no localStorage
-              onlyMine = all.filter((e) => idSet.has(e.id));
-
-              // se algum salvo não veio da API, completa com o salvo local
-              const missing = (Array.isArray(saved) ? saved : []).filter(
-                (s: any) => s?.id && !onlyMine.some((e) => e.id === s.id)
-              );
-              onlyMine = [
-                ...onlyMine,
-                ...missing.map((m: any) =>
-                  normalizeElder({
-                    id: m.id,
-                    name: m.name,
-                    birthdate: m.birthdate,
-                    birthDate: m.birthDate,
-                    avatarPath: m.avatarPath,
-                    photo: m.photo,
-                    familyId: m.familyId,
-                    family_id: m.family_id,
-                    conditions: m.conditions,
-                  } as ElderApi)
-                ),
-              ];
-            } catch {
-              onlyMine = [];
-            }
-          }
-        }
-
-        const updatedUser = { ...currentUser, elders: onlyMine };
         setCurrentUser(updatedUser);
+
+        // 6. Salva a versão atualizada no localStorage
         try {
           localStorage.setItem("user", JSON.stringify(updatedUser));
-        } catch {
-          /* ignore */
+        } catch (err) {
+          console.warn("Falha ao salvar usuário no localStorage:", err);
         }
       } catch (err: any) {
         console.error("Falha ao buscar idosos:", err?.message ?? err);
@@ -221,14 +200,15 @@ export default function FamilyDashboard() {
     };
 
     fetchElders();
-  }, [currentUser?.id, currentUser?.role, setCurrentUser]);
+  }, [currentUser?.id, currentUser?.role, setCurrentUser]); // Dependências estão corretas
 
   const handleAddElder = () => navigate("/elder/register");
   const handleStartIvcf = (elderId: string) => navigate(`/ivcf/${elderId}`);
   const handleFindCaregiver = () => navigate("/search");
   const handleViewBookings = () => navigate("/bookings");
   const handleOpenGuide = () => navigate("/guide");
-  const handleEditElder = (elderId: string) => navigate(`/elders/${elderId}/edit`);
+  const handleEditElder = (elderId: string) =>
+    navigate(`/elders/${elderId}/edit`);
 
   if (isLoading) {
     return (
@@ -263,7 +243,8 @@ export default function FamilyDashboard() {
                 Bem-vindo ao D-care
               </h2>
               <p className="text-muted-foreground mb-6">
-                Para começar, vamos cadastrar as informações da pessoa que você cuida
+                Para começar, vamos cadastrar as informações da pessoa que você
+                cuida
               </p>
               <Button
                 variant="healthcare"
@@ -283,7 +264,9 @@ export default function FamilyDashboard() {
               <CardContent className="p-4 text-center">
                 <Search className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
                 <h3 className="font-medium text-sm">Buscar Cuidadores</h3>
-                <p className="text-xs text-muted-foreground">Profissionais verificados</p>
+                <p className="text-xs text-muted-foreground">
+                  Profissionais verificados
+                </p>
               </CardContent>
             </Card>
 
@@ -291,7 +274,9 @@ export default function FamilyDashboard() {
               <CardContent className="p-4 text-center">
                 <Activity className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
                 <h3 className="font-medium text-sm">Avaliação IVCF-20</h3>
-                <p className="text-xs text-muted-foreground">Avalie a independência</p>
+                <p className="text-xs text-muted-foreground">
+                  Avalie a independência
+                </p>
               </CardContent>
             </Card>
 
@@ -299,7 +284,9 @@ export default function FamilyDashboard() {
               <CardContent className="p-4 text-center">
                 <MessageCircle className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
                 <h3 className="font-medium text-sm">Guia IA</h3>
-                <p className="text-xs text-muted-foreground">Orientações especializadas</p>
+                <p className="text-xs text-muted-foreground">
+                  Orientações especializadas
+                </p>
               </CardContent>
             </Card>
 
@@ -307,7 +294,9 @@ export default function FamilyDashboard() {
               <CardContent className="p-4 text-center">
                 <Calendar className="w-8 h-8 mx-auto mb-2 text-healthcare-dark" />
                 <h3 className="font-medium text-sm">Agendamentos</h3>
-                <p className="text-xs text-muted-foreground">Gerencie consultas</p>
+                <p className="text-xs text-muted-foreground">
+                  Gerencie consultas
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -331,7 +320,10 @@ export default function FamilyDashboard() {
 
             <div className="flex items-center gap-3">
               <Avatar className="border-2 border-white/20">
-                <AvatarImage src={currentUser.photo} alt={currentUser.name || "userName"} />
+                <AvatarImage
+                  src={currentUser.photo}
+                  alt={currentUser.name || "userName"}
+                />
                 <AvatarFallback className="bg-white/20 text-white">
                   {getInitials(currentUser.name)}
                 </AvatarFallback>
@@ -431,21 +423,25 @@ export default function FamilyDashboard() {
                         <h3 className="font-semibold text-lg text-foreground mb-1 truncate">
                           {elder.name}
                         </h3>
-                        <p className="text-sm text-muted-foreground mb-2">{age}</p>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {age}
+                        </p>
 
                         {/* Condições (até 3 + “+N”) */}
                         <div className="flex flex-wrap gap-2 mb-3">
                           {conditions.length ? (
                             <>
-                              {conditions.slice(0, 3).map((c: any, idx: number) => (
-                                <Badge
-                                  key={`${elder.id}-cond-${idx}`}
-                                  variant="outline"
-                                  className="text-xs rounded-full px-3 py-1"
-                                >
-                                  {getConditionLabel(c)}
-                                </Badge>
-                              ))}
+                              {conditions
+                                .slice(0, 3)
+                                .map((c: any, idx: number) => (
+                                  <Badge
+                                    key={`${elder.id}-cond-${idx}`}
+                                    variant="outline"
+                                    className="text-xs rounded-full px-3 py-1"
+                                  >
+                                    {getConditionLabel(c)}
+                                  </Badge>
+                                ))}
                               {conditions.length > 3 && (
                                 <Badge
                                   variant="secondary"
@@ -493,7 +489,9 @@ export default function FamilyDashboard() {
 
         {/* Status */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Atividade Recente</h2>
+          <h2 className="text-lg font-semibold text-foreground">
+            Atividade Recente
+          </h2>
 
           <Card className="bg-gradient-to-r from-medical-success/10 to-healthcare-soft/30 border-medical-success/20">
             <CardContent className="p-4">

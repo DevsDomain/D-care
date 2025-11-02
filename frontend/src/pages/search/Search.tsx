@@ -88,8 +88,8 @@ export default function Search() {
   };
 
   const handleBookCaregiver = (caregiver: Caregiver) => {
-    const userId = caregiver.userId;
-    navigate(`/book/${userId}/${caregiver.price_range}`);
+    //const userId = caregiver.userId;
+    navigate(`/book/${caregiver.id}/${caregiver.price_range}`);
   };
 
   const filteredCaregivers = caregivers.filter(
