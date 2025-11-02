@@ -1,73 +1,88 @@
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import {
+  CalendarDays,
+  FileText,
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  CalendarIcon,
+} from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 
-import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Calendar, Clock, MapPin, FileText, AlertTriangle, ArrowLeft, Check } from 'lucide-react';
-import { Button } from '@/components/ui/button-variants';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/components/hooks/use-toast';
-import { mockApi } from '@/lib/api/mock';
-import { useAppStore } from '@/lib/stores/appStore';
-
-const services = [
-  'Personal Care',
-  'Medication Management', 
-  'Meal Preparation',
-  'Companionship',
-  'Light Housekeeping',
-  'Transportation',
-  'Physical Therapy',
-  'Medical Administration'
-];
+import { Button } from "@/components/ui/button-variants";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/components/hooks/use-toast";
+import { mockApi } from "@/lib/api/mock";
+import { useAppStore } from "@/lib/stores/appStore";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ptBR } from "date-fns/locale/pt-BR";
 
 const timeSlots = [
-  '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', 
-  '14:00', '15:00', '16:00', '17:00', '18:00'
+  "08:00",
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+  "18:00",
+  "19:00",
+  "20:00",
+  "21:00",
+  "22:00",
+  "23:00",
 ];
 
 export default function BookingForm() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const caregiverId = searchParams.get('caregiverId');
   const { toast } = useToast();
   const { selectedElder, setLoading } = useAppStore();
-  
+
+  const { caregiverId } = useParams<{ caregiverId: string }>();
+  const { caregiverPrice } = useParams<{ caregiverPrice: string }>();
+
+  console.log(caregiverPrice, "caregiverPrice");
+  console.log(caregiverId, "caregiverId");
+
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    date: '',
-    startTime: '',
+    date: new Date(),
+    startTime: "",
     duration: 4,
     emergency: false,
-    services: [] as string[],
-    notes: '',
+    notes: "",
     address: {
-      street: selectedElder?.address.street || '',
-      city: selectedElder?.address.city || '',
-      state: selectedElder?.address.state || '',
-      zipCode: selectedElder?.address.zipCode || ''
-    }
+      street: selectedElder?.address.street || "",
+      city: selectedElder?.address.city || "",
+      state: selectedElder?.address.state || "",
+      zipCode: selectedElder?.address.zipCode || "",
+    },
   });
-
-  const handleServiceToggle = (service: string) => {
-    setFormData(prev => ({
-      ...prev,
-      services: prev.services.includes(service)
-        ? prev.services.filter(s => s !== service)
-        : [...prev.services, service]
-    }));
-  };
 
   const handleSubmit = async () => {
     if (!caregiverId || !selectedElder) {
       toast({
         title: "Error",
         description: "Missing booking information",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -82,60 +97,60 @@ export default function BookingForm() {
         emergency: formData.emergency,
         notes: formData.notes,
         address: formData.address,
-        services: formData.services,
-        totalPrice: formData.duration * 35 // Mock calculation
+        //services: formData.services,
+        totalPrice: formData.duration * Number(caregiverPrice), // Mock calculation
       };
 
       const response = await mockApi.createBooking(bookingData);
-      
+
       if (response.success) {
         toast({
           title: "Booking Request Sent",
           description: "The caregiver will be notified of your request",
         });
-        navigate('/bookings');
+        navigate("/bookings");
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create booking",
-        variant: "destructive"
+        variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const isStep1Valid = formData.date && formData.startTime && formData.services.length > 0;
-  const isStep2Valid = formData.address.street && formData.address.city;
+  const isStep1Valid = formData.date && formData.startTime;
+  const isStep2Valid = formData.notes.length >= 0;
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-6">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon-sm"
-            onClick={() => step === 1 ? navigate(-1) : setStep(1)}
+            onClick={() => (step === 1 ? navigate(-1) : setStep(1))}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Nova Reserva</h1>
-            <p className="text-sm text-muted-foreground">
-              Passo {step} de 3
-            </p>
+            <h1 className="text-xl font-semibold text-foreground">
+              Nova Reserva
+            </h1>
+            <p className="text-sm text-muted-foreground">Passo {step} de 3</p>
           </div>
         </div>
-        
+
         {/* Progress */}
         <div className="mt-4 flex gap-2">
           {[1, 2, 3].map((num) => (
-            <div 
+            <div
               key={num}
               className={`h-2 flex-1 rounded-full transition-colors ${
-                step >= num ? 'bg-healthcare-light' : 'bg-muted'
+                step >= num ? "bg-healthcare-light" : "bg-muted"
               }`}
             />
           ))}
@@ -149,49 +164,83 @@ export default function BookingForm() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Calendar className="w-5 h-5 text-healthcare-light" />
+                  <CalendarDays className="w-5 h-5 text-healthcare-light" />
                   Data e Horário
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="date">Data</Label>
-                  <Input
-                    id="date"
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
-                    min={new Date().toISOString().split('T')[0]}
-                  />
+                  <Label htmlFor="birthDate">Data</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-left font-normal"
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.date
+                          ? formData.date.toLocaleDateString("pt-BR")
+                          : "Selecione a data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.date}
+                        initialFocus
+                        captionLayout="dropdown-years"
+                        fromYear={new Date().getFullYear() - 100}
+                        toYear={new Date().getFullYear()}
+                        locale={ptBR}
+                        onSelect={(date) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            date: date || prev.date,
+                          }))
+                        }
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="startTime">Horário de Início</Label>
-                    <Select value={formData.startTime} onValueChange={(value) => 
-                      setFormData(prev => ({ ...prev, startTime: value }))
-                    }>
+                    <Select
+                      value={formData.startTime}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({ ...prev, startTime: value }))
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecionar" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeSlots.map(time => (
-                          <SelectItem key={time} value={time}>{time}</SelectItem>
+                        {timeSlots.map((time) => (
+                          <SelectItem key={time} value={time}>
+                            {time}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   <div>
                     <Label htmlFor="duration">Duração (horas)</Label>
-                    <Select value={formData.duration.toString()} onValueChange={(value) => 
-                      setFormData(prev => ({ ...prev, duration: parseInt(value) }))
-                    }>
+                    <Select
+                      value={formData.duration.toString()}
+                      onValueChange={(value) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          duration: parseInt(value),
+                        }))
+                      }
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {[2, 3, 4, 6, 8, 12].map(hours => (
+                        {[2, 3, 4, 6, 8, 12].map((hours) => (
                           <SelectItem key={hours} value={hours.toString()}>
                             {hours}h
                           </SelectItem>
@@ -205,14 +254,18 @@ export default function BookingForm() {
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 text-medical-critical" />
                     <div>
-                      <p className="font-medium text-foreground">Atendimento de Emergência</p>
-                      <p className="text-sm text-muted-foreground">Resposta prioritária</p>
+                      <p className="font-medium text-foreground">
+                        Atendimento de Emergência
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Resposta prioritária
+                      </p>
                     </div>
                   </div>
                   <Switch
                     checked={formData.emergency}
-                    onCheckedChange={(checked) => 
-                      setFormData(prev => ({ ...prev, emergency: checked }))
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, emergency: checked }))
                     }
                   />
                 </div>
@@ -220,7 +273,7 @@ export default function BookingForm() {
             </Card>
 
             {/* Services */}
-            <Card>
+            {/*    <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Serviços Necessários</CardTitle>
               </CardHeader>
@@ -247,8 +300,8 @@ export default function BookingForm() {
                 </div>
               </CardContent>
             </Card>
-
-            <Button 
+ */}
+            <Button
               onClick={() => setStep(2)}
               disabled={!isStep1Valid}
               className="w-full"
@@ -262,7 +315,7 @@ export default function BookingForm() {
         {step === 2 && (
           <div className="space-y-6">
             {/* Address */}
-            <Card>
+            {/*           <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <MapPin className="w-5 h-5 text-healthcare-light" />
@@ -322,7 +375,7 @@ export default function BookingForm() {
                   />
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Notes */}
             <Card>
@@ -335,14 +388,16 @@ export default function BookingForm() {
               <CardContent>
                 <Textarea
                   value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, notes: e.target.value }))
+                  }
                   placeholder="Informações importantes sobre o atendimento, medicações, preferências, etc."
                   rows={4}
                 />
               </CardContent>
             </Card>
 
-            <Button 
+            <Button
               onClick={() => setStep(3)}
               disabled={!isStep2Valid}
               className="w-full"
@@ -368,38 +423,41 @@ export default function BookingForm() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Data:</span>
                     <span className="font-medium">
-                      {new Date(formData.date).toLocaleDateString('pt-BR')}
+                      {new Date(formData.date).toLocaleDateString("pt-BR")}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Horário:</span>
                     <span className="font-medium">
-                      {formData.startTime} - {
-                        String(parseInt(formData.startTime.split(':')[0]) + formData.duration).padStart(2, '0')
-                      }:00
+                      {formData.startTime} -{" "}
+                      {String(
+                        parseInt(formData.startTime.split(":")[0]) +
+                          formData.duration
+                      ).padStart(2, "0")}
+                      :00
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Duração:</span>
                     <span className="font-medium">{formData.duration}h</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Serviços:</span>
-                    <span className="font-medium text-right max-w-[200px]">
-                      {formData.services.join(', ')}
-                    </span>
-                  </div>
+
                   {formData.emergency && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Emergência:</span>
-                      <span className="font-medium text-medical-critical">Sim</span>
+                      <span className="font-medium text-medical-critical">
+                        Sim
+                      </span>
                     </div>
                   )}
                   <div className="pt-2 border-t border-border">
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total estimado:</span>
                       <span className="text-healthcare-dark">
-                        R$ {(formData.duration * 35).toFixed(2)}
+                        R${" "}
+                        {(formData.duration * Number(caregiverPrice)).toFixed(
+                          2
+                        )}
                       </span>
                     </div>
                   </div>
@@ -408,14 +466,14 @@ export default function BookingForm() {
             </Card>
 
             <div className="space-y-3">
-              <Button 
+              <Button
                 onClick={handleSubmit}
                 className="w-full"
                 variant="healthcare"
               >
                 Enviar Solicitação
               </Button>
-              <Button 
+              <Button
                 onClick={() => setStep(2)}
                 variant="outline"
                 className="w-full"

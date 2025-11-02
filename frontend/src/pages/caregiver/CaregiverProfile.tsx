@@ -23,6 +23,7 @@ import { fetchCaregiverProfileFromAPI } from "@/lib/api/caregiver";
 
 export default function CaregiverProfile() {
   const { id } = useParams<{ id: string }>();
+  console.log("ID",id)
   const navigate = useNavigate();
 
   const [caregiver, setCaregiver] = useState<Caregiver | null>(null);
