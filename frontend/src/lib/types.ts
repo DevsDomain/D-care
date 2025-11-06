@@ -34,7 +34,7 @@ export interface Caregiver {
   distanceKm: number;
   skills: string[]; // e.g., ["Elderly Care", "Medical Administration", "Mobility Assistance"]
   experience: string; // e.g., "5+ years"
-  priceRange: string; // e.g., "R$ 25-35/hora"
+  price_range: string; // e.g., "R$ 25-35/hora"
   emergency: boolean; // Available for emergency calls
   availability: boolean;
   bio: string;
@@ -53,6 +53,7 @@ export interface Elder {
   id: string;
   name: string;
   birthDate: Date;
+  familyId: string;
   photo?: string;
   avatarFile: File | null;
   conditions: string[]; // Health conditions like ["Diabetes", "Hypertension"]

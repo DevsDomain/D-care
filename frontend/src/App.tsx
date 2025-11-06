@@ -47,7 +47,7 @@ function AppLayout() {
 
         {/* FAMILY */}
         <Route
-          path="/book/:caregiverId"
+          path="/book/:caregiverId/:caregiverPrice"
           element={
             <PrivateRoute roles={["FAMILY"]}>
               <BookingForm />

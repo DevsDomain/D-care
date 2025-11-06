@@ -16,6 +16,17 @@ enum UserRole {
   @@schema("auth")
 }
 
+enum AppointmentStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+  COMPLETED
+
+    @@schema("appointments")
+
+}
+
 model Users {
   id           String    @id @default(uuid()) @db.Uuid
   email        String    @unique @db.VarChar(255)
@@ -156,7 +167,6 @@ model Caregivers {
 
   createdAt    DateTime?   @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt    DateTime?   @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
-  requests     AppointmentRequests[]   @relation("CaregiverToRequests")
   appointments Appointments[]          @relation("CaregiverToAppointments")
   documents    CaregiverDocuments[]    @relation("CaregiverToDocuments")
   user         Users?                  @relation("UserToCaregiver", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -188,12 +198,13 @@ model Appointments {
   caregiverId   String?  @map("caregiver_id") @db.Uuid
   datetimeStart DateTime @map("datetime_start") @db.Timestamp(6)
   datetimeEnd   DateTime @map("datetime_end") @db.Timestamp(6)
-  status        Unsupported("appointment_status")? @default(dbgenerated("'pending'::appointment_status"))
+  status         AppointmentStatus @default(PENDING)
   emergency     Boolean? @default(false)
+  notes          String? @db.Text
+  totalPrice    Float     @default(0)
   createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 
-  requests  AppointmentRequests[] @relation("AppointmentToRequests")
   caregiver Caregivers?           @relation("CaregiverToAppointments", fields: [caregiverId], references: [id], onUpdate: NoAction)
   elder     Elders?               @relation("ElderToAppointments", fields: [elderId], references: [id], onUpdate: NoAction)
   family    Families?             @relation("FamilyToAppointments", fields: [familyId], references: [id], onUpdate: NoAction)
@@ -205,20 +216,7 @@ model Appointments {
   @@schema("appointments")
 }
 
-model AppointmentRequests {
-  id            String   @id @default(uuid()) @db.Uuid
-  appointmentId String?  @map("appointment_id") @db.Uuid
-  caregiverId   String?  @map("caregiver_id") @db.Uuid
-  status        Unsupported("request_status")? @default(dbgenerated("'waiting'::request_status"))
-  requestedAt   DateTime? @default(now()) @map("requested_at") @db.Timestamp(6)
-  updatedAt     DateTime? @default(now()) @updatedAt @map("updated_at") @db.Timestamp(6)
 
-  appointment Appointments? @relation("AppointmentToRequests", fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  caregiver   Caregivers?   @relation("CaregiverToRequests", fields: [caregiverId], references: [id], onDelete: Cascade, onUpdate: NoAction)
-
-  @@map("appointment_requests")
-  @@schema("appointments")
-}
 
 model Reviews {
   id            String   @id @default(uuid()) @db.Uuid
