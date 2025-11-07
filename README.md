@@ -13,8 +13,8 @@ Cada entrega será realizada a partir da criação de uma **tag** conforme rela�
 | Sprint | Início | Previsão de entrega | Status | Release | Kanban | BurnDown |
 |:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | 01 | 16/09/2025 | 06/10/2025 | ​​​​☑️ Concluído | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint1.png?raw=true) |
-| 02 | 13/10/2025 | 02/11/2025 | ⏳ Em andamento | [Ver release 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | Ver BurnDown 2 |
-| 03 | 06/11/2025 | 23/11/2025 | 🚧 A iniciar | Ver release 3 | Ver Sprint 3 | Ver BurnDown 3 |
+| 02 | 13/10/2025 | 02/11/2025 | ☑️ Concluído | [Ver release 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | [Ver Burndown 2](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint2.png?raw=true) |
+| 03 | 06/11/2025 | 23/11/2025 | ⏳ Em andamento | [Ver release 3](https://github.com/DevsDomain/D-care/releases/tag/Sprint3) | [Ver Sprint 3](https://github.com/orgs/DevsDomain/projects/41/views/6) | Ver BurnDown 3 |
 
 ## ✍️ Product Backlog
 O Product Backlog segue o padrão de priorização:
@@ -28,19 +28,19 @@ O Product Backlog segue o padrão de priorização:
 ## 👤 Usuário / Sistema
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
-| US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 7            | 5              | Done  |
-| US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | Done  |
-| US13 | Como usuário, quero consultar uma cartilha com IA                            | Alta         | 10           | 10              | In Progress  |
-| US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | In Progress  |
-| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | To Do  |
+| US01 | Como usuário, quero me cadastrar como família/cuidador para acessar o sistema | Média        | 7            | 5              | Done        |
+| US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | Done        |
+| US13 | Como usuário, quero consultar uma cartilha com IA                            | Alta         | 10           | 10              | Done        |
+| US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | To Do       |
+| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | To Do       |
 
 ---
 
 ## 🧑‍⚕️ Cuidador
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
-| US04 | Como cuidador, quero editar meu perfil (dados, geolocalização, CRM/COREN, agenda) | Alta        | 8            | 8          | In Progress   |
-| US06 | Como cuidador, quero definir disponibilidade (agenda) e emergências          | Alta        | 7            | 7               | To Do        |
+| US04 | Como cuidador, quero editar meu perfil (dados, geolocalização, CRM/COREN, agenda) | Alta        | 8            | 8          | Done         |
+| US06 | Como cuidador, quero definir disponibilidade (agenda) e emergências          | Alta        | 7            | 7               | Done         |
 | US10 | Como cuidador, quero aceitar/recusar solicitações de agendamento             | Baixa       | 7            | 8               | To Do        |
 
 ---
@@ -49,13 +49,13 @@ O Product Backlog segue o padrão de priorização:
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
 | US03 | Como família, quero registrar um idoso (dados pessoais/saúde)                | Média        | 7            | 7               | Done         |
-| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | In Progress  |
-| US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | In Progress  |
-| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | In Progress  |
+| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | To Do        |
+| US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | Done         |
+| US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | Done         |
 | US09 | Como família, quero agendar um cuidador em data/hora                         | Alta         | 6            | 9               | To Do        |
 | US11 | Como família, quero avaliar o cuidador após atendimento                      | Baixa        | 4            | 5               | To Do        |
-| US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | To Do        |
-| US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | In Progress  |
+| US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | Done         |
+| US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | Done         |
 | US17 | Como família, quero visualizar meus agendamentos (futuros e passados)        | Média        | 7            | 8               | To Do        |
 
 
@@ -108,7 +108,5 @@ O Product Backlog segue o padrão de priorização:
 | Scrum Master    | Juliana Maciel   | [![Linkedin Badge](https://img.shields.io/badge/Linkedin-blue?style=flat-square&logo=Linkedin&logoColor=white)](https://www.linkedin.com/in/juliana-maciel-manso) [![GitHub Badge](https://img.shields.io/badge/GitHub-111217?style=flat-square&logo=github&logoColor=white)](https://github.com/Jummanso) |
 | Dev Team        | Abner Rodrigo    | [![Linkedin Badge](https://img.shields.io/badge/Linkedin-blue?style=flat-square&logo=Linkedin&logoColor=white)](https://www.linkedin.com/in/abnercosta97) [![GitHub Badge](https://img.shields.io/badge/GitHub-111217?style=flat-square&logo=github&logoColor=white)](https://github.com/abnercosta97) |
 | Dev Team        | Fernando Davi    | [![Linkedin Badge](https://img.shields.io/badge/Linkedin-blue?style=flat-square&logo=Linkedin&logoColor=white)](https://www.linkedin.com/in/fernando-davi-492842276) [![GitHub Badge](https://img.shields.io/badge/GitHub-111217?style=flat-square&logo=github&logoColor=white)](https://github.com/fnddavi) |
-
-
 
 
