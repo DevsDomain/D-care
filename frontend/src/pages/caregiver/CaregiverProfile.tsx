@@ -23,7 +23,7 @@ import { fetchCaregiverProfileFromAPI } from "@/lib/api/caregiver";
 
 export default function CaregiverProfile() {
   const { id } = useParams<{ id: string }>();
-  console.log("ID",id)
+  console.log("ID", id);
   const navigate = useNavigate();
 
   const [caregiver, setCaregiver] = useState<Caregiver | null>(null);
@@ -44,7 +44,8 @@ export default function CaregiverProfile() {
       if (data) {
         // Normaliza para o tipo Caregiver
         const caregiverData: Caregiver = {
-          id,
+          id: data.id,
+          userId: data.userId,
           name: data.name || "Sem nome",
           phone: data.phone || "",
           email: data.email,
@@ -53,7 +54,7 @@ export default function CaregiverProfile() {
           verified: data.validated || false,
           emergency: data.emergency || false,
           experience: data.experience || "",
-          priceRange: `R$ ${data.priceRange || "—"}`,
+          price_range: data.price_range || "",
           rating: data.rating || 0,
           reviewCount: data.reviewCount || 0,
           skills: data.skills || [],
@@ -71,10 +72,6 @@ export default function CaregiverProfile() {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleBookCaregiver = () => {
-    if (caregiver) navigate(`/book/${caregiver.id}`);
   };
 
   if (isLoading) {
@@ -97,6 +94,11 @@ export default function CaregiverProfile() {
       />
     );
   }
+
+  const handleBookCaregiver = (caregiver: Caregiver) => {
+    //const userId = caregiver.userId;
+    navigate(`/book/${caregiver.id}/${caregiver.price_range}`);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -179,7 +181,7 @@ export default function CaregiverProfile() {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <p className="text-2xl font-bold text-healthcare-dark">
-                  {caregiver.priceRange}
+                  R${caregiver.price_range}
                 </p>
                 <p className="text-sm text-muted-foreground">por hora</p>
               </div>
@@ -200,7 +202,7 @@ export default function CaregiverProfile() {
               <Button
                 variant="healthcare"
                 size="lg"
-                onClick={handleBookCaregiver}
+                onClick={() => handleBookCaregiver(caregiver)}
               >
                 <Calendar className="w-5 h-5 mr-2" />
                 Contratar

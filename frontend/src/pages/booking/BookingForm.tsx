@@ -171,7 +171,7 @@ export default function BookingForm() {
   };
 
   const isStep1Valid = formData.date && formData.startTime;
-  const isStep2Valid = formData.notes.length >= 0;
+  const isStep2Valid = elderSelected?.id !== undefined;
 
   return (
     <div className="min-h-screen bg-background pb-24">
