@@ -43,7 +43,7 @@ export default function Search() {
   const globalFilters = useSearchFilters || {};
 
   const [filters, setFilters] = useState<SearchFilters>({
-    distanceKm: 10,
+    distanceKm: 30,
     verified: false,
     emergency: false,
     rating: 0,
