@@ -133,7 +133,7 @@ export interface IvcfResult {
 
 export interface IvcfQuestion {
   id: string;
-  category: "instrumental" | "cognitive" | "social";
+  category: "Autopercepção da saúde" | "Atividades de vida diária" | "Cognição" | "Humor" | "Mobilidade" | "Comunicação" | "Comorbidades Múltiplas";
   question: string;
   description?: string;
   options: {

@@ -191,36 +191,190 @@ import {
   const mockIvcfQuestions: IvcfQuestion[] = [
     {
       id: 'q1',
-      category: 'instrumental',
-      question: 'Consegue usar o telefone?',
-      description: 'Avaliar a capacidade de utilizar o telefone de forma independente',
+      category: 'Autopercepção da saúde',
+      question: 'Em geral, comparando com outras pessoas de sua idade, você diria que sua saúda é:',
+      description: '',
       options: [
-        { value: 2, label: 'Utiliza por iniciativa própria', description: 'Liga e atende sem ajuda' },
-        { value: 1, label: 'Disca alguns números conhecidos', description: 'Precisa de auxílio ocasional' },
-        { value: 0, label: 'Atende mas não liga', description: 'Não consegue discar números' }
+        { value: 1, label: 'Regular ou ruim', description: '' },
+        { value: 0, label: 'Excelente, muito boa ou boa', description: '' }
       ]
     },
     {
       id: 'q2',
-      category: 'instrumental',
-      question: 'Consegue ir a locais distantes usando algum transporte?',
-      description: 'Avaliar a capacidade de se locomover independentemente',
+      category: 'Atividades de vida diária',
+      question: 'Por causa de sua saúde ou condição física, você deixou de fazer compras?',
+      description: '',
       options: [
-        { value: 2, label: 'Viaja sozinho(a)', description: 'Usa transporte público ou dirige' },
-        { value: 1, label: 'Viaja acompanhado(a)', description: 'Precisa de companhia' },
-        { value: 0, label: 'Não viaja', description: 'Não sai de casa' }
+        { value: 4, label: 'Sim', description: '' },
+        { value: 0, label: 'Não', description: 'Não ou Não faz compras por outros motivos que não a saúde' }      ]
+    },
+
+    {
+      id: 'q4_i', // Corresponde à pergunta 4 da seção AVD instrumental
+      category: 'Atividades de vida diária',
+      question: 'Por causa de sua saúde ou condição física, você deixou de controlar seu dinheiro, gastos ou pagar as contas de sua casa?',
+      options: [
+        { value: 4, label: 'Sim', description: '' }, // Sim, deixou de fazer (4 pontos)
+        { value: 0, label: 'Não', description: 'Não ou Não controla o dinheiro por outros motivos que não a saúde' } // Não ou não faz por outro motivo (0 pontos)
       ]
     },
     {
-      id: 'q3',
-      category: 'instrumental',
-      question: 'Consegue fazer compras?',
+      id: 'q5_i', // Corresponde à pergunta 5 da seção AVD instrumental
+      category: 'Atividades de vida diária',
+      question: 'Por causa de sua saúde ou condição física, você deixou de realizar pequenos trabalhos domésticos, como lavar louça, arrumar a casa ou fazer limpeza leve?',
       options: [
-        { value: 2, label: 'Faz compras independentemente' },
-        { value: 1, label: 'Compra pequenas coisas' },
-        { value: 0, label: 'Precisa ser acompanhado(a)' }
+        { value: 4, label: 'Sim', description: '' }, // Sim, deixou de fazer (4 pontos)
+        { value: 0, label: 'Não', description: 'Não ou Não faz mais pequenos trabalhos domésticos por outros motivos que não a saúde' } // Não ou não faz por outro motivo (0 pontos)
       ]
     },
+    {
+      id: 'q6_b', // Corresponde à pergunta 6 da seção AVD básica
+      category: 'Atividades de vida diária',
+      question: 'Por causa de sua saúde ou condição física, você deixou de tomar banho sozinho?',
+      options: [
+        { value: 4, label: 'Sim', description: '' }, // Sim, deixou de tomar banho sozinho (4 pontos)
+        { value: 0, label: 'Não', description: '' } // Não, ainda toma banho sozinho (0 pontos)
+      ]
+    },
+        {
+      id: 'q7', // Corresponde à pergunta 6 da seção AVD básica
+      category: 'Cognição',
+      question: 'Algum familiar ou amigo falou que você está ficando esquecido?',
+     
+      options: [
+        { value: 1, label: 'Sim', description: '' }, // Sim, deixou de tomar banho sozinho (4 pontos)
+        { value: 0, label: 'Não', description: '' } // Não, ainda toma banho sozinho (0 pontos)
+      ]
+    },
+        {
+      id: 'q8', // Corresponde à pergunta 6 da seção AVD básica
+      category: 'Cognição',
+      question: 'Este esquecimento está piorando nos últimos meses?',
+     
+      options: [
+        { value: 1, label: 'Sim', description: '' }, 
+        { value: 0, label: 'Não', description: '' } 
+      ]
+    },
+        {
+      id: 'q9', // Corresponde à pergunta 6 da seção AVD básica
+      category: 'Cognição',
+      question: 'Este esquecimento está impedindo a realização de alguma atividade do cotidiano?',
+     
+      options: [
+        { value: 2, label: 'Sim', description: '' }, 
+        { value: 0, label: 'Não', description: '' } // Não, ainda toma banho sozinho (0 pontos)
+      ]
+    },
+          {
+      id: 'q10', // Corresponde à pergunta 6 da seção AVD básica
+      category: 'Humor',
+      question: 'No último mês, ficou com desânimo, tristeza ou desesperança??',
+      
+      options: [
+        { value: 2, label: 'Sim', description: '' }, 
+        { value: 0, label: 'Não', description: '' } // Não, ainda toma banho sozinho (0 pontos)
+      ]
+    },
+        {
+      id: 'q11', // Corresponde à pergunta 6 da seção AVD básica
+      category: 'Humor',
+      question: 'No último mês, perdeu interesse ou prazer em atividades anteriormente prazerosas?',
+      
+      options: [
+        { value: 2, label: 'Sim', description: '' }, 
+        { value: 0, label: 'Não', description: '' } // Não, ainda toma banho sozinho (0 pontos)
+      ]
+    },
+    {
+      id: 'q12', // Corresponde à Q.12 da imagem
+      category: 'Mobilidade',
+      question: 'Você é incapaz de elevar os braços acima do nível do ombro?',
+          options: [
+        { value: 1, label: 'Sim' }, // Sim¹ = 1 ponto
+        { value: 0, label: 'Não' }
+      ]
+    },
+    {
+      id: 'q13', // Corresponde à Q.13 da imagem
+      category: 'Mobilidade',
+      question: 'Você é incapaz de manusear ou segurar pequenos objetos?',
+          options: [
+        { value: 1, label: 'Sim' }, // Sim¹ = 1 ponto
+        { value: 0, label: 'Não' }
+      ]
+    },
+    {
+      id: 'q14', // Corresponde à Q.14 da imagem
+      category: 'Mobilidade',
+      question: 'Você tem alguma das quatro condições abaixo relacionadas?',
+      description: 'Perda de peso não intencional (4,5kg ou 5% do peso corporal no último ano OU 6kg nos últimos 6 meses OU 3kg no último mês); Índice de Massa Corporal (IMC) menor que 22 kg/m²; Circunferência da panturrilha menor que 31 cm; Tempo gasto no teste de velocidade da marcha (4m) maior que 5 segundos.',
+      options: [
+        { value: 2, label: 'Sim' }, // Sim² = 2 pontos
+        { value: 0, label: 'Não' }
+      ]
+    },
+    {
+      id: 'q15', // Corresponde à Q.15 da imagem
+      category: 'Mobilidade',
+      question: 'Você tem dificuldade para caminhar capaz de impedir a realização de alguma atividade do cotidiano?',
+      
+      options: [
+        { value: 2, label: 'Sim' }, // Sim² = 2 pontos
+        { value: 0, label: 'Não' }
+      ]
+    },
+    {
+      id: 'q16', // Corresponde à Q.16 da imagem
+      category: 'Mobilidade',
+      question: 'Você teve duas ou mais quedas no último ano?',
+      
+      options: [
+        { value: 2, label: 'Sim' }, // Sim² = 2 pontos
+        { value: 0, label: 'Não' }
+      ]
+    },
+    {
+      id: 'q17', // Corresponde à Q.17 da imagem
+      category: 'Mobilidade',
+      question: 'Você perde urina ou fezes, sem querer, em algum momento?',
+      description: 'Continência esfincteriana',
+      options: [
+        { value: 2, label: 'Sim' }, // Sim² = 2 pontos
+        { value: 0, label: 'Não' }
+      ]
+    },
+        {
+      id: 'q18', // Corresponde à Q.16 da imagem
+      category: 'Comunicação',
+      question: 'Você tem problemas de visão capaz de impedir a realização de alguma atividade do cotidiano?',
+      description: 'É permitido o uso de óculos ou lentes de contato',
+      options: [
+        { value: 2, label: 'Sim' }, // Sim² = 2 pontos
+        { value: 0, label: 'Não' }
+      ]
+    },
+    {
+      id: 'q19', // Corresponde à Q.17 da imagem
+      category: 'Comunicação',
+      question: 'Você tem problemas de audição capaz de impedir a realização de alguma atividade do cotidiano?',
+      description: 'É permitido o uso de aparelho auditivo',
+      options: [
+        { value: 2, label: 'Sim' }, // Sim² = 2 pontos
+        { value: 0, label: 'Não' }
+      ]
+    },
+       {
+      id: 'q20', // Corresponde à Q.17 da imagem
+      category: 'Comorbidades Múltiplas',
+      question: 'Você tem alguma das três condições abaixo relacionadas?',
+      description: 'Cinco ou mais comorbidades crônicas (hipertensão, diabetes, doença pulmonar obstrutiva crônica, insuficiência cardíaca congestiva, doença renal crônica, artrite, osteoporose, depressão, câncer, demência, acidente vascular cerebral, doença cardíaca isquêmica, entre outras); Uso de cinco ou mais medicamentos prescritos; Internação hospitalar nos últimos seis meses.',
+      options: [
+        { value: 4, label: 'Sim' }, // Sim² = 2 pontos
+        { value: 0, label: 'Não' }
+      ]
+    }
+
     // Add more questions...
   ];
   
@@ -388,7 +542,7 @@ import {
       };
     },
   
-    async submitIvcfAssessment(elderId: string, answers: Record<string, number>): Promise<ApiResponse<IvcfResult>> {
+    async submitIvcfAssessment(elderId: string = '123', answers: Record<string, number>): Promise<ApiResponse<IvcfResult>> {
       await delay(1000);
       
       // Calculate score (simplified)
