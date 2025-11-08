@@ -26,6 +26,8 @@ jobs:
             git pull origin qas
 
             echo "🧹 Cleaning up unnecessary files..."
+            # This command finds all files/dirs in the current directory
+            # and deletes everything EXCEPT the specified items.
             find . -mindepth 1 -maxdepth 1 \
               ! -name 'backend' \
               ! -name 'frontend' \
@@ -34,8 +36,16 @@ jobs:
               ! -name '.env' \
               -exec sudo rm -rf {} \;
 
-            echo "✅ Keeping only backend, frontend, test, docker-compose.yml"
+            # Updated this echo command to be accurate
+            echo "✅ Keeping only backend, frontend, test, docker-compose.yml, and .env"
             ls -la
+
+            echo "🧹 Pruning Docker system to free up space..."
+            # This is the fix for "No space left on device"
+            # -a = --all (prune all unused images, not just dangling ones)
+            # -f = --force (do not ask for confirmation)
+            sudo docker system prune -af
+            sudo docker builder prune -af
 
             echo "🐳 Rebuilding containers..."
             sudo docker compose build --no-cache
