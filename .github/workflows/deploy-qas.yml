@@ -20,6 +20,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ~/D-care
+            sudo docker compose down
             git fetch origin
             git checkout qas
             git pull origin qas
@@ -30,12 +31,12 @@ jobs:
               ! -name 'frontend' \
               ! -name 'test' \
               ! -name 'docker-compose.yml' \
+              ! -name '.env' \
               -exec sudo rm -rf {} \;
 
             echo "✅ Keeping only backend, frontend, test, docker-compose.yml"
             ls -la
 
             echo "🐳 Rebuilding containers..."
-            sudo docker compose down
             sudo docker compose build --no-cache
             sudo docker compose up -d
