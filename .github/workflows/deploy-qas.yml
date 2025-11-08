@@ -23,6 +23,19 @@ jobs:
             git fetch origin
             git checkout qas
             git pull origin qas
+
+            echo "🧹 Cleaning up unnecessary files..."
+            find . -mindepth 1 -maxdepth 1 \
+              ! -name 'backend' \
+              ! -name 'frontend' \
+              ! -name 'test' \
+              ! -name 'docker-compose.yml' \
+              -exec sudo rm -rf {} \;
+
+            echo "✅ Keeping only backend, frontend, test, docker-compose.yml"
+            ls -la
+
+            echo "🐳 Rebuilding containers..."
             sudo docker compose down
             sudo docker compose build --no-cache
             sudo docker compose up -d
