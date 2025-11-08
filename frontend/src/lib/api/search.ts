@@ -15,20 +15,22 @@ export async function fetchCaregiversFromAPI(
   try {
     const caregivers = await searchCaregivers(filters);
 
+    console.log("FROM API CALL",caregivers[0])
+
     // Ajuste de formato para o frontend
-    return caregivers.map((c: any) => ({
+    return caregivers.map((c: Caregiver) => ({
       id: c.id,
       userId: c.userId,
-      name: c.name,
-      photo: c.photo ?? "https://placehold.co/150x150?text=Caregiver",
-      verified: c.verified ?? c.validated ?? false,
-      crmCorem: c.crmCorem ?? c.crm_coren ?? "",
+      name: c.name ?? "Cuidador(a) Anônimo(a)",
+      photo: c.avatarPath ?? c.avatarPath ?? "",
+      verified: c.verified ?? c.verificationBadges ?? false,
+      crm_coren: c.crm_coren ?? c.crm_coren ?? "",
       rating: Number(c.rating ?? 0),
-      reviewCount: Number(c.reviewCount ?? c.review_count ?? 0),
+      reviewCount: Number(c.reviewCount ?? c.rating ?? 0),
       distanceKm: Number(c.distanceKm ?? 0),
       skills: c.skills ?? ["Companionship", "Elderly Care"],
       experience: c.experience ?? "1+ years",
-      priceRange: c.priceRange ?? "R$ 30-40/hora",
+      price_range: c.price_range ,
       emergency: c.emergency ?? false,
       availability: c.availability ?? [],
       bio: c.bio ?? "",

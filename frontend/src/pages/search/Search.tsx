@@ -29,7 +29,6 @@ import {
 import { CaregiverCard } from "@/components/common/CaregiverCard";
 import { EmptyState } from "@/components/common/EmptyState";
 import { ListSkeleton } from "@/components/common/LoadingSkeleton";
-import { mockApi } from "@/lib/api/mock";
 import { fetchCaregiversFromAPI } from "@/lib/api/search";
 import type { Caregiver, SearchFilters } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
@@ -44,7 +43,7 @@ export default function Search() {
   const globalFilters = useSearchFilters || {};
 
   const [filters, setFilters] = useState<SearchFilters>({
-    distanceKm: 10,
+    distanceKm: 30,
     verified: false,
     emergency: false,
     rating: 0,
@@ -64,6 +63,7 @@ export default function Search() {
         minRating: filters.rating ?? undefined,
         availableForEmergency: filters.emergency ?? undefined,
         specialization: searchQuery || undefined,
+
       });
 
       setCaregivers(response);
@@ -88,8 +88,8 @@ export default function Search() {
   };
 
   const handleBookCaregiver = (caregiver: Caregiver) => {
-    const userId = caregiver.userId;
-    navigate(`/book/${userId}`);
+    //const userId = caregiver.userId;
+    navigate(`/book/${caregiver.id}/${caregiver.price_range}`);
   };
 
   const filteredCaregivers = caregivers.filter(

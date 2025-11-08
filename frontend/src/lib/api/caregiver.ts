@@ -73,6 +73,8 @@ export async function fetchCaregiverProfileFromAPI(userId: string) {
     const profile = data.userProfile?.[0];
 
     return {
+      id: caregiver?.id,
+      userId: data.userId,
       name: profile?.name ?? "Sem nome", // ✅ inclui o nome
       phone: profile?.phone ?? "",
       email: data.email,
@@ -87,7 +89,7 @@ export async function fetchCaregiverProfileFromAPI(userId: string) {
       emergency: caregiver?.emergency,
       availability: caregiver?.availability,
       experience: caregiver?.experience,
-      priceRange: caregiver?.priceRange,
+      price_range: caregiver?.priceRange,
       rating: caregiver?.rating,
       reviewCount: caregiver?.reviewCount,
       skills: caregiver?.skills,

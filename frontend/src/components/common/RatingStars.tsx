@@ -3,13 +3,13 @@
  * Displays star ratings with healthcare theme styling
  */
 
-import { Star } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Star } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RatingStarsProps {
   rating: number;
   maxRating?: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: "sm" | "md" | "lg";
   showNumber?: boolean;
   reviewCount?: number;
   interactive?: boolean;
@@ -20,23 +20,23 @@ interface RatingStarsProps {
 export function RatingStars({
   rating,
   maxRating = 5,
-  size = 'md',
+  size = "md",
   showNumber = true,
   reviewCount,
   interactive = false,
   onRatingChange,
-  className
+  className,
 }: RatingStarsProps) {
   const sizeClasses = {
-    sm: 'w-3 h-3',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5'
+    sm: "w-3 h-3",
+    md: "w-4 h-4",
+    lg: "w-5 h-5",
   };
 
   const textSizeClasses = {
-    sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base'
+    sm: "text-xs",
+    md: "text-sm",
+    lg: "text-base",
   };
 
   const handleStarClick = (starRating: number) => {
@@ -46,12 +46,13 @@ export function RatingStars({
   };
 
   return (
-    <div className={cn("flex items-center gap-1", className)}>
+    <div className={cn("flex-col items-center gap-1", className)}>
       <div className="flex items-center gap-0.5">
         {Array.from({ length: maxRating }, (_, index) => {
           const starRating = index + 1;
           const isFilled = starRating <= rating;
-          const isPartiallyFilled = starRating - 0.5 <= rating && starRating > rating;
+          const isPartiallyFilled =
+            starRating - 0.5 <= rating && starRating > rating;
 
           return (
             <button
@@ -87,7 +88,7 @@ export function RatingStars({
           );
         })}
       </div>
-      
+
       {showNumber && (
         <div className={cn("flex items-center gap-1", textSizeClasses[size])}>
           <span className="font-medium text-foreground">
@@ -95,7 +96,7 @@ export function RatingStars({
           </span>
           {reviewCount !== undefined && (
             <span className="text-muted-foreground">
-              ({reviewCount} {reviewCount === 1 ? 'avaliação' : 'avaliações'})
+              ({reviewCount} {reviewCount === 1 ? "avaliação" : "avaliações"})
             </span>
           )}
         </div>

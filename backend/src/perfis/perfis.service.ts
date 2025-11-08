@@ -7,6 +7,7 @@ import { getCoordinatesFromZipCode } from '../common/helper/getCoordinatesFromCe
 import { StorageService } from '../storage/storage.service';
 import safeParseArray from '../common/pipes/safe-parse-array.pipe';
 import { SearchCaregiversDto } from './dto/search-caregivers.dto';
+import { CaregiverRaw } from 'src/common/types/caregiver-input-type';
 
 @Injectable()
 export class PerfisService {
@@ -212,65 +213,67 @@ export class PerfisService {
         whereClause += ` AND c.availability = false`;
       }
 
+      console.log('🔍 [DEBUG] Filtros SQL aplicados:', whereClause);
+
       // 4️⃣ Query principal
-      const caregiversRaw = await this.prisma.$queryRawUnsafe<any[]>(`
-        SELECT 
-          c.id,
-          c.user_id AS "userId",
-          up.name AS caregiver_name,
-          c.bio,
-          c.crm_coren AS "crmCoren",
-          c.validated,
-          c.availability,
-          c.emergency,
-          ST_AsText(c.location) AS location_wkt,
-          COALESCE(AVG(r.rating), 0) AS rating,
-          COUNT(r.id) AS review_count,
-          ST_Distance(
-            c.location, 
-            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
-          ) AS distance_meters
-        FROM caregiver.caregivers c
-        JOIN auth.user_profiles up ON up.user_id = c.user_id
-        LEFT JOIN reviews.reviews r ON r.caregiver_id = c.id
-        WHERE c.location IS NOT NULL
-          AND ST_DWithin(
-            c.location, 
-            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography, 
-            ${maxDistance}
+      const caregiversRaw = await this.prisma.$queryRawUnsafe<CaregiverRaw[]>(`
+      select
+	c.id,
+	c.user_id as "userId",
+	up.name,
+	c.crm_coren,
+	c."avatarPath",
+	c.validated,
+	c.bio,
+	c.address,
+	c.city,
+	c.state,
+	c.zip_code,
+	c.experience,
+	c.price_range,
+	c.availability,
+	c.emergency,
+	c.skills,
+	c.languages,
+	c.specializations,
+  c."verificationBadges",
+	ST_Distance(
+            c.location,
+	ST_SetSRID(ST_MakePoint(${lng},
+	${lat}),
+	4326)::geography
+          ) as distance_meters,
+	ST_AsText(c.location) as location_wkt,
+	coalesce(AVG(r.rating),
+	0) as rating,
+	up.name as caregiver_name
+from
+	caregiver.caregivers c
+join auth.user_profiles up on
+	up.user_id = c.user_id
+left join reviews.reviews r on
+	r.caregiver_id = c.id
+where
+	c.location is not null
+	and ST_DWithin(
+            c.location,
+	ST_SetSRID(ST_MakePoint(${lng},
+	${lat}),
+	4326)::geography,
+	${maxDistance}
           )
           ${whereClause}
-        GROUP BY c.id, up.name
-        ORDER BY distance_meters ASC;
+group by
+	c.id,
+	up.name
+order by
+	distance_meters asc
       `);
-
-      console.log(
-        `🏁 Total de cuidadores encontrados: ${caregiversRaw.length}`,
-      );
 
       // 5️⃣ Formatar resposta
       return caregiversRaw.map((c) => ({
-        id: c.id,
-        userId: c.userId,
-        name: c.caregiver_name,
-        photo: `https://randomuser.me/api/portraits/${
-          Math.random() > 0.5 ? 'women' : 'men'
-        }/${Math.floor(Math.random() * 90) + 1}.jpg`,
-        verified: c.validated,
-        crmCorem: c.crmCoren || 'N/A',
-        rating: Number(c.rating),
-        reviewCount: Number(c.review_count),
+        ...c,
         distanceKm: parseFloat((Number(c.distance_meters) / 1000).toFixed(2)),
-        availability: c.availability,
-        emergency: c.emergency,
-        skills: ['Elderly Care', 'Medication Management'],
-        experience: `${Math.floor(Math.random() * 10) + 1}+ years`,
-        priceRange: 'R$ 30-40/hora',
-        bio: c.bio,
-        phone: '+55 12 99999-0000',
-        languages: ['Portuguese'],
-        specializations: ['Elderly Care', 'Rehabilitation'],
-        verificationBadges: ['Background Check', 'First Aid Certified'],
       }));
     } catch (error) {
       console.error('❌ Erro ao buscar cuidadores:', error);

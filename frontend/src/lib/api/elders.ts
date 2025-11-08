@@ -116,7 +116,7 @@ export async function createElder(elder: Partial<Elder>) {
   // Campos básicos
   formData.append("name", elder.name ?? "");
   if (elder.birthDate) formData.append("birthdate", elder.birthDate.toISOString());
-
+  
   if (elder.conditions) formData.append("conditions", JSON.stringify(elder.conditions));
   if (elder.medications) formData.append("medications", JSON.stringify(elder.medications));
 

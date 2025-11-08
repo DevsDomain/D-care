@@ -53,6 +53,15 @@ export class AuthService {
     });
 
     const tokens = this.signTokens(user.id, user.email, user.role);
+
+    if (user.id) {
+      await this.prisma.families.create({
+        data: {
+          userId: user.id,
+          id: user.id,
+        },
+      });
+    }
     return { user: this.safeUser(user), ...tokens };
   }
 

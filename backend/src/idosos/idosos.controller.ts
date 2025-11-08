@@ -1,7 +1,15 @@
 // src/idosos/idosos.controller.ts
 import {
-  Controller, Post, Get, Patch, Delete, Body, Param,
-  UseInterceptors, UploadedFile,
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  UseInterceptors,
+  UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { IdososService } from './idosos.service';
 import { CreateElderDto } from './dto/create-elder.dto';
@@ -14,13 +22,21 @@ export class IdososController {
 
   @Post()
   @UseInterceptors(FileInterceptor('avatar'))
-  create(@Body() dto: CreateElderDto, @UploadedFile() file?: Express.Multer.File) {
+  create(
+    @Body() dto: CreateElderDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
     return this.idososService.createElder(dto, file);
   }
 
   @Get()
   findAll() {
     return this.idososService.findAllElders();
+  }
+
+  @Get('family')
+  findByFamily(@Query('familyId') familyId: string) {
+    return this.idososService.findAllByFamily(familyId);
   }
 
   @Get(':id')
