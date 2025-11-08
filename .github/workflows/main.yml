@@ -29,7 +29,7 @@ jobs:
           echo "PG_USER=${{ secrets.PG_USER }}" >> backend/.env
           echo "PG_PASS=${{ secrets.PG_PASS }}" >> backend/.env
           echo "PG_DB=${{ secrets.PG_DB }}" >> backend/.env
-          echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@pg-care:5432/${{ secrets.PG_DB }}" >> backend/.env
+          echo "DATABASE_URL=postgresql://${{ secrets.PG_USER }}:${{ secrets.PG_PASS }}@localhost:55432/${{ secrets.PG_DB }}" >> backend/.env
           
           echo "PG_USER=${{ secrets.PG_USER }}" >> .env
           echo "PG_PASS=${{ secrets.PG_PASS }}" >> .env
