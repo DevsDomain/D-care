@@ -20,20 +20,21 @@ export class CreateAppointmentDto {
   @IsOptional()
   caregiverId?: string;
 
-  // Expect a date string like 'YYYY-MM-DD'
+  // 'YYYY-MM-DD'
   @IsISO8601({ strict: true })
   date: string;
 
-  // Expect a time string like 'HH:MM'
-  @IsString() // You can use @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/) for stricter validation
+  // 'HH:MM'
+  @IsString()
   startTime: string;
 
+  // Duração em MINUTOS
   @IsNumber()
-  duration: number; // Assuming this is in minutes
+  duration: number;
 
   @IsString()
   @IsOptional()
-  status?: 'PENDING';
+  status?: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'CANCELLED' | 'COMPLETED';
 
   @IsBoolean()
   @IsOptional()
