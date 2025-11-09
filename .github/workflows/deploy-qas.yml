@@ -1,0 +1,52 @@
+name: Deploy to QAS
+
+on:
+  push:
+    branches:
+      - qas
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: SSH into EC2 and deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/D-care
+            sudo docker compose down
+            git fetch origin
+            git checkout qas
+            git pull origin qas
+
+            echo "🧹 Cleaning up unnecessary files..."
+            # This command finds all files/dirs in the current directory
+            # and deletes everything EXCEPT the specified items.
+            find . -mindepth 1 -maxdepth 1 \
+              ! -name 'backend' \
+              ! -name 'frontend' \
+              ! -name 'test' \
+              ! -name 'docker-compose.yml' \
+              ! -name '.env' \
+              -exec sudo rm -rf {} \;
+
+            # Updated this echo command to be accurate
+            echo "✅ Keeping only backend, frontend, test, docker-compose.yml, and .env"
+            ls -la
+
+            echo "🧹 Pruning Docker system to free up space..."
+            # This is the fix for "No space left on device"
+            # -a = --all (prune all unused images, not just dangling ones)
+            # -f = --force (do not ask for confirmation)
+            sudo docker system prune -af
+            sudo docker builder prune -af
+
+            echo "🐳 Rebuilding containers..."
+            sudo docker compose build --no-cache
+            sudo docker compose up -d
