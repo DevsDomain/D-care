@@ -37,10 +37,27 @@ import { AgeCalculator } from "@/components/hooks/useAge";
 import { requestAppointment } from "@/lib/api/appointment";
 
 const timeSlots = [
-  "08:00","09:00","10:00","11:00","12:00","13:00",
-  "14:00","15:00","16:00","17:00","18:00","19:00",
-  "20:00","21:00","22:00","23:00",
+  "08:00", "09:00", "10:00", "11:00",
+  "12:00", "13:00", "14:00", "15:00",
+  "16:00", "17:00", "18:00", "19:00",
+  "20:00", "21:00", "22:00", "23:00",
 ];
+
+type ElderApi = {
+  id: string;
+  familyId?: string | null;
+  family?: { id?: string | null } | null;
+  name: string;
+  birthdate?: Date | undefined;
+  birthDate?: Date | undefined;
+  avatarPath?: string | undefined;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  };
+};
 
 export default function BookingForm() {
   const navigate = useNavigate();
@@ -49,6 +66,7 @@ export default function BookingForm() {
   const { currentUser, setCurrentUser } = useAppStore();
   const { caregiverId } = useParams<{ caregiverId: string }>();
   const { caregiverPrice } = useParams<{ caregiverPrice: string }>();
+
   const [loadingElders, setLoadingElders] = useState(false);
   const [elderSelected, setElderSelected] = useState<ElderApi>();
   const [step, setStep] = useState(1);
@@ -70,19 +88,6 @@ export default function BookingForm() {
     },
   });
 
-  type ElderApi = {
-    id: string;
-    familyId?: string | null;
-    family?: { id?: string | null } | null;
-    name: string;
-    birthdate?: Date | undefined;
-    birthDate?: Date | undefined;
-    avatarPath?: string | undefined;
-    address?: {
-      street?: string; city?: string; state?: string; zipCode?: string;
-    }
-  };
-
   // Busca lista de idosos da família
   useEffect(() => {
     const fetchElders = async () => {
@@ -90,17 +95,22 @@ export default function BookingForm() {
         setLoadingElders(true);
         const url = `idosos/family?familyId=${currentUser?.id}`;
         const { data } = await api.get<ElderApi[]>(url);
+
         const updatedUser = { ...currentUser, elders: data };
         setCurrentUser(updatedUser);
+
         try {
           localStorage.setItem("user", JSON.stringify(updatedUser));
-        } catch {}
+        } catch {
+          // ignora erro de localStorage
+        }
       } catch (err: any) {
         console.error("Falha ao buscar idosos:", err?.message ?? err);
       } finally {
         setLoadingElders(false);
       }
     };
+
     fetchElders();
   }, [currentUser?.id, currentUser?.role, setCurrentUser]);
 
@@ -122,7 +132,7 @@ export default function BookingForm() {
 
     setLoading(true);
     try {
-      // duração em MINUTOS para o backend
+      // duração em MINUTOS para o backend (seu service deve tratar isso)
       const durationMinutes = formData.duration * 60;
 
       const bookingData = {
@@ -137,6 +147,7 @@ export default function BookingForm() {
         totalPrice: formData.duration * Number(caregiverPrice),
       };
 
+      console.log("FORM DATA ENVIADO PARA API:", bookingData);
       const response = await requestAppointment(bookingData);
 
       if (response.status === 201) {
@@ -145,8 +156,16 @@ export default function BookingForm() {
           description: "O cuidador será notificado sobre sua solicitação!",
         });
         navigate("/bookings");
+      } else {
+        console.error("Resposta inesperada ao criar agendamento:", response);
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar o agendamento.",
+          variant: "destructive",
+        });
       }
-    } catch {
+    } catch (err) {
+      console.error("Erro ao criar agendamento:", err);
       toast({
         title: "Erro",
         description: "Falha ao criar agendamento",
@@ -173,7 +192,9 @@ export default function BookingForm() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Nova Reserva</h1>
+            <h1 className="text-xl font-semibold text-foreground">
+              Nova Reserva
+            </h1>
             <p className="text-sm text-muted-foreground">Passo {step} de 3</p>
           </div>
         </div>
@@ -204,10 +225,12 @@ export default function BookingForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="birthDate">Data</Label>
+                  {/* corrigido: htmlFor bate com id do botão */}
+                  <Label htmlFor="booking-date">Data</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
+                        id="booking-date"
                         variant="outline"
                         className="w-full justify-start text-left font-normal"
                       >
@@ -239,14 +262,17 @@ export default function BookingForm() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="startTime">Horário de Início</Label>
+                    {/* corrigido: htmlFor -> id no SelectTrigger */}
+                    <Label htmlFor="booking-startTime">
+                      Horário de Início
+                    </Label>
                     <Select
                       value={formData.startTime}
                       onValueChange={(value) =>
                         setFormData((prev) => ({ ...prev, startTime: value }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="booking-startTime">
                         <SelectValue placeholder="Selecionar" />
                       </SelectTrigger>
                       <SelectContent>
@@ -260,7 +286,8 @@ export default function BookingForm() {
                   </div>
 
                   <div>
-                    <Label htmlFor="duration">Duração (horas)</Label>
+                    {/* corrigido: htmlFor -> id no SelectTrigger */}
+                    <Label htmlFor="booking-duration">Duração (horas)</Label>
                     <Select
                       value={String(formData.duration)}
                       onValueChange={(value) =>
@@ -270,7 +297,7 @@ export default function BookingForm() {
                         }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="booking-duration">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -288,8 +315,12 @@ export default function BookingForm() {
                   <div className="flex items-center gap-3">
                     <AlertTriangle className="w-5 h-5 text-medical-critical" />
                     <div>
-                      <p className="font-medium text-foreground">Atendimento de Emergência</p>
-                      <p className="text-sm text-muted-foreground">Resposta prioritária</p>
+                      <p className="font-medium text-foreground">
+                        Atendimento de Emergência
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Resposta prioritária
+                      </p>
                     </div>
                   </div>
                   <Switch
@@ -324,7 +355,10 @@ export default function BookingForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* corrigido: adicionados id + name */}
                 <Textarea
+                  id="booking-notes"
+                  name="notes"
                   value={formData.notes}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, notes: e.target.value }))
@@ -354,7 +388,9 @@ export default function BookingForm() {
                   <Card
                     key={elder.id}
                     className={`healthcare-card cursor-pointer ${
-                      elderSelected?.id === elder.id ? "border-2 border-healthcare-light" : ""
+                      elderSelected?.id === elder.id
+                        ? "border-2 border-healthcare-light"
+                        : ""
                     }`}
                     onClick={() => setElderSelected(elder)}
                   >
@@ -368,8 +404,12 @@ export default function BookingForm() {
                         </Avatar>
 
                         <div className="flex-1 min-w-0">
-                          <h3 className="font-semibold text-lg text-foreground mb-1 truncate">{elder.name}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">{age}</p>
+                          <h3 className="font-semibold text-lg text-foreground mb-1 truncate">
+                            {elder.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            {age}
+                          </p>
                         </div>
                       </div>
                     </CardContent>
@@ -412,7 +452,8 @@ export default function BookingForm() {
                     <span className="font-medium">
                       {formData.startTime} -{" "}
                       {String(
-                        parseInt(formData.startTime.split(":")[0]) + formData.duration
+                        parseInt(formData.startTime.split(":")[0]) +
+                          formData.duration
                       ).padStart(2, "0")}
                       :00
                     </span>
@@ -425,14 +466,19 @@ export default function BookingForm() {
                   {formData.emergency && (
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Emergência:</span>
-                      <span className="font-medium text-medical-critical">Sim</span>
+                      <span className="font-medium text-medical-critical">
+                        Sim
+                      </span>
                     </div>
                   )}
                   <div className="pt-2 border-t border-border">
                     <div className="flex justify-between text-lg font-semibold">
                       <span>Total estimado:</span>
                       <span className="text-healthcare-dark">
-                        R$ {(formData.duration * Number(caregiverPrice)).toFixed(2)}
+                        R${" "}
+                        {(
+                          formData.duration * Number(caregiverPrice)
+                        ).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -441,10 +487,18 @@ export default function BookingForm() {
             </Card>
 
             <div className="space-y-3">
-              <Button onClick={handleSubmit} className="w-full" variant="healthcare">
+              <Button
+                onClick={handleSubmit}
+                className="w-full"
+                variant="healthcare"
+              >
                 Enviar Solicitação
               </Button>
-              <Button onClick={() => setStep(2)} variant="outline" className="w-full">
+              <Button
+                onClick={() => setStep(2)}
+                variant="outline"
+                className="w-full"
+              >
                 Voltar
               </Button>
             </div>

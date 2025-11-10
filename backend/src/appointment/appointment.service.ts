@@ -1,6 +1,14 @@
+// backend/src/appointment/appointment.service.ts
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateAppointmentDto } from './dto/create-book.dto';
+
+export type AppointmentStatusString =
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'COMPLETED';
 
 @Injectable()
 export class AppointmentService {
@@ -23,10 +31,14 @@ export class AppointmentService {
     // 4) Duração em MINUTOS (DTO já está em minutos)
     const durationMinutes = Number(dto.duration ?? 0);
     if (!Number.isFinite(durationMinutes) || durationMinutes <= 0) {
-      throw new BadRequestException(`'duration' deve ser um número (minutos) > 0`);
+      throw new BadRequestException(
+        `'duration' deve ser um número (minutos) > 0`,
+      );
     }
 
-    const datetimeEnd = new Date(datetimeStart.getTime() + durationMinutes * 60000);
+    const datetimeEnd = new Date(
+      datetimeStart.getTime() + durationMinutes * 60000,
+    );
 
     return this.prisma.appointments.create({
       data: {
@@ -35,7 +47,7 @@ export class AppointmentService {
         caregiverId: dto.caregiverId,
         datetimeStart,
         datetimeEnd,
-        status: (dto.status as any) ?? 'PENDING',
+        status: (dto.status as AppointmentStatusString) ?? 'PENDING',
         emergency: dto.emergency ?? false,
         notes: dto.notes ?? '',
         totalPrice: dto.totalPrice ?? 0,
@@ -48,9 +60,6 @@ export class AppointmentService {
     if (params.familyId) where.familyId = params.familyId;
     if (params.caregiverId) where.caregiverId = params.caregiverId;
 
-    // Incluímos elder e caregiver para facilitar a renderização no front.
-    // (O nome do cuidador costuma vir via Users -> UserProfiles; se quiser,
-    //  pode expandir mais um nível depois.)
     const rows = await this.prisma.appointments.findMany({
       where,
       orderBy: { datetimeStart: 'asc' },
@@ -60,7 +69,7 @@ export class AppointmentService {
           include: {
             user: {
               include: {
-                userProfile: true, // é uma lista; pegue o [0] no front, se existir
+                userProfile: true,
               },
             },
           },
@@ -69,5 +78,35 @@ export class AppointmentService {
     });
 
     return rows;
+  }
+
+  async updateStatus(id: string, status: AppointmentStatusString) {
+    const allowed: AppointmentStatusString[] = [
+      'PENDING',
+      'ACCEPTED',
+      'REJECTED',
+      'CANCELLED',
+      'COMPLETED',
+    ];
+
+    if (!allowed.includes(status)) {
+      throw new BadRequestException('Status inválido');
+    }
+
+    const appointment = await this.prisma.appointments.findUnique({
+      where: { id },
+    });
+
+    if (!appointment) {
+      throw new BadRequestException('Agendamento não encontrado');
+    }
+
+    return this.prisma.appointments.update({
+      where: { id },
+      data: {
+        status,
+        updatedAt: new Date(),
+      },
+    });
   }
 }
