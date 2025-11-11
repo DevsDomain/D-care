@@ -19,6 +19,7 @@ import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 import { useLogout } from "@/components/hooks/use-logout";
 import { AgeCalculator } from "@/components/hooks/useAge";
 import { api } from "@/lib/api/api";
+import type { Elder } from "@/lib/types";
 
 /** Helper: iniciais do nome */
 const getInitials = (name?: string) => {
@@ -137,7 +138,7 @@ function normalizeElder(e: ElderApi) {
 
 export default function FamilyDashboard() {
   const navigate = useNavigate();
-  const { currentUser, setCurrentUser } = useAppStore();
+  const { currentUser, setCurrentUser, setSelectedElder } = useAppStore();
   const handleLogout = useLogout();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -203,7 +204,10 @@ export default function FamilyDashboard() {
   }, [currentUser?.id, currentUser?.role, setCurrentUser]); // Dependências estão corretas
 
   const handleAddElder = () => navigate("/elder/register");
-  const handleStartIvcf = (elderId: string) => navigate(`/ivcf/${elderId}`);
+  const handleStartIvcf = (elder: Elder) => {
+    setSelectedElder(elder);
+    navigate(`/ivcf/${elder.id}`);
+  };
   const handleFindCaregiver = () => navigate("/search");
   const handleViewBookings = () => navigate("/bookings");
   const handleOpenGuide = () => navigate("/guide");
@@ -463,7 +467,7 @@ export default function FamilyDashboard() {
                           <Button
                             variant="healthcare"
                             size="sm"
-                            onClick={() => handleStartIvcf(elder.id)}
+                            onClick={() => handleStartIvcf(elder)}
                           >
                             <Activity className="w-4 h-4 mr-1" />
                             IVCF-20

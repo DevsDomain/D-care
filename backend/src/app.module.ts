@@ -8,6 +8,7 @@ import { AiProxyModule } from './ai-proxy/ai-proxy.module';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './cadastro/auth.module';
 import { AppointmentModule } from './appointment/appointment.module';
+import { Ivcf20Module } from './ivcf20/ivcf20.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { AppointmentModule } from './appointment/appointment.module';
     AiProxyModule,
     DatabaseModule,
     AuthModule,
+    Ivcf20Module,
   ],
   controllers: [AppController],
   providers: [AppService],
