@@ -542,7 +542,7 @@ import {
       };
     },
   
-    async submitIvcfAssessment(elderId: string = '123', answers: Record<string, number>): Promise<ApiResponse<IvcfResult>> {
+    async submitIvcfAssessment(elderId:string, answers: Record<string, number>): Promise<ApiResponse<IvcfResult>> {
       await delay(1000);
       
       // Calculate score (simplified)
@@ -550,29 +550,33 @@ import {
       const maxPossible = mockIvcfQuestions.length * 2;
       const percentage = (totalScore / maxPossible) * 100;
       
-      let category: 'independent' | 'at-risk' | 'frail';
+      let category: 'Idoso(a) Robusto' | 'Idoso(a) Potencialmente Frágil' | 'Idoso(a) Frágil';
       let tips: string[];
       
-      if (percentage >= 80) {
-        category = 'independent';
+      if (totalScore <= 6) {
+        // Corresponde a '0 a 6 pontos'
+        category = 'Idoso(a) Robusto';
         tips = [
-          'Continue with regular physical activities',
-          'Maintain social connections',
-          'Keep up with hobbies and interests'
+          'Continue com atividades físicas regulares',
+          'Mantenha as conexões sociais e o convívio',
+          'Preserve seus hobbies e interesses'
         ];
-      } else if (percentage >= 60) {
-        category = 'at-risk';
+      } else if (totalScore >= 7 && totalScore <= 14) {
+        // Corresponde a '7 a 14 pontos'
+        // OBS: Corrigido o erro de digitação no original, alterando 'Potenciamento frágil' para 'Potencialmente Frágil'.
+        category = 'Idoso(a) Potencialmente Frágil';
         tips = [
-          'Consider additional support for daily activities',
-          'Regular health check-ups recommended',
-          'Social activities to prevent isolation'
+          'Considere apoio adicional para atividades diárias (se necessário)',
+          'Recomendam-se check-ups e avaliações de saúde regulares',
+          'Aumente as atividades sociais para prevenir o isolamento'
         ];
-      } else {
-        category = 'frail';
+      } else { // totalScore >= 15
+        // Corresponde a '≥ 15 pontos'
+        category = 'Idoso(a) Frágil';
         tips = [
-          'Professional care assistance recommended',
-          'Safety modifications needed at home',
-          'Regular medical monitoring required'
+          'Assistência e cuidados profissionais são fortemente recomendados',
+          'Modificações de segurança e adaptações são necessárias no ambiente doméstico',
+          'Monitoramento médico e gerontológico regular é fundamental'
         ];
       }
   
@@ -583,9 +587,9 @@ import {
         category,
         tips,
         recommendations: [
-          'Schedule regular medical check-ups',
-          'Consider home safety assessment',
-          'Evaluate need for additional support services'
+          'Agendar check-ups médicos regulares',
+          'Considerar uma avaliação de segurança residencial (do lar)',
+          'Avaliar a necessidade de serviços de apoio adicionais'
         ],
         answers,
         completedAt: new Date().toISOString(),

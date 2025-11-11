@@ -117,7 +117,7 @@ export interface Review {
   services: string[]; // Which services were reviewed
 }
 
-export type IvcfCategory = "independent" | "at-risk" | "frail";
+export type IvcfCategory = "Idoso(a) Robusto" | "Idoso(a) Potencialmente Frágil" | "Idoso(a) Frágil";
 
 export interface IvcfResult {
   id: string;
@@ -141,6 +141,7 @@ export interface IvcfQuestion {
     label: string;
     description?: string;
   }[];
+  previousAnswerValue?: number;
 }
 
 export interface User {

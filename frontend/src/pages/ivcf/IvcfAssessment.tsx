@@ -3,14 +3,18 @@ import { useNavigate } from "react-router-dom";
 import {
   Brain,
   Users,
-  Activity,
   ArrowLeft,
   ArrowRight,
   Check,
   FileText,
-  Share2,
-  Download,
   Award,
+  Eye,
+  Laugh,
+  Footprints,
+  AudioLines,
+  PersonStanding,
+  TriangleAlert,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,40 +24,52 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/hooks/use-toast";
 import { mockApi } from "@/lib/api/mock";
-import type { IvcfQuestion, IvcfResult } from "@/lib/types";
+import type { Elder, IvcfQuestion, IvcfResult } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
+import { createIVCF20, getIVCF20ByElderId } from "@/lib/api/ivcf20";
 
 const CategoryMap = {
   "Autopercepção da saúde": {
-    Icon: Activity,
+    Icon: Eye,
     name: "Autopercepção da saúde",
+    maxPt: 1,
   },
   Cognição: {
     Icon: Brain,
     name: "Cognição",
+    maxPt: 4,
   },
   Humor: {
-    Icon: Users,
+    Icon: Laugh,
     name: "Humor",
+    maxPt: 4,
   },
   Mobilidade: {
-    Icon: Activity, // Atividade, pois Brain e Users já foram usados
+    Icon: PersonStanding, // Atividade, pois Brain e Users já foram usados
     name: "Mobilidade",
+    maxPt: 10,
   },
   "Atividades de vida diária": {
-    Icon: Activity,
+    Icon: Footprints,
     name: "Atividades de vida diária",
+    maxPt: 6,
   },
   Comunicação: {
-    Icon: Users,
+    Icon: AudioLines,
     name: "Comunicação",
+    maxPt: 4,
   },
   "Comorbidades Múltiplas": {
-    Icon: Activity,
+    Icon: TriangleAlert,
     name: "Comorbidades Múltiplas",
+    maxPt: 4,
   },
-  // Adicione outras categorias da sua IvcfQuestion aqui
-} as const; // 'as const' para tipagem forte
+  Idade: {
+    Icon: Users,
+    name: "Idade",
+    maxPt: 3,
+  },
+} as const;
 
 export default function IvcfAssessment() {
   const navigate = useNavigate();
@@ -68,8 +84,80 @@ export default function IvcfAssessment() {
   const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
+    // Função assíncrona interna (IIFE) para usar await
+    const loadResult = async () => {
+      if (!selectedElder) return; // Garante que selectedElder existe
+      setLoading(true); // Opcional: inicie o loading aqui
+
+      try {
+        // 1. AWAIT a primeira resposta (dados principais)
+        const response = await getIVCF20ByElderId(selectedElder!);
+
+        if (response.data && response.data.id) {
+          // 2. AWAIT a segunda chamada (para obter tips e recommendations)
+          const tipsResponse = await mockApi.submitIvcfAssessment(
+            response.data.id,
+            response.data.answers
+          );
+
+          // 3. ATUALIZAÇÃO DO ESTADO com dados SÍNCRONOS
+          setResult({
+            recommendations: tipsResponse.data!.recommendations, // Agora é string[]
+            tips: tipsResponse.data!.tips, // Agora é string[]
+            completedAt: response.data.updatedAt,
+            answers: JSON.parse(response.data.answers),
+            score: response.data.score,
+            category: response.data.category,
+            id: response.data.id,
+            elderId: response.data.elderId,
+            validUntil: response.data.updatedAt,
+          } as IvcfResult); // O casting é mais seguro agora que os tipos coincidem
+
+          const baseQuestions = await mockApi.getIvcfQuestions();
+          const mergedQuestions = mergeAnswersWithQuestions(
+            baseQuestions.data!,
+            JSON.parse(response.data.answers)
+          );
+
+          setQuestions(mergedQuestions);
+          setAnswers(JSON.parse(response.data.answers));
+          setShowResult(true);
+        } else {
+          const baseQuestions = await mockApi.getIvcfQuestions();
+          setQuestions(baseQuestions.data!);
+        }
+      } catch (error) {
+        // Lida com erros de rede ou de API (incluindo 404/400 se a API os lançar)
+        console.error("Erro ao carregar resultado IVCF20:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadResult();
+  }, [selectedElder]); // Adicione selectedElder como dependência se ele puder mudar
+
+  const handleNewAssessment = () => {
+    setResult(null);
     loadQuestions();
-  }, []);
+  };
+
+  const mergeAnswersWithQuestions = (
+    questionsArray: IvcfQuestion[],
+    answersMap: Record<string, number>
+  ): IvcfQuestion[] => {
+    return questionsArray.map((question) => {
+      // Look up the score for the current question ID
+      const answerValue = answersMap[question.id];
+
+      // Return a new question object with the previousAnswerValue filled
+      return {
+        ...question,
+        // Use the found answer value, or 0 if the question wasn't answered for some reason
+        previousAnswerValue: answerValue !== undefined ? answerValue : 0,
+      };
+    });
+  };
 
   const loadQuestions = async () => {
     try {
@@ -77,7 +165,7 @@ export default function IvcfAssessment() {
       if (response.success && response.data) {
         setQuestions(response.data);
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Falha ao carregar questionário",
@@ -86,6 +174,22 @@ export default function IvcfAssessment() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const elderAge = (Elder: Elder) => {
+    if (!Elder.birthDate) return null;
+    const birthDate = new Date(Elder.birthDate);
+    const ageDifMs = Date.now() - birthDate.getTime();
+    const ageDate = new Date(ageDifMs);
+    return Math.abs(ageDate.getUTCFullYear() - 1970);
+  };
+
+  const elderAgePoints = (age: number) => {
+    if (age === null) return 0;
+    if (age <= 74) return 0;
+    if (age <= 84) return 1;
+    if (age >= 85) return 3;
+    return 0;
   };
 
   const handleAnswer = (questionId: string, value: number) => {
@@ -123,14 +227,17 @@ export default function IvcfAssessment() {
         answers
       );
       if (response.success && response.data) {
-        setResult(response.data);
-        setShowResult(true);
-        toast({
-          title: "Avaliação Concluída",
-          description: "Resultados calculados com sucesso",
-        });
+        const resBd = await createIVCF20(selectedElder, response.data);
+        if (resBd.data) {
+          setResult(response.data);
+          setShowResult(true);
+          toast({
+            title: "Avaliação Concluída",
+            description: "Resultados calculados com sucesso",
+          });
+        }
       }
-    } catch (error) {
+    } catch {
       toast({
         title: "Erro",
         description: "Falha ao processar avaliação",
@@ -146,15 +253,37 @@ export default function IvcfAssessment() {
 
     const categoryScores: Record<string, { current: number; max: number }> = {};
 
+    const age = elderAge(selectedElder!);
+    const agePoints = elderAgePoints(age!);
+
+    if (!categoryScores["Idade"]) {
+      categoryScores["Idade"] = {
+        current: agePoints,
+        max: 3,
+      };
+    } else {
+      categoryScores["Idade"].current += agePoints;
+    }
+
     questions.forEach((question) => {
       const answer = result.answers[question.id] || 0;
       const maxScore = Math.max(...question.options.map((opt) => opt.value));
 
       if (!categoryScores[question.category]) {
-        categoryScores[question.category] = { current: 0, max: 0 };
+        categoryScores[question.category] = {
+          current: 0,
+          max: CategoryMap[question.category as keyof typeof CategoryMap].maxPt,
+        };
       }
 
-      categoryScores[question.category].current += answer;
+      const categoryMax =
+        CategoryMap[question.category as keyof typeof CategoryMap].maxPt;
+      const newScore = categoryScores[question.category].current + answer;
+
+      categoryScores[question.category].current = Math.min(
+        newScore,
+        categoryMax
+      );
       categoryScores[question.category].max += maxScore;
     });
 
@@ -211,23 +340,24 @@ export default function IvcfAssessment() {
               </div>
 
               <h2 className="text-3xl font-bold text-foreground mb-2">
-                {result.score}/{questions.length * 2}
+                <p>Pontuação</p>
+                {result.score}/36
               </h2>
 
               <Badge
                 className={`text-sm px-4 py-2 ${
-                  result.category === "independent"
+                  result.category === "Idoso(a) Robusto"
                     ? "bg-medical-success text-white"
-                    : result.category === "at-risk"
+                    : result.category === "Idoso(a) Potencialmente Frágil"
                     ? "bg-medical-warning text-neutral-900"
                     : "bg-medical-critical text-white"
                 }`}
               >
-                {result.category === "independent"
+                {result.category === "Idoso(a) Robusto"
                   ? "Independente"
-                  : result.category === "at-risk"
-                  ? "Em Risco"
-                  : "Fragilizado"}
+                  : result.category === "Idoso(a) Potencialmente Frágil"
+                  ? "Fragilizado"
+                  : "Em Risco"}
               </Badge>
 
               <p className="text-sm text-muted-foreground mt-2">
@@ -249,7 +379,7 @@ export default function IvcfAssessment() {
               {Object.entries(categoryScores).map(([category, scores]) => {
                 const categoryInfo =
                   CategoryMap[category as keyof typeof CategoryMap];
-                const percentage = (scores.current / scores.max) * 100;
+                const percentage = (scores.current / categoryInfo.maxPt) * 100;
 
                 return (
                   <div key={category} className="space-y-2">
@@ -261,7 +391,7 @@ export default function IvcfAssessment() {
                         </span>
                       </div>
                       <span className="text-sm text-muted-foreground">
-                        {scores.current}/{scores.max}
+                        {scores.current}/{categoryInfo.maxPt}
                       </span>
                     </div>
                     <Progress value={percentage} className="h-2" />
@@ -293,14 +423,13 @@ export default function IvcfAssessment() {
 
           {/* Actions */}
           <div className="space-y-3">
-            <Button className="w-full" variant="healthcare">
-              <Share2 className="w-4 h-4 mr-2" />
-              Compartilhar Resultado
-            </Button>
-
-            <Button className="w-full" variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Exportar PDF
+            <Button
+              className="w-full"
+              variant="secondary"
+              onClick={() => handleNewAssessment()}
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              Refazer Avaliação IVCF20
             </Button>
 
             <Button
@@ -349,11 +478,11 @@ export default function IvcfAssessment() {
           {/* Category indicator */}
           <div className="flex items-center gap-2">
             {React.createElement(currentCategory.Icon, {
-              className: "w-5 h-5 text-healthcare-light",
+              className: "w-6 h-6 text-healthcare-light",
             })}
             <Badge
               variant="secondary"
-              className="bg-healthcare-soft text-healthcare-dark"
+              className="bg-healthcare-soft text-healthcare-dark text-md"
             >
               {currentCategory.name}
             </Badge>
@@ -381,7 +510,7 @@ export default function IvcfAssessment() {
 
             <CardContent>
               <RadioGroup
-              key={currentQ.id}
+                key={currentQ.id}
                 value={answers[currentQ.id]?.toString()}
                 onValueChange={(value) =>
                   handleAnswer(currentQ.id, parseInt(value))
