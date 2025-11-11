@@ -158,8 +158,9 @@ export default function BookingList() {
 
       const queryParam = isFamily
         ? `familyId=${derivedFamilyId}`
-        : `caregiverId=${(currentUser as any)?.caregiverProfile?.id ?? currentUser.id
-        }`;
+        : `caregiverId=${
+            (currentUser as any)?.caregiverProfile?.id ?? currentUser.id
+          }`;
 
       const { data } = await api.get<AppointmentApi[]>(
         `appointments?${queryParam}`,
@@ -200,58 +201,133 @@ export default function BookingList() {
           caregiver:
             caregiverPhoto || caregiverName
               ? ({
-                id: a.caregiverId ?? '',
-                userId: '',
-                name: caregiverName,
-                photo: caregiverPhoto || '',
-                verified: false,
-                address: '',
-                city: '',
-                state: '',
-                zipCode: '',
-                avatarPath: null,
-                rating: 0,
-                reviewCount: 0,
-                distanceKm: 0,
-                skills: [],
-                experience: '',
-                price_range: '',
-                emergency: false,
-                availability: true,
-                bio: '',
-                phone: '',
-                languages: [],
-                specializations: [],
-                verificationBadges: [],
-              } as any)
+                  id: a.caregiverId ?? '',
+                  userId: '',
+                  name: caregiverName,
+                  photo: caregiverPhoto || '',
+                  verified: false,
+                  address: '',
+                  city: '',
+                  state: '',
+                  zipCode: '',
+                  avatarPath: null,
+                  rating: 0,
+                  reviewCount: 0,
+                  distanceKm: 0,
+                  skills: [],
+                  experience: '',
+                  price_range: '',
+                  emergency: false,
+                  availability: true,
+                  bio: '',
+                  phone: '',
+                  languages: [],
+                  specializations: [],
+                  verificationBadges: [],
+                } as any)
               : undefined,
 
           elder:
             elderPhoto || elderName
               ? ({
-                id: a.elderId ?? '',
-                name: elderName,
-                birthDate: new Date(a.datetimeStart),
-                familyId: a.familyId ?? '',
-                photo: elderPhoto || undefined,
-                avatarFile: null,
-                conditions: [],
-                medications: [],
-                address: {
-                  street: a.elder?.address ?? '',
-                  city: a.elder?.city ?? '',
-                  state: a.elder?.state ?? '',
-                  zipCode: a.elder?.zipCode ?? '',
-                  number: '',
-                },
-                preferences: {},
-                createdAt: a.createdAt,
-              } as any)
+                  id: a.elderId ?? '',
+                  name: elderName,
+                  birthDate: new Date(a.datetimeStart),
+                  familyId: a.familyId ?? '',
+                  photo: elderPhoto || undefined,
+                  avatarFile: null,
+                  conditions: [],
+                  medications: [],
+                  address: {
+                    street: a.elder?.address ?? '',
+                    city: a.elder?.city ?? '',
+                    state: a.elder?.state ?? '',
+                    zipCode: a.elder?.zipCode ?? '',
+                    number: '',
+                  },
+                  preferences: {},
+                  createdAt: a.createdAt,
+                } as any)
               : undefined,
         };
       });
 
-      setBookings(mapped);
+      // 🔥 MOCK APENAS PARA TESTAR UM CARD "ACEITO"
+      // quando não precisar mais, pode apagar esse bloco inteiro
+      const mockAcceptedBooking: Booking = {
+        id: 'mock-accepted-1',
+        caregiverId: 'mock-caregiver-1',
+        elderId: 'mock-elder-1',
+        // data futura para cair em "Próximas"
+        dateISO: new Date('2025-12-13T17:00:00-03:00').toISOString(),
+        duration: 8,
+        status: 'accepted',
+        emergency: false,
+        notes: 'Reserva de teste aceita para visualizar o card.',
+        address: {
+          street: 'Rua Exemplo, 123',
+          city: 'São Paulo',
+          state: 'SP',
+          zipCode: '01234-567',
+        },
+        totalPrice: 1200,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: undefined,
+        services: ['Cuidados gerais', 'Administração de medicamentos'],
+
+        caregiver: {
+          id: 'mock-caregiver-1',
+          userId: '',
+          name: 'Marcelo Antonio',
+          photo:
+            'https://images.unsplash.com/photo-1535916707207-35f97e715e1b?w=150&h=150&fit=crop&crop=face',
+          verified: true,
+          address: '',
+          city: 'São Paulo',
+          state: 'SP',
+          zipCode: '01234-567',
+          avatarPath: null,
+          rating: 4.9,
+          reviewCount: 120,
+          distanceKm: 2,
+          skills: [],
+          experience: '8 anos',
+          price_range: 'R$ 150/h',
+          emergency: false,
+          availability: true,
+          bio: '',
+          phone: '+55 11 99999-0000',
+          languages: ['Português'],
+          specializations: [],
+          verificationBadges: [],
+        } as any,
+
+        elder: {
+          id: 'mock-elder-1',
+          name: 'Paciente Teste',
+          birthDate: new Date('1950-01-10'),
+          familyId: 'mock-family',
+          photo:
+            'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=150&h=150&fit=crop&crop=face',
+          avatarFile: null,
+          conditions: ['Hipertensão'],
+          medications: ['Losartana'],
+          address: {
+            street: 'Rua Exemplo, 123',
+            city: 'São Paulo',
+            state: 'SP',
+            zipCode: '01234-567',
+            number: '123',
+          },
+          preferences: {},
+          createdAt: new Date().toISOString(),
+        } as any,
+      };
+
+      const withMock = [...mapped, mockAcceptedBooking];
+
+      setBookings(withMock);
     } catch (error) {
       console.error(error);
       toast({
@@ -282,8 +358,9 @@ export default function BookingList() {
 
       toast({
         title: 'Sucesso',
-        description: `Reserva ${status === 'canceled' ? 'cancelada' : 'atualizada'
-          } com sucesso`,
+        description: `Reserva ${
+          status === 'canceled' ? 'cancelada' : 'atualizada'
+        } com sucesso`,
       });
     } catch (error) {
       console.error(error);
@@ -316,10 +393,7 @@ export default function BookingList() {
       switch (tab) {
         case 'upcoming':
           // futuras que ainda não foram canceladas/finalizadas
-          return (
-            isFuture &&
-            (isRequested || isAccepted)
-          );
+          return isFuture && (isRequested || isAccepted);
 
         case 'active':
           // acontecendo agora e efetivamente "ativas"
@@ -327,11 +401,7 @@ export default function BookingList() {
 
         case 'completed':
           // tudo que já terminou OU foi cancelado
-          return (
-            isPast ||
-            isCanceled ||
-            isCompleted
-          );
+          return isPast || isCanceled || isCompleted;
 
         default: // 'all'
           return true;
@@ -425,12 +495,13 @@ export default function BookingList() {
                 description={
                   activeTab === 'all'
                     ? 'Você ainda não tem reservas. Comece procurando um cuidador.'
-                    : `Não há reservas ${activeTab === 'upcoming'
-                      ? 'próximas'
-                      : activeTab === 'active'
-                        ? 'ativas'
-                        : 'finalizadas'
-                    }.`
+                    : `Não há reservas ${
+                        activeTab === 'upcoming'
+                          ? 'próximas'
+                          : activeTab === 'active'
+                          ? 'ativas'
+                          : 'finalizadas'
+                      }.`
                 }
                 actionLabel={activeTab === 'all' ? 'Buscar Cuidador' : undefined}
                 onAction={
@@ -461,8 +532,9 @@ export default function BookingList() {
                         </div>
                       </div>
                       <Badge
-                        className={`${statusConfig[booking.status].color
-                          } text-xs font-medium`}
+                        className={`${
+                          statusConfig[booking.status].color
+                        } text-xs font-medium`}
                       >
                         {statusConfig[booking.status].label}
                       </Badge>
