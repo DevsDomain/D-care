@@ -10,6 +10,7 @@ import {
   Check,
   X,
   Plus,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
@@ -17,17 +18,30 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ptBR } from "date-fns/locale";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/hooks/use-toast";
-import { getElderById, updateElder } from "@/lib/api/elders";
+import { getElderById, updateElder, deleteElder } from "@/lib/api/elders";
 import { AvatarInput } from "@/components/avatar-input";
 import { getAdressByCEP } from "@/lib/api/getAdressByCEP";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAppStore } from "@/lib/stores/appStore";
 
 export default function ElderEdit() {
   const { id } = useParams(); // rota: /elders/:id/edit
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { currentUser, setCurrentUser } = useAppStore();
 
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState<any>(null);
@@ -42,7 +56,7 @@ export default function ElderEdit() {
         setFormData({
           id: data.id,
           name: data.name ?? "",
-          birthDate: data.birthDate ?? null, // já é Date | undefined
+          birthDate: data.birthDate ?? null, // Date | string
 
           // foto atual (pra preview)
           avatarUrl: data.photo ?? null,
@@ -54,6 +68,13 @@ export default function ElderEdit() {
             state: data.address?.state ?? "",
             zipCode: data.address?.zipCode ?? "",
             number: data.address?.number ?? "",
+          },
+
+          // 👇 preferências (inclui gênero do cuidador)
+          preferences: data.preferences ?? {
+            gender: "any",
+            language: ["Portuguese"],
+            specialNeeds: [],
           },
 
           conditions: Array.isArray(data.conditions) ? data.conditions : [],
@@ -130,13 +151,21 @@ export default function ElderEdit() {
     try {
       const payload = {
         name: formData.name,
-        birthdate: formData.birthDate ? new Date(formData.birthDate).toISOString() : undefined,
+        birthdate: formData.birthDate
+          ? new Date(formData.birthDate).toISOString()
+          : undefined,
         medicalConditions: JSON.stringify(formData.conditions || []),
         medications: JSON.stringify(formData.medications || []),
         address: formData.address.street,
         city: formData.address.city,
         state: formData.address.state,
         zipCode: formData.address.zipCode,
+
+        // 👇 envia as preferências (inclui gênero do cuidador)
+        preferences: {
+          ...(formData.preferences || {}),
+          gender: formData.preferences?.gender ?? "any",
+        },
       };
 
       await updateElder(id!, payload, formData.avatarFile);
@@ -151,6 +180,43 @@ export default function ElderEdit() {
       toast({
         title: "Erro",
         description: err?.message || "Falha ao atualizar idoso",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!id) return;
+    const confirmed = window.confirm(
+      "Tem certeza que deseja excluir este cadastro? Essa ação não pode ser desfeita."
+    );
+    if (!confirmed) return;
+
+    try {
+      await deleteElder(id);
+
+      // remove o idoso do usuário atual (estado global)
+      if (currentUser?.elders) {
+        const updatedUser = {
+          ...currentUser,
+          elders: currentUser.elders.filter((e: any) => e.id !== id),
+        };
+        setCurrentUser(updatedUser);
+        try {
+          localStorage.setItem("user", JSON.stringify(updatedUser));
+        } catch {}
+      }
+
+      toast({
+        title: "Idoso excluído",
+        description: "O cadastro foi removido com sucesso.",
+      });
+      navigate("/");
+    } catch (err: any) {
+      console.error(err);
+      toast({
+        title: "Erro",
+        description: err?.message || "Falha ao excluir idoso",
         variant: "destructive",
       });
     }
@@ -178,7 +244,7 @@ export default function ElderEdit() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Preview simples caso seu AvatarInput não suporte previewUrl */}
+            {/* Preview da foto atual */}
             {formData.avatarUrl && !formData.avatarFile && (
               <div className="flex items-center gap-3">
                 <img
@@ -186,14 +252,14 @@ export default function ElderEdit() {
                   alt="Foto atual"
                   className="w-20 h-20 rounded-full object-cover"
                 />
-                <span className="text-sm text-muted-foreground">Foto atual</span>
+                <span className="text-sm text-muted-foreground">
+                  Foto atual
+                </span>
               </div>
             )}
 
             <AvatarInput
               value={formData.avatarFile}
-              // se seu componente tiver prop de preview, descomente a linha abaixo:
-              // previewUrl={formData.avatarUrl}
               label="Foto do Idoso"
               onChange={(file) =>
                 setFormData((prev: any) => ({ ...prev, avatarFile: file }))
@@ -214,6 +280,32 @@ export default function ElderEdit() {
               />
             </div>
 
+            {/* 👇 Preferência de gênero do cuidador (editável) */}
+            <div>
+              <Label>Preferência de gênero do cuidador</Label>
+              <Select
+                value={formData.preferences?.gender ?? "any"}
+                onValueChange={(value: "male" | "female" | "any") =>
+                  setFormData((prev: any) => ({
+                    ...prev,
+                    preferences: {
+                      ...(prev.preferences || {}),
+                      gender: value,
+                    },
+                  }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="any">Indiferente</SelectItem>
+                  <SelectItem value="female">Feminino</SelectItem>
+                  <SelectItem value="male">Masculino</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label htmlFor="birthDate">Data de nascimento</Label>
               <Popover>
@@ -221,14 +313,20 @@ export default function ElderEdit() {
                   <Button variant="outline" className="w-full justify-start">
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.birthDate
-                      ? new Date(formData.birthDate).toLocaleDateString("pt-BR")
+                      ? new Date(formData.birthDate).toLocaleDateString(
+                          "pt-BR"
+                        )
                       : "Selecione a data"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="p-0">
                   <Calendar
                     mode="single"
-                    selected={formData.birthDate ? new Date(formData.birthDate) : undefined}
+                    selected={
+                      formData.birthDate
+                        ? new Date(formData.birthDate)
+                        : undefined
+                    }
                     initialFocus
                     captionLayout="dropdown-years"
                     fromYear={new Date().getFullYear() - 100}
@@ -387,10 +485,22 @@ export default function ElderEdit() {
           </CardContent>
         </Card>
 
-        <Button onClick={handleSubmit} className="w-full" variant="healthcare">
-          <Check className="w-4 h-4 mr-2" />
-          Salvar Alterações
-        </Button>
+        <div className="space-y-3">
+          <Button onClick={handleSubmit} className="w-full" variant="healthcare">
+            <Check className="w-4 h-4 mr-2" />
+            Salvar Alterações
+          </Button>
+
+          <Button
+            type="button"
+            onClick={handleDelete}
+            className="w-full"
+            variant="outline"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Excluir cadastro
+          </Button>
+        </div>
       </div>
     </div>
   );
