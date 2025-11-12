@@ -1,4 +1,3 @@
-// src/pages/elder/ElderEdit.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -61,6 +60,7 @@ export default function ElderEdit() {
           // foto atual (pra preview)
           avatarUrl: data.photo ?? null,
           avatarFile: null, // usuário pode trocar depois
+          removeAvatar: false, // 👈 flag para "apagar foto"
 
           address: {
             street: data.address?.street ?? "",
@@ -70,7 +70,7 @@ export default function ElderEdit() {
             number: data.address?.number ?? "",
           },
 
-          // 👇 preferências (inclui gênero do cuidador)
+          // preferências (inclui gênero do cuidador)
           preferences: data.preferences ?? {
             gender: "any",
             language: ["Portuguese"],
@@ -147,9 +147,19 @@ export default function ElderEdit() {
     }));
   };
 
+  // 👇 NOVO: remover foto (só no front; backend pode usar flag depois)
+  const handleRemovePhoto = () => {
+    setFormData((prev: any) => ({
+      ...prev,
+      avatarUrl: null,
+      avatarFile: null,
+      removeAvatar: true,
+    }));
+  };
+
   const handleSubmit = async () => {
     try {
-      const payload = {
+      const payload: any = {
         name: formData.name,
         birthdate: formData.birthDate
           ? new Date(formData.birthDate).toISOString()
@@ -161,12 +171,17 @@ export default function ElderEdit() {
         state: formData.address.state,
         zipCode: formData.address.zipCode,
 
-        // 👇 envia as preferências (inclui gênero do cuidador)
+        // preferências (inclui gênero do cuidador)
         preferences: {
           ...(formData.preferences || {}),
           gender: formData.preferences?.gender ?? "any",
         },
       };
+
+      // 👇 se o usuário marcou remover foto, envia flag
+      if (formData.removeAvatar) {
+        payload.removeAvatar = true;
+      }
 
       await updateElder(id!, payload, formData.avatarFile);
 
@@ -244,7 +259,7 @@ export default function ElderEdit() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Preview da foto atual */}
+            {/* Preview da foto atual + botão remover */}
             {formData.avatarUrl && !formData.avatarFile && (
               <div className="flex items-center gap-3">
                 <img
@@ -252,9 +267,35 @@ export default function ElderEdit() {
                   alt="Foto atual"
                   className="w-20 h-20 rounded-full object-cover"
                 />
-                <span className="text-sm text-muted-foreground">
-                  Foto atual
-                </span>
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm text-muted-foreground">
+                    Foto atual
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemovePhoto}
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Remover foto
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Se tiver uma foto nova selecionada, também deixa remover */}
+            {formData.avatarFile && (
+              <div className="flex justify-start">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemovePhoto}
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  Remover foto
+                </Button>
               </div>
             )}
 
@@ -262,7 +303,12 @@ export default function ElderEdit() {
               value={formData.avatarFile}
               label="Foto do Idoso"
               onChange={(file) =>
-                setFormData((prev: any) => ({ ...prev, avatarFile: file }))
+                setFormData((prev: any) => ({
+                  ...prev,
+                  avatarFile: file,
+                  // se o user escolhe outra foto, não estamos mais "removendo"
+                  removeAvatar: false,
+                }))
               }
             />
 
@@ -280,7 +326,7 @@ export default function ElderEdit() {
               />
             </div>
 
-            {/* 👇 Preferência de gênero do cuidador (editável) */}
+            {/* Preferência de gênero do cuidador (editável) */}
             <div>
               <Label>Preferência de gênero do cuidador</Label>
               <Select

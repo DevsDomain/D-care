@@ -247,6 +247,7 @@ export async function updateElder(
     city?: string;
     state?: string;
     zipCode?: string;
+    removeAvatar?: boolean;
 
     // pode até vir coisa extra aqui (ex: preferences),
     // mas vamos filtrar antes de mandar pro backend
@@ -266,6 +267,7 @@ export async function updateElder(
     "city",
     "state",
     "zipCode",
+    "removeAvatar",
   ] as const;
 
   const cleaned: Record<string, any> = {};
