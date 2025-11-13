@@ -1,5 +1,5 @@
-// src/idosos/dto/update-elder.dto.ts
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsBoolean } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class UpdateElderDto {
   @IsOptional()
@@ -33,4 +33,16 @@ export class UpdateElderDto {
   @IsOptional()
   @IsString()
   zipCode?: string;
+
+  // 👇 NOVO: flag para remover o avatar
+  @IsOptional()
+  @Transform(({ value }) => {
+    // aceita true, 'true', '1'
+    if (value === true) return true;
+    if (value === 'true') return true;
+    if (value === '1') return true;
+    return false;
+  })
+  @IsBoolean()
+  removeAvatar?: boolean;
 }

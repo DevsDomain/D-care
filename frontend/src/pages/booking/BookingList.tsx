@@ -1,51 +1,133 @@
-
 import { useState, useEffect } from 'react';
 import { Plus, Calendar, Clock, MapPin, Phone, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button-variants';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BookingCardSkeleton } from '@/components/common/LoadingSkeleton';
 import { EmptyState } from '@/components/common/EmptyState';
-import { useToast } from '@/components/hooks/use-toast'
-import { mockApi } from '@/lib/api/mock';
+import { useToast } from '@/components/hooks/use-toast';
 import type { Booking, BookingStatus } from '@/lib/types';
 import { useAppStore } from '@/lib/stores/appStore';
+import { api } from '@/lib/api/api';
 
-const statusConfig = {
-  requested: { 
-    label: 'Solicitado', 
-    color: 'bg-medical-warning text-neutral-900',
-    description: 'Aguardando resposta do cuidador'
-  },
-  accepted: { 
-    label: 'Aceito', 
-    color: 'bg-medical-success text-white',
-    description: 'Confirmado pelo cuidador'
-  },
-  'in-progress': { 
-    label: 'Em Andamento', 
-    color: 'bg-trust-blue text-white',
-    description: 'Atendimento em curso'
-  },
-  completed: { 
-    label: 'Concluído', 
-    color: 'bg-neutral-600 text-white',
-    description: 'Atendimento finalizado'
-  },
-  canceled: { 
-    label: 'Cancelado', 
-    color: 'bg-medical-critical text-white',
-    description: 'Cancelado'
-  },
-  expired: { 
-    label: 'Expirado', 
-    color: 'bg-neutral-400 text-white',
-    description: 'Prazo expirado'
-  }
+// ===== Resposta mínima do backend =====
+type AppointmentApiStatus =
+  | 'PENDING'
+  | 'ACCEPTED'
+  | 'REJECTED'
+  | 'CANCELLED'
+  | 'COMPLETED';
+
+type AppointmentApi = {
+  id: string;
+  familyId: string | null;
+  elderId: string | null;
+  caregiverId: string | null;
+  datetimeStart: string; // ISO
+  datetimeEnd: string;   // ISO
+  status: AppointmentApiStatus;
+  emergency: boolean | null;
+  notes: string | null;
+  totalPrice: number;
+  createdAt: string;
+  updatedAt: string;
+  elder?: {
+    id: string;
+    name: string | null;
+    avatarPath?: string | null;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zipCode?: string | null;
+  } | null;
+  caregiver?: {
+    id: string;
+    avatarPath?: string | null;
+    user?: {
+      userProfile: Array<{ id: string; name: string | null }>;
+    } | null;
+  } | null;
 };
+
+// Config visual de status no front
+const statusConfig = {
+  requested: {
+    label: 'Solicitado',
+    color: 'bg-medical-warning text-neutral-900',
+    description: 'Aguardando resposta do cuidador',
+  },
+  accepted: {
+    label: 'Aceito',
+    color: 'bg-medical-success text-white',
+    description: 'Confirmado pelo cuidador',
+  },
+  'in-progress': {
+    label: 'Em Andamento',
+    color: 'bg-trust-blue text-white',
+    description: 'Atendimento em curso',
+  },
+  completed: {
+    label: 'Concluído',
+    color: 'bg-neutral-600 text-white',
+    description: 'Atendimento finalizado',
+  },
+  canceled: {
+    label: 'Cancelado',
+    color: 'bg-medical-critical text-white',
+    description: 'Cancelado',
+  },
+  expired: {
+    label: 'Expirado',
+    color: 'bg-neutral-400 text-white',
+    description: 'Prazo expirado',
+  },
+};
+
+// Map enum backend -> front
+function mapStatusFromApi(status: AppointmentApiStatus): BookingStatus {
+  switch (status) {
+    case 'PENDING':
+      return 'requested';
+    case 'ACCEPTED':
+      return 'accepted';
+    case 'REJECTED':
+    case 'CANCELLED':
+      return 'canceled';
+    case 'COMPLETED':
+      return 'completed';
+    default:
+      return 'requested';
+  }
+}
+
+// Map enum front -> backend (para PATCH)
+function mapStatusToApi(status: BookingStatus): AppointmentApiStatus {
+  switch (status) {
+    case 'requested':
+      return 'PENDING';
+    case 'accepted':
+      return 'ACCEPTED';
+    case 'canceled':
+      return 'CANCELLED';
+    case 'completed':
+      return 'COMPLETED';
+    // 'in-progress' e 'expired' não temos no backend;
+    // se algum dia usar, dá pra mapear para ACCEPTED/CANCELLED, etc.
+    default:
+      return 'PENDING';
+  }
+}
+
+// Duração (h) a partir de início/fim
+function calcDurationHours(startISO: string, endISO: string): number {
+  const s = new Date(startISO).getTime();
+  const e = new Date(endISO).getTime();
+  const diff = Math.max(0, e - s);
+  return Math.max(1, Math.round(diff / 3600000));
+}
 
 export default function BookingList() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -56,81 +138,300 @@ export default function BookingList() {
 
   useEffect(() => {
     loadBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadBookings = async () => {
     if (!currentUser) return;
-    
+    setLoading(true);
+
     try {
-      const response = await mockApi.getBookings(currentUser.id);
-      if (response.success && response.data) {
-        setBookings(response.data);
-      }
+      const isFamily =
+        currentUser.role === 'FAMILY' || currentUser.role === 'family';
+
+      // familyId do banco = id da tabela "families".
+      // você já usa elder.familyId, então derivamos daqui
+      const derivedFamilyId =
+        (currentUser as any)?.elders?.[0]?.familyId ??
+        (currentUser as any)?.familyId ??
+        currentUser.id;
+
+      const queryParam = isFamily
+        ? `familyId=${derivedFamilyId}`
+        : `caregiverId=${
+            (currentUser as any)?.caregiverProfile?.id ?? currentUser.id
+          }`;
+
+      const { data } = await api.get<AppointmentApi[]>(
+        `appointments?${queryParam}`,
+      );
+
+      const mapped: Booking[] = data.map((a) => {
+        const status = mapStatusFromApi(a.status);
+        const duration = calcDurationHours(a.datetimeStart, a.datetimeEnd);
+
+        const caregiverName =
+          a.caregiver?.user?.userProfile?.[0]?.name ?? 'Cuidador';
+        const caregiverPhoto = a.caregiver?.avatarPath ?? undefined;
+
+        const elderName = a.elder?.name ?? 'Paciente';
+        const elderPhoto = a.elder?.avatarPath ?? undefined;
+
+        return {
+          id: a.id,
+          caregiverId: a.caregiverId ?? '',
+          elderId: a.elderId ?? '',
+          dateISO: a.datetimeStart,
+          duration,
+          status,
+          emergency: Boolean(a.emergency),
+          notes: a.notes ?? '',
+          address: {
+            street: a.elder?.address ?? '',
+            city: a.elder?.city ?? '',
+            state: a.elder?.state ?? '',
+            zipCode: a.elder?.zipCode ?? '',
+          },
+          totalPrice: a.totalPrice ?? 0,
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+          completedAt: a.status === 'COMPLETED' ? a.updatedAt : undefined,
+          services: [],
+
+          caregiver:
+            caregiverPhoto || caregiverName
+              ? ({
+                  id: a.caregiverId ?? '',
+                  userId: '',
+                  name: caregiverName,
+                  photo: caregiverPhoto || '',
+                  verified: false,
+                  address: '',
+                  city: '',
+                  state: '',
+                  zipCode: '',
+                  avatarPath: null,
+                  rating: 0,
+                  reviewCount: 0,
+                  distanceKm: 0,
+                  skills: [],
+                  experience: '',
+                  price_range: '',
+                  emergency: false,
+                  availability: true,
+                  bio: '',
+                  phone: '',
+                  languages: [],
+                  specializations: [],
+                  verificationBadges: [],
+                } as any)
+              : undefined,
+
+          elder:
+            elderPhoto || elderName
+              ? ({
+                  id: a.elderId ?? '',
+                  name: elderName,
+                  birthDate: new Date(a.datetimeStart),
+                  familyId: a.familyId ?? '',
+                  photo: elderPhoto || undefined,
+                  avatarFile: null,
+                  conditions: [],
+                  medications: [],
+                  address: {
+                    street: a.elder?.address ?? '',
+                    city: a.elder?.city ?? '',
+                    state: a.elder?.state ?? '',
+                    zipCode: a.elder?.zipCode ?? '',
+                    number: '',
+                  },
+                  preferences: {},
+                  createdAt: a.createdAt,
+                } as any)
+              : undefined,
+        };
+      });
+
+      // 🔥 MOCK APENAS PARA TESTAR UM CARD "ACEITO"
+      // quando não precisar mais, pode apagar esse bloco inteiro
+      const mockAcceptedBooking: Booking = {
+        id: 'mock-accepted-1',
+        caregiverId: 'mock-caregiver-1',
+        elderId: 'mock-elder-1',
+        // data futura para cair em "Próximas"
+        dateISO: new Date('2025-12-13T17:00:00-03:00').toISOString(),
+        duration: 8,
+        status: 'accepted',
+        emergency: false,
+        notes: 'Reserva de teste aceita para visualizar o card.',
+        address: {
+          street: 'Rua Exemplo, 123',
+          city: 'São Paulo',
+          state: 'SP',
+          zipCode: '01234-567',
+        },
+        totalPrice: 1200,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        completedAt: undefined,
+        services: ['Cuidados gerais', 'Administração de medicamentos'],
+
+        caregiver: {
+          id: 'mock-caregiver-1',
+          userId: '',
+          name: 'Marcelo Antonio',
+          photo:
+            'https://images.unsplash.com/photo-1535916707207-35f97e715e1b?w=150&h=150&fit=crop&crop=face',
+          verified: true,
+          address: '',
+          city: 'São Paulo',
+          state: 'SP',
+          zipCode: '01234-567',
+          avatarPath: null,
+          rating: 4.9,
+          reviewCount: 120,
+          distanceKm: 2,
+          skills: [],
+          experience: '8 anos',
+          price_range: 'R$ 150/h',
+          emergency: false,
+          availability: true,
+          bio: '',
+          phone: '+55 11 99999-0000',
+          languages: ['Português'],
+          specializations: [],
+          verificationBadges: [],
+        } as any,
+
+        elder: {
+          id: 'mock-elder-1',
+          name: 'Paciente Teste',
+          birthDate: new Date('1950-01-10'),
+          familyId: 'mock-family',
+          photo:
+            'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=150&h=150&fit=crop&crop=face',
+          avatarFile: null,
+          conditions: ['Hipertensão'],
+          medications: ['Losartana'],
+          address: {
+            street: 'Rua Exemplo, 123',
+            city: 'São Paulo',
+            state: 'SP',
+            zipCode: '01234-567',
+            number: '123',
+          },
+          preferences: {},
+          createdAt: new Date().toISOString(),
+        } as any,
+      };
+
+      const withMock = [...mapped, mockAcceptedBooking];
+
+      setBookings(withMock);
     } catch (error) {
+      console.error(error);
       toast({
-        title: "Erro",
-        description: "Falha ao carregar reservas",
-        variant: "destructive"
+        title: 'Erro',
+        description: 'Falha ao carregar reservas',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleStatusUpdate = async (bookingId: string, status: BookingStatus) => {
+  // ✅ Atualiza status usando o PATCH real no backend
+  const handleStatusUpdate = async (
+    bookingId: string,
+    status: BookingStatus,
+  ) => {
     try {
-      const response = await mockApi.updateBookingStatus(bookingId, status);
-      if (response.success) {
-        setBookings(prev => prev.map(booking => 
-          booking.id === bookingId ? { ...booking, status } : booking
-        ));
-        toast({
-          title: "Sucesso",
-          description: `Reserva ${status === 'canceled' ? 'cancelada' : 'atualizada'} com sucesso`,
-        });
-      }
-    } catch (error) {
+      const apiStatus = mapStatusToApi(status);
+
+      await api.patch(`appointments/${bookingId}/status`, {
+        status: apiStatus,
+      });
+
+      setBookings((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, status } : b)),
+      );
+
       toast({
-        title: "Erro",
-        description: "Falha ao atualizar reserva",
-        variant: "destructive"
+        title: 'Sucesso',
+        description: `Reserva ${
+          status === 'canceled' ? 'cancelada' : 'atualizada'
+        } com sucesso`,
+      });
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Erro',
+        description: 'Falha ao atualizar reserva',
+        variant: 'destructive',
       });
     }
   };
 
-  const filterBookings = (status?: BookingStatus) => {
-    if (status) {
-      return bookings.filter(booking => booking.status === status);
-    }
-    return bookings;
-  };
-
+  // 🔎 Abas por DATA (próximas, em andamento, finalizadas)
   const getTabBookings = (tab: string) => {
-    switch (tab) {
-      case 'upcoming':
-        return bookings.filter(b => ['requested', 'accepted'].includes(b.status));
-      case 'active':
-        return bookings.filter(b => b.status === 'in-progress');
-      case 'completed':
-        return bookings.filter(b => ['completed', 'canceled', 'expired'].includes(b.status));
-      default:
-        return bookings;
-    }
+    const now = Date.now();
+
+    return bookings.filter((b) => {
+      const start = new Date(b.dateISO).getTime();
+      const end = start + b.duration * 60 * 60 * 1000;
+
+      const isFuture = start > now;
+      const isOngoing = start <= now && end >= now;
+      const isPast = end < now;
+
+      const isCanceled = b.status === 'canceled';
+      const isCompleted = b.status === 'completed';
+      const isAccepted =
+        b.status === 'accepted' || b.status === 'in-progress';
+      const isRequested = b.status === 'requested';
+
+      switch (tab) {
+        case 'upcoming':
+          // futuras que ainda não foram canceladas/finalizadas
+          return isFuture && (isRequested || isAccepted);
+
+        case 'active':
+          // acontecendo agora e efetivamente "ativas"
+          return isOngoing && isAccepted;
+
+        case 'completed':
+          // tudo que já terminou OU foi cancelado
+          return isPast || isCanceled || isCompleted;
+
+        default: // 'all'
+          return true;
+      }
+    });
   };
 
-  const formatDate = (dateISO: string) => {
-    return new Date(dateISO).toLocaleDateString('pt-BR', {
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString('pt-BR', {
       day: '2-digit',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
     });
-  };
 
-  const formatTime = (dateISO: string) => {
-    return new Date(dateISO).toLocaleTimeString('pt-BR', {
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString('pt-BR', {
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
+
+  const getCaregiverName = (b: Booking) => b.caregiver?.name || 'Cuidador';
+  const getElderName = (b: Booking) => b.elder?.name || 'Paciente';
+  const getCaregiverInitials = (b: Booking) => {
+    const n = getCaregiverName(b);
+    const i = n
+      .split(' ')
+      .filter(Boolean)
+      .map((x) => x[0])
+      .join('');
+    return i || 'C';
   };
 
   if (loading) {
@@ -149,9 +450,12 @@ export default function BookingList() {
       <div className="bg-card border-b border-border px-4 py-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Minhas Reservas</h1>
+            <h1 className="text-2xl font-bold text-foreground">
+              Minhas Reservas
+            </h1>
             <p className="text-muted-foreground">
-              {bookings.length} {bookings.length === 1 ? 'reserva' : 'reservas'}
+              {bookings.length}{' '}
+              {bookings.length === 1 ? 'reserva' : 'reservas'}
             </p>
           </div>
           <Link to="/search">
@@ -163,12 +467,24 @@ export default function BookingList() {
       </div>
 
       <div className="p-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="space-y-6"
+        >
           <TabsList className="grid w-full grid-cols-4 bg-muted rounded-2xl p-1">
-            <TabsTrigger value="all" className="rounded-xl">Todas</TabsTrigger>
-            <TabsTrigger value="upcoming" className="rounded-xl">Próximas</TabsTrigger>
-            <TabsTrigger value="active" className="rounded-xl">Ativas</TabsTrigger>
-            <TabsTrigger value="completed" className="rounded-xl">Finalizadas</TabsTrigger>
+            <TabsTrigger value="all" className="rounded-xl">
+              Todas
+            </TabsTrigger>
+            <TabsTrigger value="upcoming" className="rounded-xl">
+              Próximas
+            </TabsTrigger>
+            <TabsTrigger value="active" className="rounded-xl">
+              Ativas
+            </TabsTrigger>
+            <TabsTrigger value="completed" className="rounded-xl">
+              Finalizadas
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value={activeTab} className="space-y-4">
@@ -177,12 +493,22 @@ export default function BookingList() {
                 icon={Calendar}
                 title="Nenhuma reserva encontrada"
                 description={
-                  activeTab === 'all' 
-                    ? "Você ainda não tem reservas. Comece procurando um cuidador."
-                    : `Não há reservas ${activeTab === 'upcoming' ? 'próximas' : activeTab === 'active' ? 'ativas' : 'finalizadas'}.`
+                  activeTab === 'all'
+                    ? 'Você ainda não tem reservas. Comece procurando um cuidador.'
+                    : `Não há reservas ${
+                        activeTab === 'upcoming'
+                          ? 'próximas'
+                          : activeTab === 'active'
+                          ? 'ativas'
+                          : 'finalizadas'
+                      }.`
                 }
-                actionLabel={activeTab === 'all' ? "Buscar Cuidador" : undefined}
-                onAction={activeTab === 'all' ? () => window.location.href = '/search' : undefined}
+                actionLabel={activeTab === 'all' ? 'Buscar Cuidador' : undefined}
+                onAction={
+                  activeTab === 'all'
+                    ? () => (window.location.href = '/search')
+                    : undefined
+                }
               />
             ) : (
               getTabBookings(activeTab).map((booking) => (
@@ -193,20 +519,22 @@ export default function BookingList() {
                         <Avatar className="w-12 h-12">
                           <AvatarImage src={booking.caregiver?.photo} />
                           <AvatarFallback>
-                            {booking.caregiver?.name.split(' ').map(n => n[0]).join('')}
+                            {getCaregiverInitials(booking)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <h3 className="font-semibold text-foreground">
-                            {booking.caregiver?.name}
+                            {getCaregiverName(booking)}
                           </h3>
                           <p className="text-sm text-muted-foreground">
-                            Para {booking.elder?.name}
+                            Para {getElderName(booking)}
                           </p>
                         </div>
                       </div>
-                      <Badge 
-                        className={`${statusConfig[booking.status].color} text-xs font-medium`}
+                      <Badge
+                        className={`${
+                          statusConfig[booking.status].color
+                        } text-xs font-medium`}
                       >
                         {statusConfig[booking.status].label}
                       </Badge>
@@ -219,29 +547,36 @@ export default function BookingList() {
                       <Calendar className="w-4 h-4 text-healthcare-light" />
                       <span>{formatDate(booking.dateISO)}</span>
                       <Clock className="w-4 h-4 text-healthcare-light ml-4" />
-                      <span>{formatTime(booking.dateISO)} ({booking.duration}h)</span>
+                      <span>
+                        {formatTime(booking.dateISO)} ({booking.duration}h)
+                      </span>
                     </div>
 
                     {/* Address */}
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="w-4 h-4 text-healthcare-light" />
                       <span className="text-muted-foreground">
-                        {booking.address.street}, {booking.address.city}
+                        {[booking.address?.street, booking.address?.city]
+                          .filter(Boolean)
+                          .join(', ')}
                       </span>
                     </div>
 
                     {/* Services */}
-                    <div className="flex flex-wrap gap-2">
-                      {booking.services.map(service => (
-                        <Badge 
-                          key={service} 
-                          variant="secondary" 
-                          className="text-xs bg-healthcare-soft text-healthcare-dark"
-                        >
-                          {service}
-                        </Badge>
-                      ))}
-                    </div>
+                    {Array.isArray(booking.services) &&
+                      booking.services.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {booking.services.map((service) => (
+                            <Badge
+                              key={service}
+                              variant="secondary"
+                              className="text-xs bg-healthcare-soft text-healthcare-dark"
+                            >
+                              {service}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
 
                     {/* Emergency Badge */}
                     {booking.emergency && (
@@ -250,18 +585,17 @@ export default function BookingList() {
                       </Badge>
                     )}
 
-                    {/* Price */}
+                    {/* Price + Actions */}
                     <div className="flex justify-between items-center pt-2 border-t border-border">
                       <span className="text-lg font-semibold text-foreground">
-                        R$ {booking.totalPrice.toFixed(2)}
+                        R$ {Number(booking.totalPrice || 0).toFixed(2)}
                       </span>
-                      
-                      {/* Action Buttons */}
+
                       <div className="flex gap-2">
                         {booking.status === 'accepted' && (
                           <>
                             <Button variant="outline" size="sm" asChild>
-                              <a href={`tel:${booking.caregiver?.phone}`}>
+                              <a href={`tel:${booking.caregiver?.phone ?? ''}`}>
                                 <Phone className="w-4 h-4" />
                               </a>
                             </Button>
@@ -270,12 +604,14 @@ export default function BookingList() {
                             </Button>
                           </>
                         )}
-                        
+
                         {['requested', 'accepted'].includes(booking.status) && (
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleStatusUpdate(booking.id, 'canceled')}
+                            onClick={() =>
+                              handleStatusUpdate(booking.id, 'canceled')
+                            }
                           >
                             Cancelar
                           </Button>
