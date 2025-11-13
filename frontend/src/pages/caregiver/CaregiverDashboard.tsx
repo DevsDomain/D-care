@@ -31,6 +31,10 @@ import {
   toggleCaregiverAvailability,
   toggleCaregiverEmergencyAvailability,
 } from "@/lib/api/caregiver";
+import {
+  fetchAppointments,
+  updateAppointmentStatus,
+} from "@/lib/api/appointment";
 
 export default function CaregiverDashboard() {
   const [bookingRequests, setBookingRequests] = useState<Booking[]>([]);
@@ -43,6 +47,9 @@ export default function CaregiverDashboard() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { currentUser } = useAppStore();
+  const [processingBookingIds, setProcessingBookingIds] = useState<string[]>(
+    []
+  );
 
   const navigate = useNavigate();
 
@@ -81,96 +88,74 @@ export default function CaregiverDashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // Mock data for caregiver dashboard
-      const mockRequests: Booking[] = [
-        {
-          id: "3",
-          caregiverId: currentUser!.id,
-          elderId: "1",
-          dateISO: "2024-09-10T14:00:00Z",
-          duration: 4,
-          status: "requested",
-          emergency: false,
-          notes: "Cuidados regulares da tarde, administração de medicamentos",
+      setLoading(true);
+      // obter caregiverId: derive do currentUser (verificar onde está o id real do caregiver)
+      const caregiverId =
+        (currentUser as any)?.caregiverProfile?.id ?? currentUser?.id;
+
+      if (!caregiverId) {
+        console.warn("Caregiver id not found for currentUser");
+        setBookingRequests([]);
+        setUpcomingBookings([]);
+        return;
+      }
+
+      const data = await fetchAppointments({ caregiverId });
+
+      // mapear AppointmentApi -> Booking (pode reutilizar mapStatusFromApi / calcDurationHours do BookingList)
+      const mapped = (data as any[]).map((a) => {
+        const status =
+          a.status === "PENDING"
+            ? "requested"
+            : a.status === "ACCEPTED"
+            ? "accepted"
+            : a.status === "COMPLETED"
+            ? "completed"
+            : "canceled";
+        const duration = Math.max(
+          1,
+          Math.round(
+            (new Date(a.datetimeEnd).getTime() -
+              new Date(a.datetimeStart).getTime()) /
+              3600000
+          )
+        );
+        return {
+          id: a.id,
+          caregiverId: a.caregiverId,
+          elderId: a.elderId,
+          dateISO: a.datetimeStart,
+          duration,
+          status,
+          emergency: Boolean(a.emergency),
+          notes: a.notes ?? "",
           address: {
-            street: "Rua das Flores, 123",
-            city: "São Paulo",
-            state: "SP",
-            zipCode: "01234-567",
+            street: a.elder?.address ?? "",
+            city: a.elder?.city ?? "",
+            state: a.elder?.state ?? "",
+            zipCode: a.elder?.zipCode ?? "",
           },
-          totalPrice: 140,
-          services: ["Personal Care", "Medication Management"],
-          createdAt: "2024-09-08T10:00:00Z",
-          updatedAt: "2024-09-08T10:00:00Z",
-          elder: {
-            id: "1",
-            name: "José da Silva",
-            conditions: ["Diabetes", "Hypertension"],
-            medications: ["Metformin", "Losartan"],
-            avatarFile: null,
-            birthDate: new Date(),
+          totalPrice: a.totalPrice ?? 0,
+          services: [],
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+          elder: a.elder
+            ? { id: a.elder.id, name: a.elder.name, photo: a.elder.avatarPath }
+            : undefined,
+        } as Booking;
+      });
 
-            address: {
-              street: "Rua das Flores, 123",
-              city: "São Paulo",
-              state: "SP",
-              zipCode: "01234-567",
-              number: "123",
-            },
-            preferences: {
-              gender: "female",
-              language: ["Portuguese"],
-            },
-            createdAt: "2024-01-15T10:00:00Z",
-          },
-        },
-      ];
+      // separar requests PENDING e upcoming (accepted/future)
+      const requests = mapped.filter((m) => m.status === "requested");
+      const upcoming = mapped.filter((m) => m.status === "accepted");
 
-      const mockUpcoming: Booking[] = [
-        {
-          id: "4",
-          caregiverId: currentUser!.id,
-          elderId: "1",
-          dateISO: "2024-09-11T09:00:00Z",
-          duration: 3,
-          status: "accepted",
-          emergency: false,
-          address: {
-            street: "Rua das Flores, 123",
-            city: "São Paulo",
-            state: "SP",
-            zipCode: "01234-567",
-          },
-          totalPrice: 105,
-          services: ["Companionship", "Light Housekeeping"],
-          createdAt: "2024-09-07T15:00:00Z",
-          updatedAt: "2024-09-08T09:00:00Z",
-          elder: {
-            id: "1",
-            name: "José da Silva",
-            conditions: ["Diabetes"],
-            medications: ["Metformin"],
-            avatarFile: null,
-            birthDate: new Date(),
-            address: {
-              street: "Rua das Flores, 123",
-              city: "São Paulo",
-              state: "SP",
-              zipCode: "01234-567",
-              number: "123",
-            },
-            preferences: {},
-            createdAt: "2024-01-15T10:00:00Z",
-          },
-        },
-      ];
-
-      setBookingRequests(mockRequests);
-      setUpcomingBookings(mockUpcoming);
-    } catch (error) {
+      setBookingRequests(requests);
+      setUpcomingBookings(upcoming);
+    } catch (err) {
+      console.error("Erro ao carregar bookings:", err);
       toast({
         title: "Erro",
-        description: "Falha ao carregar dados do painel",
+        description: "Falha ao carregar solicitações",
         variant: "destructive",
       });
     } finally {
@@ -183,37 +168,37 @@ export default function CaregiverDashboard() {
     action: "accept" | "decline"
   ) => {
     try {
-      const status = action === "accept" ? "accepted" : "canceled";
-      const response = await mockApi.updateBookingStatus(bookingId, status);
+      setProcessingBookingIds((prev) => [...prev, bookingId]);
+      const apiStatus = action === "accept" ? "ACCEPTED" : "REJECTED"; // seu backend aceita REJECTED
+      await updateAppointmentStatus(bookingId, apiStatus);
 
-      if (response.success) {
-        setBookingRequests((prev) => prev.filter((b) => b.id !== bookingId));
-
-        if (action === "accept") {
-          const acceptedBooking = bookingRequests.find(
-            (b) => b.id === bookingId
-          );
-          if (acceptedBooking) {
-            setUpcomingBookings((prev) => [
-              ...prev,
-              { ...acceptedBooking, status: "accepted" },
-            ]);
-          }
+      // Atualização local:
+      setBookingRequests((prev) => prev.filter((b) => b.id !== bookingId));
+      if (action === "accept") {
+        const acceptedBooking = bookingRequests.find((b) => b.id === bookingId);
+        if (acceptedBooking) {
+          setUpcomingBookings((prev) => [
+            ...prev,
+            { ...acceptedBooking, status: "accepted" },
+          ]);
         }
-
-        toast({
-          title: "Sucesso",
-          description: `Solicitação ${
-            action === "accept" ? "aceita" : "recusada"
-          } com sucesso`,
-        });
       }
-    } catch (error) {
+
+      toast({
+        title: "Sucesso",
+        description: `Solicitação ${
+          action === "accept" ? "aceita" : "recusada"
+        } com sucesso`,
+      });
+    } catch (err) {
+      console.error(err);
       toast({
         title: "Erro",
         description: "Falha ao processar solicitação",
         variant: "destructive",
       });
+    } finally {
+      setProcessingBookingIds((prev) => prev.filter((id) => id !== bookingId));
     }
   };
 
@@ -419,9 +404,14 @@ export default function CaregiverDashboard() {
                               onClick={() =>
                                 handleBookingResponse(booking.id, "decline")
                               }
+                              disabled={processingBookingIds.includes(
+                                booking.id
+                              )}
                             >
                               <XCircle className="w-4 h-4 mr-1" />
-                              Recusar
+                              {processingBookingIds.includes(booking.id)
+                                ? "Processando..."
+                                : "Recusar"}
                             </Button>
                             <Button
                               variant="healthcare"
@@ -429,9 +419,14 @@ export default function CaregiverDashboard() {
                               onClick={() =>
                                 handleBookingResponse(booking.id, "accept")
                               }
+                              disabled={processingBookingIds.includes(
+                                booking.id
+                              )}
                             >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Aceitar
+                              <XCircle className="w-4 h-4 mr-1" />
+                              {processingBookingIds.includes(booking.id)
+                                ? "Processando..."
+                                : "Aceitar"}
                             </Button>
                           </div>
                         </div>

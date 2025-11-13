@@ -80,32 +80,29 @@ export class AppointmentService {
     return rows;
   }
 
-  async updateStatus(id: string, status: AppointmentStatusString) {
-    const allowed: AppointmentStatusString[] = [
-      'PENDING',
-      'ACCEPTED',
-      'REJECTED',
-      'CANCELLED',
-      'COMPLETED',
-    ];
-
-    if (!allowed.includes(status)) {
-      throw new BadRequestException('Status inválido');
-    }
-
+  async updateStatus(
+    id: string,
+    userId: string,
+    status: AppointmentStatusString,
+  ) {
     const appointment = await this.prisma.appointments.findUnique({
       where: { id },
+      include: { caregiver: true },
     });
 
-    if (!appointment) {
+    if (!appointment)
       throw new BadRequestException('Agendamento não encontrado');
-    }
+    if (appointment.caregiver?.userId !== userId)
+      throw new BadRequestException(
+        'Você não tem permissão para alterar este agendamento',
+      );
 
     return this.prisma.appointments.update({
       where: { id },
-      data: {
-        status,
-        updatedAt: new Date(),
+      data: { status, updatedAt: new Date() },
+      include: {
+        family: { include: { user: { include: { userProfile: true } } } },
+        elder: true,
       },
     });
   }

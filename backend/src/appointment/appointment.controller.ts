@@ -45,10 +45,12 @@ export class AppointmentController {
    * body: { "status": "CANCELLED" | "ACCEPTED" | ... }
    */
   @Patch(':id/status')
+  @Roles(Role.CAREGIVER)
   async updateStatus(
     @Param('id') id: string,
     @Body() dto: UpdateAppointmentStatusDto,
-  ) {
-    return this.appointmentService.updateStatus(id, dto.status);
-  }
+    @Req() req: any,
+) {
+  const userId = req.user.id; // vem do JWT
+  return this.appointmentService.updateStatusAsCaregiver(id, userId, dto.status);
 }
