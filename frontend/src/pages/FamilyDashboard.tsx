@@ -411,7 +411,7 @@ export default function FamilyDashboard() {
 
               return (
                 <Card key={elder.id} className="healthcare-card">
-                  <CardContent className="p-6">
+                  <CardContent className="px-0 py-6">
                     <div className="flex items-start gap-4">
                       <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
                         <AvatarImage
@@ -498,7 +498,7 @@ export default function FamilyDashboard() {
           </h2>
 
           <Card className="bg-gradient-to-r from-medical-success/10 to-healthcare-soft/30 border-medical-success/20">
-            <CardContent className="p-4">
+            <CardContent className="px-10 py-6">
               <div className="flex items-center gap-3">
                 <div className="bg-medical-success/20 p-2 rounded-full">
                   <Shield className="w-5 h-5 text-medical-success" />
