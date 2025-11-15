@@ -52,6 +52,8 @@ export default function CaregiverEdition() {
     skills: [],
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [noCouncilRegistration, setNoCouncilRegistration] = useState(false);
+
 
   const commonSkills = [
     "Administração de medicamentos",
@@ -164,23 +166,52 @@ export default function CaregiverEdition() {
     if (!currentUser?.id) return;
     setLoading(true);
 
-    // ✅ Local validation for CRM/COREN format
-    const crmPattern = /^(CRM|COREN|CRP|CREFITO)(-[A-Z]{2})?\s?\d{4,8}$/i;
+    const registration = formData.crm_coren?.trim() || "";
 
-    if (formData.crm_coren && !crmPattern.test(formData.crm_coren.trim())) {
-      toast({
-        title: "CRM/COREN inválido",
-        description:
-          "Use formatos válidos como: CRM-SP 123456, COREN-SP 123456, CRP 123456 ou CREFITO 123456",
-        variant: "destructive",
-      });
-      setLoading(false);
-      return;
+    // ✅ Validação local de CRM / COREN / CRP / CREFITO
+    // Mantendo um padrão mais "oficial" e preservando o comportamento antigo de CRM/COREN
+    if (!noCouncilRegistration && registration) {
+      // padrão antigo – para não quebrar nada que já exista no banco
+      const legacyCrmCorenPattern =
+        /^(CRM|COREN)(-[A-Z]{2})?\s?\d{4,8}$/i;
+
+      // Ex.: CRM-SP 123456 ou CRM/SP 123456
+      const crmPattern = /^CRM[-\/ ]?[A-Z]{2}\s?\d{4,6}$/i;
+
+      // Ex.: COREN-SP 123456 ou COREN/SP 123456
+      const corenPattern = /^COREN[-\/ ]?[A-Z]{2}[- ]?\d{4,6}$/i;
+
+      // Ex.: CRP 06/12345 (06 = regional, / número) :contentReference[oaicite:0]{index=0}
+      const crpPattern = /^CRP\s?\d{2}\/\d{4,6}$/i;
+
+      // Ex.: CREFITO-4 123456-F ou CREFITO-4/123456-F :contentReference[oaicite:1]{index=1}
+      const crefitoPattern =
+        /^CREFITO-?\d{1,2}[-\/ ]?\d{4,6}-?[A-Z]{1,3}$/i;
+
+      const isValid =
+        crmPattern.test(registration) ||
+        corenPattern.test(registration) ||
+        crpPattern.test(registration) ||
+        crefitoPattern.test(registration) ||
+        legacyCrmCorenPattern.test(registration); // mantém a lógica original de CRM/COREN
+
+      if (!isValid) {
+        toast({
+          title: "Registro profissional inválido",
+          description:
+            'Use um formato válido, por exemplo: "CRM-SP 123456", "COREN-SP 123456", "CRP 06/12345" ou "CREFITO-4 123456-F". Se você não possui registro, marque a opção "Não possuo registro".',
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
     }
 
     try {
+      const normalizedCrmCoren = noCouncilRegistration ? "" : registration;
+
       const form = new FormData();
-      form.append("crm_coren", formData.crm_coren || "");
+      form.append("crm_coren", normalizedCrmCoren);
       form.append("bio", formData.bio || "");
       form.append("address", formData.address || "");
       form.append("city", formData.city || "");
@@ -198,7 +229,7 @@ export default function CaregiverEdition() {
 
       await updateCaregiverProfile(
         formData.userId!,
-        formData,
+        { ...formData, crm_coren: normalizedCrmCoren },
         avatarFile || undefined
       );
 
@@ -220,7 +251,8 @@ export default function CaregiverEdition() {
     }
   };
 
-  const isStep1Valid = formData.crm_coren && formData.bio;
+  const isStep1Valid =
+    !!formData.bio && (!!formData.crm_coren || noCouncilRegistration);
   const isStep2Valid = formData.address && formData.city && formData.state;
   const isStep3Valid = formData.skills && formData.specializations;
   const isStep4Valid = formData.priceRange && formData.experience;
@@ -249,9 +281,8 @@ export default function CaregiverEdition() {
           {[1, 2, 3, 4].map((num) => (
             <div
               key={num}
-              className={`h-2 flex-1 rounded-full transition-colors ${
-                step >= num ? "bg-healthcare-light" : "bg-muted"
-              }`}
+              className={`h-2 flex-1 rounded-full transition-colors ${step >= num ? "bg-healthcare-light" : "bg-muted"
+                }`}
             />
           ))}
         </div>
@@ -275,22 +306,58 @@ export default function CaregiverEdition() {
                   onChange={(file) => setAvatarFile(file)}
                   defaultUrl={formData.avatarUrl || undefined}
                 />
-                <div>
-                  <Label htmlFor="crm_coren" className="mb-2">
-                    CRM/COREN
-                  </Label>
+
+                {/* 🔄 BLOCO NOVO DE REGISTRO PROFISSIONAL */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="crm_coren" className="mb-2">
+                      Registro profissional
+                    </Label>
+                    <span className="text-xs text-muted-foreground">
+                      CRM, COREN, CRP ou CREFITO
+                    </span>
+                  </div>
+
                   <Input
                     id="crm_coren"
                     value={formData.crm_coren || ""}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
-                        crm_coren: e.target.value,
+                        crm_coren: e.target.value.toUpperCase(),
                       }))
                     }
-                    placeholder="Digite seu CRM ou COREN"
+                    placeholder="Ex.: CRM-SP 123456, COREN-SP 123456, CRP 06/12345, CREFITO-4 123456-F"
+                    disabled={noCouncilRegistration}
                   />
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="no_council_registration"
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-muted-foreground"
+                      checked={noCouncilRegistration}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setNoCouncilRegistration(checked);
+                        if (checked) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            crm_coren: "",
+                          }));
+                        }
+                      }}
+                    />
+                    <Label
+                      htmlFor="no_council_registration"
+                      className="text-xs text-muted-foreground"
+                    >
+                      Não possuo registro em CRM, COREN, CRP ou CREFITO
+                    </Label>
+                  </div>
                 </div>
+
+                {/* 🌟 Biografia continua igual */}
                 <div>
                   <Label htmlFor="bio" className="mb-2">
                     Biografia

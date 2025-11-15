@@ -187,7 +187,7 @@ export default function Register() {
               {/* CRM/COREN apenas para cuidador */}
               {form.role === 'caregiver' && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="crmCoren">CRM/COREN</Label>
+                  <Label htmlFor="crmCoren">CRM | COREN | CREFITO | N/A</Label>
                   <Input
                     id="crmCoren"
                     name="crmCoren"
