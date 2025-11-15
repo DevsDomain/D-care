@@ -14,8 +14,8 @@ export class ProfessionalIdValidationPipe implements PipeTransform {
 
     if (!valid) {
       throw new BadRequestException(
-        'crm_coren inválido. Use formatos: CRM-SP 123456, COREN-SP 123456, CRP 123456, CREFITO 123456',
-      );
+        'crm_coren inválido. Exemplos: CRM-SP 123456, COREN-SP 123456, CRP 06/12345, CRP 06/12345-6, CREFITO-3 123456-F, CREFITO-3/123456-F',
+        );
     }
     return value;
   }
