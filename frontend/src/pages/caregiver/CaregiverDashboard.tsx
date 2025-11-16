@@ -1,3 +1,4 @@
+// src/pages/caregiver/CaregiverDashboard.tsx
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import {
@@ -5,24 +6,21 @@ import {
   Clock,
   MapPin,
   User,
-  BriefcaseMedical,
   Bell,
-  CheckCircle,
-  XCircle,
   AlertCircle,
-  TrendingUp,
-  Hospital,
-  UserRoundPen,
+  Check,
+  X,
+  Phone,
+  Avatar as LucideAvatar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CaregiverCardSkeleton } from "@/components/common/LoadingSkeleton";
 import { EmptyState } from "@/components/common/EmptyState";
 import { useToast } from "@/components/hooks/use-toast";
-import { mockApi } from "@/lib/api/mock";
 import type { Caregiver, Booking } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
 import { useNavigate } from "react-router-dom";
@@ -31,201 +29,353 @@ import {
   toggleCaregiverAvailability,
   toggleCaregiverEmergencyAvailability,
 } from "@/lib/api/caregiver";
+import {
+  fetchAppointments,
+  updateAppointmentStatus,
+} from "@/lib/api/appointment";
+import { api } from "@/lib/api/api";
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+/* ===========================
+   Backend types (used in mapping)
+   =========================== */
+type AppointmentApiStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "CANCELLED"
+  | "COMPLETED";
+
+type AppointmentApi = {
+  id: string;
+  familyId: string | null;
+  elderId: string | null;
+  caregiverId: string | null;
+  datetimeStart: string;
+  datetimeEnd: string;
+  status: AppointmentApiStatus;
+  emergency: boolean | null;
+  notes: string | null;
+  totalPrice: number;
+  createdAt: string;
+  updatedAt: string;
+
+  elder?: {
+    id: string;
+    name: string | null;
+    avatarPath?: string | null;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zipCode?: string | null;
+  } | null;
+
+  family?: {
+    user?: {
+      userProfile: Array<{ id: string; name: string | null; phone?: string }>;
+    };
+  } | null;
+};
+
+/* ===========================
+   Front status map
+   =========================== */
+type BookingStatus = "requested" | "accepted" | "canceled" | "completed";
+
+const statusConfig: Record<BookingStatus, { label: string; color: string }> = {
+  requested: { label: "Solicitado", color: "bg-yellow-300 text-black" },
+  accepted: { label: "Aceito", color: "bg-green-600 text-white" },
+  canceled: { label: "Cancelado", color: "bg-red-600 text-white" },
+  completed: { label: "Concluído", color: "bg-neutral-600 text-white" },
+};
+
+/* API <-> Front maps */
+function mapStatusFromApi(s: AppointmentApiStatus): BookingStatus {
+  switch (s) {
+    case "PENDING":
+      return "requested";
+    case "ACCEPTED":
+      return "accepted";
+    case "REJECTED":
+    case "CANCELLED":
+      return "canceled";
+    case "COMPLETED":
+      return "completed";
+    default:
+      return "requested";
+  }
+}
+function mapStatusToApi(s: BookingStatus): AppointmentApiStatus {
+  switch (s) {
+    case "requested":
+      return "PENDING";
+    case "accepted":
+      return "ACCEPTED";
+    case "canceled":
+      return "CANCELLED";
+    case "completed":
+      return "COMPLETED";
+    default:
+      return "PENDING";
+  }
+}
+
+/* Duração em horas (a partir de ISO start/end) */
+function calcDurationHours(startISO: string, endISO: string) {
+  const s = new Date(startISO).getTime();
+  const e = new Date(endISO).getTime();
+  return Math.max(1, Math.round((e - s) / 3600000));
+}
+
+/* ===========================
+   Component
+   =========================== */
 export default function CaregiverDashboard() {
+  // local UI state
   const [bookingRequests, setBookingRequests] = useState<Booking[]>([]);
   const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
   const [caregiverUser, setCaregiverUser] = useState<Partial<Caregiver>>({});
-  const [emergencyAvailable, setEmergencyAvailable] = useState(
-    caregiverUser.emergency
+  const [emergencyAvailable, setEmergencyAvailable] = useState<
+    boolean | undefined
+  >(caregiverUser?.emergency);
+  const [activeToday, setActiveToday] = useState<boolean | undefined>(
+    caregiverUser?.availability
   );
-  const [activeToday, setActiveToday] = useState(caregiverUser.availability);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentUser } = useAppStore();
+  const { currentUser, setCurrentUser } = useAppStore();
+  const [processingBookingIds, setProcessingBookingIds] = useState<string[]>(
+    []
+  );
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [tab, setTab] = useState<"requests" | "accepted" | "completed">(
+    "requests"
+  );
 
   const navigate = useNavigate();
 
-  // Load existing caregiver data
+  /* -------------------------
+     Debug helper
+     ------------------------- */
+  const log = (...args: any[]) => {
+    // visible and consistent prefix
+    // eslint-disable-next-line no-console
+    console.debug("[CaregiverDashboard]", ...args);
+  };
+
+  /* -------------------------
+     Fetch caregiver profile (first load)
+     ------------------------- */
+  /* -------------------------
+   Fetch caregiver profile (first load)
+   ------------------------- */
+  // -----------------------------------------------------
+  // Fetch caregiver profile once we know currentUser.id
+  // -----------------------------------------------------
   useEffect(() => {
-    const fetchCaregiver = async () => {
-      try {
-        const caregiver = await fetchCaregiverProfile(currentUser!.id);
-
-        setActiveToday(caregiver.availability);
-        setEmergencyAvailable(caregiver.emergency);
-        setCaregiverUser(caregiver);
-        loadDashboardData();
-      } catch (error) {
-        console.error("Error loading caregiver:", error);
+    async function loadCaregiver() {
+      if (!currentUser?.id) {
+        log("No currentUser yet. Waiting...");
+        return;
       }
-    };
+      if (currentUser.role !== "CAREGIVER") {
+        log("User is not caregiver:", currentUser.role);
+        return;
+      }
 
-    if (currentUser?.role === "CAREGIVER") {
-      fetchCaregiver();
+      try {
+        log("Fetching caregiver profile for userId:", currentUser.id);
+
+        const caregiver = await fetchCaregiverProfile(currentUser.id);
+
+        log("Caregiver fetched:", caregiver);
+
+        if (!caregiver) {
+          log("No caregiver record found for this user.");
+          return;
+        }
+
+        setCaregiverUser(caregiver);
+
+        setActiveToday(!!caregiver?.availability);
+        setEmergencyAvailable(!!caregiver?.emergency);
+
+        // After we know caregiver info -> load appointments
+        await loadAppointmentsForCaregiver(caregiver);
+      } catch (err) {
+        console.error(err);
+        toast({
+          title: "Erro",
+          description: "Falha ao carregar perfil do cuidador",
+          variant: "destructive",
+        });
+      }
     }
-  }, [currentUser?.name]);
 
-  const handleActive = async () => {
-    await toggleCaregiverAvailability(caregiverUser.userId!, !activeToday);
-    setActiveToday(!activeToday);
-  };
+    loadCaregiver();
+  }, [currentUser]);
 
-  const handleEmergency = async () => {
-    await toggleCaregiverEmergencyAvailability(
-      caregiverUser.userId!,
-      !emergencyAvailable
-    );
-    setEmergencyAvailable(!emergencyAvailable);
-  };
+  // -----------------------------------------------------
+  // Load appointments using caregiver.userId
+  // -----------------------------------------------------
+  async function loadAppointmentsForCaregiver(caregiver: any) {
+    if (!caregiver) {
+      log("loadAppointmentsForCaregiver: caregiver is null");
+      return;
+    }
 
-  const loadDashboardData = async () => {
+    const caregiverId = caregiver.userId; // <-- ✔ correto!
+
+    if (!caregiverId) {
+      log("loadAppointmentsForCaregiver: caregiver.userId is missing");
+      return;
+    }
+
     try {
-      // Mock data for caregiver dashboard
-      const mockRequests: Booking[] = [
-        {
-          id: "3",
-          caregiverId: currentUser!.id,
-          elderId: "1",
-          dateISO: "2024-09-10T14:00:00Z",
-          duration: 4,
-          status: "requested",
-          emergency: false,
-          notes: "Cuidados regulares da tarde, administração de medicamentos",
-          address: {
-            street: "Rua das Flores, 123",
-            city: "São Paulo",
-            state: "SP",
-            zipCode: "01234-567",
-          },
-          totalPrice: 140,
-          services: ["Personal Care", "Medication Management"],
-          createdAt: "2024-09-08T10:00:00Z",
-          updatedAt: "2024-09-08T10:00:00Z",
-          elder: {
-            id: "1",
-            name: "José da Silva",
-            conditions: ["Diabetes", "Hypertension"],
-            medications: ["Metformin", "Losartan"],
-            avatarFile: null,
-            birthDate: new Date(),
+      setLoading(true);
+      const url = `appointments?caregiverId=${caregiverId}`;
+      log("GET", url);
 
-            address: {
-              street: "Rua das Flores, 123",
-              city: "São Paulo",
-              state: "SP",
-              zipCode: "01234-567",
-              number: "123",
-            },
-            preferences: {
-              gender: "female",
-              language: ["Portuguese"],
-            },
-            createdAt: "2024-01-15T10:00:00Z",
-          },
-        },
-      ];
+      const { data } = await api.get(url);
 
-      const mockUpcoming: Booking[] = [
-        {
-          id: "4",
-          caregiverId: currentUser!.id,
-          elderId: "1",
-          dateISO: "2024-09-11T09:00:00Z",
-          duration: 3,
-          status: "accepted",
-          emergency: false,
-          address: {
-            street: "Rua das Flores, 123",
-            city: "São Paulo",
-            state: "SP",
-            zipCode: "01234-567",
-          },
-          totalPrice: 105,
-          services: ["Companionship", "Light Housekeeping"],
-          createdAt: "2024-09-07T15:00:00Z",
-          updatedAt: "2024-09-08T09:00:00Z",
-          elder: {
-            id: "1",
-            name: "José da Silva",
-            conditions: ["Diabetes"],
-            medications: ["Metformin"],
-            avatarFile: null,
-            birthDate: new Date(),
-            address: {
-              street: "Rua das Flores, 123",
-              city: "São Paulo",
-              state: "SP",
-              zipCode: "01234-567",
-              number: "123",
-            },
-            preferences: {},
-            createdAt: "2024-01-15T10:00:00Z",
-          },
-        },
-      ];
+      log("Appointments fetched:", data);
 
-      setBookingRequests(mockRequests);
-      setUpcomingBookings(mockUpcoming);
-    } catch (error) {
+      const mapped = data.map((a: any) => ({
+        id: a.id,
+        elderName: a.elder?.name ?? "Paciente",
+        elderPhoto: a.elder?.avatarPath ?? "",
+        familyName: a.family?.user?.userProfile?.[0]?.name ?? "Familiar",
+        familyPhone: a.family?.user?.userProfile?.[0]?.phone ?? "",
+        dateISO: a.datetimeStart,
+        duration: calcDurationHours(a.datetimeStart, a.datetimeEnd),
+        status: mapStatusFromApi(a.status),
+        emergency: Boolean(a.emergency),
+        totalPrice: a.totalPrice ?? 0,
+        notes: a.notes ?? "",
+      }));
+
+      setAppointments(mapped);
+    } catch (err) {
+      console.error(err);
       toast({
         title: "Erro",
-        description: "Falha ao carregar dados do painel",
+        description: "Falha ao carregar solicitações",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  const handleBookingResponse = async (
-    bookingId: string,
-    action: "accept" | "decline"
-  ) => {
+  /* ========================
+     Update status (PATCH)
+     ======================== */
+  async function updateStatus(id: string, newStatus: BookingStatus) {
     try {
-      const status = action === "accept" ? "accepted" : "canceled";
-      const response = await mockApi.updateBookingStatus(bookingId, status);
+      log("updateStatus called:", { id, newStatus });
+      setProcessingBookingIds((prev) => [...prev, id]);
 
-      if (response.success) {
-        setBookingRequests((prev) => prev.filter((b) => b.id !== bookingId));
+      await api.patch(`appointments/${id}/status`, {
+        status: mapStatusToApi(newStatus),
+      });
 
-        if (action === "accept") {
-          const acceptedBooking = bookingRequests.find(
-            (b) => b.id === bookingId
-          );
-          if (acceptedBooking) {
-            setUpcomingBookings((prev) => [
-              ...prev,
-              { ...acceptedBooking, status: "accepted" },
-            ]);
-          }
-        }
-
-        toast({
-          title: "Sucesso",
-          description: `Solicitação ${
-            action === "accept" ? "aceita" : "recusada"
-          } com sucesso`,
-        });
+      // update local state
+      setAppointments((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+      );
+      setBookingRequests((prev) => prev.filter((b) => b.id !== id));
+      if (newStatus === "accepted") {
+        const accepted = appointments.find((x) => x.id === id);
+        if (accepted)
+          setUpcomingBookings((prev) => [
+            ...prev,
+            { ...accepted, status: "accepted" },
+          ]);
       }
-    } catch (error) {
+
+      log("updateStatus success, updated local states.");
+      toast({ title: "Sucesso", description: "Status atualizado!" });
+    } catch (err) {
+      console.error("[CaregiverDashboard] updateStatus error:", err);
       toast({
         title: "Erro",
-        description: "Falha ao processar solicitação",
+        description: "Falha ao atualizar status",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessingBookingIds((prev) => prev.filter((x) => x !== id));
+    }
+  }
+
+  /* Toggle availability */
+  const handleActive = async () => {
+    try {
+      log("Toggling availability (current caregiverUser):", caregiverUser);
+      await toggleCaregiverAvailability(caregiverUser.userId!, !activeToday);
+      setActiveToday((v) => !v);
+      toast({ title: "Sucesso", description: "Disponibilidade atualizada" });
+    } catch (err) {
+      console.error("handleActive error:", err);
+      toast({
+        title: "Erro",
+        description: "Falha ao alterar disponibilidade",
         variant: "destructive",
       });
     }
   };
 
-  const formatDate = (dateISO: string) => {
-    return new Date(dateISO).toLocaleDateString("pt-BR", {
+  const handleEmergency = async () => {
+    try {
+      log("Toggling emergency availability (current):", caregiverUser);
+      await toggleCaregiverEmergencyAvailability(
+        caregiverUser.userId!,
+        !emergencyAvailable
+      );
+      setEmergencyAvailable((v) => !v);
+      toast({
+        title: "Sucesso",
+        description: "Disponibilidade de emergência atualizada",
+      });
+    } catch (err) {
+      console.error("handleEmergency error:", err);
+      toast({
+        title: "Erro",
+        description: "Falha ao alterar disponibilidade",
+        variant: "destructive",
+      });
+    }
+  };
+
+  /* Filters by tab */
+  const filtered = appointments.filter((a) => {
+    switch (tab) {
+      case "requests":
+        return a.status === "requested";
+      case "accepted":
+        return a.status === "accepted";
+      case "completed":
+        return a.status === "completed" || a.status === "canceled";
+      default:
+        return true;
+    }
+  });
+
+  /* Date / Time format helpers (single definition) */
+  const formatDate = (iso: string) =>
+    new Date(iso).toLocaleDateString("pt-BR", {
       day: "2-digit",
       month: "short",
+      year: "numeric",
+    });
+
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
+  /* Loading skeleton */
   if (loading) {
     return (
       <div className="min-h-screen bg-background pb-24">
@@ -236,6 +386,9 @@ export default function CaregiverDashboard() {
     );
   }
 
+  /* ===========================
+     Render
+     =========================== */
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
@@ -245,11 +398,11 @@ export default function CaregiverDashboard() {
             <AvatarImage
               width={200}
               height={200}
-              src={caregiverUser.avatarUrl}
-              alt={caregiverUser.name || "userName"}
+              src={(caregiverUser as any)?.avatarUrl}
+              alt={(caregiverUser as any)?.name || "userName"}
             />
             <AvatarFallback className="bg-white/20 text-white">
-              {caregiverUser.name}
+              {(caregiverUser as any)?.name ?? "Cuidador"}
             </AvatarFallback>
           </Avatar>
           <div>
@@ -261,7 +414,7 @@ export default function CaregiverDashboard() {
             </p>
           </div>
           <Button variant="outline" size="icon" title="Editar Cuidador">
-            <UserRoundPen
+            <User
               className="w-5 h-5"
               onClick={() => navigate("/editCaregiver")}
             />
@@ -284,7 +437,10 @@ export default function CaregiverDashboard() {
                 </p>
               </div>
             </div>
-            <Switch checked={activeToday} onCheckedChange={handleActive} />
+            <Switch
+              checked={Boolean(activeToday)}
+              onCheckedChange={handleActive}
+            />
           </div>
 
           <div className="flex items-center justify-between p-4 bg-medical-critical/10 rounded-2xl border border-medical-critical/20">
@@ -298,7 +454,7 @@ export default function CaregiverDashboard() {
               </div>
             </div>
             <Switch
-              checked={emergencyAvailable}
+              checked={Boolean(emergencyAvailable)}
               onCheckedChange={handleEmergency}
             />
           </div>
@@ -306,202 +462,133 @@ export default function CaregiverDashboard() {
       </div>
 
       <div className="p-4 space-y-6">
-        {/* Statistics */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card className="text-center">
-            <CardContent className="pt-6">
-              <TrendingUp className="w-8 h-8 text-medical-success mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">4.9</p>
-              <p className="text-xs text-muted-foreground">Avaliação</p>
-            </CardContent>
-          </Card>
+        {/* Tabs */}
+        <Tabs
+          value={tab}
+          onValueChange={(v: any) => setTab(v)}
+          className="space-y-6"
+        >
+          <TabsList className="grid w-full grid-cols-3 bg-muted rounded-xl p-1">
+            <TabsTrigger value="requests">Solicitações</TabsTrigger>
+            <TabsTrigger value="accepted">Aceitas</TabsTrigger>
+            <TabsTrigger value="completed">Finalizadas</TabsTrigger>
+          </TabsList>
 
-          <Card className="text-center">
-            <CardContent className="pt-6">
-              <Calendar className="w-8 h-8 text-healthcare-light mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">12</p>
-              <p className="text-xs text-muted-foreground">Este mês</p>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardContent className="pt-6">
-              <Bell className="w-8 h-8 text-medical-warning mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">
-                {bookingRequests.length}
+          <TabsContent value={tab}>
+            {loading ? (
+              <p className="text-center">Carregando...</p>
+            ) : filtered.length === 0 ? (
+              <p className="text-center text-muted-foreground">
+                Nenhuma reserva
               </p>
-              <p className="text-xs text-muted-foreground">Pendentes</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* New requests */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Novas Solicitações ({bookingRequests.length})
-          </h2>
-
-          {bookingRequests.length === 0 ? (
-            <EmptyState
-              icon={Bell}
-              title="Nenhuma solicitação pendente"
-              description="Você está em dia! Novas solicitações aparecerão aqui."
-              variant="default"
-            />
-          ) : (
-            <div className="space-y-4">
-              {bookingRequests.map((booking) => (
-                <Card key={booking.id} className="healthcare-card">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src={booking.elder?.photo} />
+            ) : (
+              filtered.map((a) => (
+                <Card key={a.id} className="mb-4 healthcare-card">
+                  <CardHeader>
+                    <div className="flex items-center gap-3 w-full">
+                      <Avatar>
+                        <AvatarImage src={a.elderPhoto} />
                         <AvatarFallback>
-                          <User className="w-6 h-6" />
+                          {(a.elderName || "P").slice(0, 1)}
                         </AvatarFallback>
                       </Avatar>
 
-                      <div className="flex-1 space-y-3">
-                        <div>
-                          <h3 className="font-semibold text-foreground">
-                            {booking.elder?.name},88 anos
-                          </h3>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>{formatDate(booking.dateISO)}</span>
-                            <Clock className="w-4 h-4 ml-2" />
-                            <span>{booking.duration}h</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-sm">
-                          <MapPin className="w-4 h-4 text-healthcare-light" />
-                          <span className="text-muted-foreground">
-                            {booking.address.street}, {booking.address.city}
-                          </span>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          {booking.services.map((service) => (
-                            <Badge
-                              key={service}
-                              variant="secondary"
-                              className="text-xs bg-healthcare-soft text-healthcare-dark"
-                            >
-                              {service}
-                            </Badge>
-                          ))}
-                        </div>
-
-                        {booking.emergency && (
-                          <Badge className="emergency-badge w-fit">
-                            Emergência
-                          </Badge>
-                        )}
-
-                        {booking.notes && (
-                          <div className="p-3 rounded-xl bg-muted">
-                            <p className="text-sm text-muted-foreground">
-                              <strong>Observações:</strong> {booking.notes}
-                            </p>
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-between pt-2">
-                          <span className="text-lg font-semibold text-foreground">
-                            R$ {booking.totalPrice.toFixed(2)}
-                          </span>
-
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleBookingResponse(booking.id, "decline")
-                              }
-                            >
-                              <XCircle className="w-4 h-4 mr-1" />
-                              Recusar
-                            </Button>
-                            <Button
-                              variant="healthcare"
-                              size="sm"
-                              onClick={() =>
-                                handleBookingResponse(booking.id, "accept")
-                              }
-                            >
-                              <CheckCircle className="w-4 h-4 mr-1" />
-                              Aceitar
-                            </Button>
-                          </div>
-                        </div>
+                      <div>
+                        <h3 className="font-semibold">{a.elderName}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Familiar: {a.familyName}
+                        </p>
                       </div>
+
+                      <Badge
+                        className={`${
+                          statusConfig[a.status].color
+                        } ml-auto px-3 py-1`}
+                      >
+                        {statusConfig[a.status].label}
+                      </Badge>
                     </div>
+                  </CardHeader>
+
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-healthcare-light" />
+                      <span>{formatDate(a.dateISO)}</span>
+                      <Clock className="w-4 h-4 text-healthcare-light ml-4" />
+                      <span>
+                        {formatTime(a.dateISO)} ({a.duration}h)
+                      </span>
+                    </div>
+
+                    {a.emergency && (
+                      <Badge className="bg-red-600 text-white">
+                        EMERGÊNCIA
+                      </Badge>
+                    )}
+
+                    <div className="flex justify-between items-center pt-2 border-t">
+                      <span className="text-lg font-semibold">
+                        R$ {Number(a.totalPrice || 0).toFixed(2)}
+                      </span>
+
+                      {/* ACTIONS */}
+                      {a.status === "requested" && (
+                        <div className="flex gap-2">
+                          <Button
+                            variant="healthcare"
+                            size="sm"
+                            onClick={() => updateStatus(a.id, "accepted")}
+                            disabled={processingBookingIds.includes(a.id)}
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Aceitar
+                          </Button>
+
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateStatus(a.id, "canceled")}
+                            disabled={processingBookingIds.includes(a.id)}
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Recusar
+                          </Button>
+                        </div>
+                      )}
+
+                      {a.status === "accepted" && (
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={`tel:${a.familyPhone}`}>
+                              <Phone className="w-4 h-4" />
+                            </a>
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => updateStatus(a.id, "canceled")}
+                            disabled={processingBookingIds.includes(a.id)}
+                          >
+                            Cancelar
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {a.notes && (
+                      <div className="p-3 rounded-xl bg-muted">
+                        <p className="text-sm">
+                          <strong>Observações:</strong> {a.notes}
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Upcoming bookings */}
-        <div>
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Próximos Atendimentos ({upcomingBookings.length})
-          </h2>
-
-          {upcomingBookings.length === 0 ? (
-            <EmptyState
-              icon={Calendar}
-              title="Nenhum atendimento agendado"
-              description="Seus próximos atendimentos aparecerão aqui."
-              variant="default"
-            />
-          ) : (
-            <div className="space-y-4">
-              {upcomingBookings.map((booking) => (
-                <Card key={booking.id} className="healthcare-card">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src={booking.elder?.photo} />
-                        <AvatarFallback>
-                          <User className="w-6 h-6" />
-                        </AvatarFallback>
-                      </Avatar>
-
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-foreground">
-                          {booking.elder?.name}
-                        </h3>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <Calendar className="w-4 h-4" />
-                          <span>{formatDate(booking.dateISO)}</span>
-                          <Clock className="w-4 h-4 ml-2" />
-                          <span>{booking.duration}h</span>
-                        </div>
-
-                        <div className="flex items-center gap-2 text-sm mt-2">
-                          <MapPin className="w-4 h-4 text-healthcare-light" />
-                          <span className="text-muted-foreground">
-                            {booking.address.city}
-                          </span>
-                        </div>
-
-                        <div className="flex justify-between items-center mt-3">
-                          <Badge className="available-badge">Confirmado</Badge>
-                          <span className="font-semibold text-foreground">
-                            R$ {booking.totalPrice.toFixed(2)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

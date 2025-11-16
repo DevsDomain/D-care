@@ -65,7 +65,18 @@ export class AppointmentService {
       orderBy: { datetimeStart: 'asc' },
       include: {
         elder: true,
+
         caregiver: {
+          include: {
+            user: {
+              include: {
+                userProfile: true,
+              },
+            },
+          },
+        },
+
+        family: {
           include: {
             user: {
               include: {
