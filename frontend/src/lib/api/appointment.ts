@@ -30,9 +30,9 @@ export const requestAppointment = async (formData: AppointmentRequest) => {
     caregiverId: formData.caregiverId,
     elderId: formData.elderId,
     familyId: formData.familyId,
-    date: dateString,              // casa com o DTO: @IsISO8601 'YYYY-MM-DD'
+    date: dateString, // casa com o DTO: @IsISO8601 'YYYY-MM-DD'
     startTime: formData.startTime, // 'HH:MM'
-    duration: formData.duration,   // MINUTOS (o service já trata)
+    duration: formData.duration, // MINUTOS (o service já trata)
     emergency: formData.emergency ?? false,
     notes: formData.notes ?? "",
     totalPrice: formData.totalPrice,
@@ -41,3 +41,28 @@ export const requestAppointment = async (formData: AppointmentRequest) => {
   // mesma base usada no BookingList: api.get("appointments?...").
   return api.post("appointments", payload);
 };
+
+export async function fetchAppointments(params: {
+  familyId?: string;
+  caregiverId?: string;
+}) {
+  const qs = new URLSearchParams(
+    Object.entries(params).filter(([, v]) => v != null) as [string, string][]
+  ).toString();
+  const { data } = await api.get(`/appointments${qs ? `?${qs}` : ""}`);
+  return data;
+}
+
+/**
+ * Atualiza o status do appointment no backend.
+ * statusApi deve ser um dos valores: 'PENDING'|'ACCEPTED'|'REJECTED'|'CANCELLED'|'COMPLETED'
+ */
+export async function updateAppointmentStatus(
+  appointmentId: string,
+  statusApi: string
+) {
+  const { data } = await api.patch(`/appointments/${appointmentId}/status`, {
+    status: statusApi,
+  });
+  return data;
+}

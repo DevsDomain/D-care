@@ -1,4 +1,15 @@
 services:
+
+  chatbot-backend:
+    build: ./ai-agent/backend/
+    container_name: chatbot_backend_dcare
+    hostname: chatbot_backend_dcare
+    networks:
+      - dcare_network
+    ports:
+      - "8888:8000"
+    command: uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+
   backend:
     build: ./backend
     container_name: backend_dcare
