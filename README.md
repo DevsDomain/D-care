@@ -10,11 +10,11 @@ Este projeto tem como objetivo o desenvolvimento de uma plataforma digital compl
 
 Cada entrega será realizada a partir da criação de uma **tag** conforme relação a seguir:
 
-| Sprint | Início | Previsão de entrega | Status | Release | Kanban | BurnDown |
+| Sprint | Início | Previsão de entrega | Status | Entregas | Kanban | BurnDown |
 |:--:|:--:|:--:|:--:|:--:|:--:|:--:|
-| 01 | 16/09/2025 | 06/10/2025 | ​​​​☑️ Concluído | [Ver release 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint1.png?raw=true) |
-| 02 | 13/10/2025 | 02/11/2025 | ☑️ Concluído | [Ver release 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | [Ver Burndown 2](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint2.png?raw=true) |
-| 03 | 06/11/2025 | 23/11/2025 | ⏳ Em andamento | [Ver release 3](https://github.com/DevsDomain/D-care/releases/tag/Sprint3) | [Ver Sprint 3](https://github.com/orgs/DevsDomain/projects/41/views/6) | Ver BurnDown 3 |
+| 01 | 16/09/2025 | 06/10/2025 | ​​​​☑️ Concluído | [Entregas Sprint 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint1.png?raw=true) |
+| 02 | 13/10/2025 | 02/11/2025 | ☑️ Concluído | [Entregas Sprint 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | [Ver Burndown 2](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint2.png?raw=true) |
+| 03 | 06/11/2025 | 23/11/2025 | ⏳ Em andamento | [Entregas Sprint 3](https://github.com/DevsDomain/D-care/releases/tag/Sprint3) | [Ver Sprint 3](https://github.com/orgs/DevsDomain/projects/41/views/6) | Ver BurnDown 3 |
 
 ## ✍️ Product Backlog
 O Product Backlog segue o padrão de priorização:
