@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { api } from '@/lib/api/api';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function Register() {
     crmCoren: '',
     password: '',
     confirmPassword: '',
+    acceptedTerms: false, // NOVO CAMPO
   });
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -32,32 +34,44 @@ export default function Register() {
   const onRole = (value: string) =>
     setForm((p) => ({ ...p, role: value as 'family' | 'caregiver' }));
 
+  const onTermsChange = (checked: boolean) => {
+    setForm((p) => ({ ...p, acceptedTerms: checked }));
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
+
+    if (!form.acceptedTerms) {
+      setErrorMsg("Você precisa aceitar os termos de uso.");
+      return;
+    }
+
     setSubmitting(true);
     try {
+      // 2. Cria o objeto com os dados COMUNS a ambos (Família e Cuidador)
+      const payload = {
+        fullName: form.fullName,
+        email: form.email,
+        phone: form.phone,
+        password: form.password,
+        confirmPassword: form.confirmPassword,
+        acceptedTerms: form.acceptedTerms, // Envia o aceite
+      };
+
       if (form.role === 'family') {
-        await api.post('/auth/register/family', {
-          fullName: form.fullName,
-          email: form.email,
-          phone: form.phone,
-          password: form.password,
-          confirmPassword: form.confirmPassword,
-        });
+        await api.post('/auth/register/family', payload);
       } else {
+        // Se for Cuidador, enviamos o payload + o campo CRM/COREN
         await api.post('/auth/register/caregiver', {
-          fullName: form.fullName,
-          email: form.email,
-          phone: form.phone,
-          crmCoren: form.crmCoren,
-          password: form.password,
-          confirmPassword: form.confirmPassword,
+          ...payload,              // Copia todos os dados de cima
+          crmCoren: form.crmCoren, // Adiciona o campo específico de cuidador
         });
       }
+
       navigate('/login');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Falha ao cadastrar');
+      setErrorMsg(err.response?.data?.message || err.message || 'Falha ao cadastrar');
     } finally {
       setSubmitting(false);
     }
@@ -245,6 +259,19 @@ export default function Register() {
                     autoComplete="new-password"
                     disabled={submitting}
                   />
+
+                  <div className="flex items-center space-x-2 py-2">
+                    <Checkbox
+                      id="terms"
+                      checked={form.acceptedTerms}
+                      onCheckedChange={onTermsChange}
+                      disabled={submitting}
+                    />
+                    <Label htmlFor="terms" className="text-sm font-normal leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                      Li e aceito os <button type="button" className="text-healthcare-primary underline hover:text-healthcare-dark">Termos de Uso</button> e Política de Privacidade.
+                    </Label>
+                  </div>
+
                   <Button
                     type="button"
                     aria-label={showConfirmPassword ? 'Ocultar confirmação' : 'Mostrar confirmação'}
