@@ -17,6 +17,10 @@ Cada entrega será realizada a partir da criação de uma **tag** conforme rela�
 | 03 | 06/11/2025 | 23/11/2025 | ⏳ Em andamento | [Entregas Sprint 3](https://github.com/DevsDomain/D-care/releases/tag/Sprint3) | [Ver Sprint 3](https://github.com/orgs/DevsDomain/projects/41/views/6) | Ver BurnDown 3 |
 
 ## ✍️ Product Backlog
+
+[Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Product_Backlog.pdf)
+
+
 O Product Backlog segue o padrão de priorização:
 - *A* Alta
 - *M* Média
