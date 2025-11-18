@@ -1,4 +1,3 @@
-// src/auth/auth.service.ts
 import {
   Inject,
   BadRequestException,
@@ -7,7 +6,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../database/prisma.service';
 import { RegisterFamilyDto } from './dto/register-family.dto';
@@ -37,6 +35,10 @@ export class AuthService {
 
     const passwordHash = await this.hash(dto.password);
 
+    const latestTerm = await this.prisma.legalTerms.findFirst({
+      orderBy: { publishedAt: 'desc' },
+    });
+
     const user = await this.prisma.users.create({
       data: {
         email: dto.email.toLowerCase(),
@@ -48,6 +50,14 @@ export class AuthService {
             phone: dto.phone,
           },
         },
+
+        terms: latestTerm
+          ? {
+              create: {
+                termId: latestTerm.id,
+              },
+            }
+          : undefined,
       },
       include: { userProfile: true },
     });
@@ -71,6 +81,10 @@ export class AuthService {
 
     const passwordHash = await this.hash(dto.password);
 
+    const latestTerm = await this.prisma.legalTerms.findFirst({
+      orderBy: { publishedAt: 'desc' },
+    });
+
     const user = await this.prisma.users.create({
       data: {
         email: dto.email.toLowerCase(),
@@ -87,6 +101,13 @@ export class AuthService {
             crmCoren: dto.crmCoren ?? null,
           },
         },
+        terms: latestTerm
+          ? {
+              create: {
+                termId: latestTerm.id,
+              },
+            }
+          : undefined,
       },
       include: { userProfile: true, caregiver: true },
     });
