@@ -18,10 +18,8 @@ Cada entrega será realizada a partir da criação de uma **tag** conforme rela�
 
 ## ✍️ Product Backlog
 
-[Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Product_Backlog.pdf)
-
-
-O Product Backlog segue o padrão de priorização:
+O [Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Product_Backlog.pdf)
+ segue o padrão de priorização:
 - *A* Alta
 - *M* Média
 - *B* Baixa
