@@ -12,6 +12,7 @@ import {
   X,
   FileText,
   Heart,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,30 @@ import { useAppStore } from "@/lib/stores/appStore";
 import { mockApi } from "@/lib/api/mock";
 import { useLogout } from "@/components/hooks/use-logout";
 
+// ⭐ novos imports
+import { RatingStars } from "@/components/common/RatingStars";
+import { EmptyState } from "@/components/common/EmptyState";
+import { api } from "@/lib/api/api";
+import { fetchCaregiverProfileFromAPI } from "@/lib/api/caregiver";
+
+/** --------- TYPES PARA AVALIAÇÕES ---------- */
+type CaregiverReview = {
+  id: string;
+  rating: number | null;
+  comment: string | null;
+  createdAt: string | null;
+  appointmentDate: string | null;
+  elderName: string | null;
+  familyName: string | null;
+};
+
+type CaregiverProfileType = {
+  id: string;
+  avatarPath?: string | null;
+  rating?: number | null;
+  reviewCount?: number | null;
+};
+
 export default function Profile() {
   const { toast } = useToast();
   const { currentUser, setCurrentUser } = useAppStore();
@@ -44,7 +69,7 @@ export default function Profile() {
 
   const [formData, setFormData] = useState({
     name: currentUser?.name || "",
-    phone: currentUser?.phone || "",
+    phone: (currentUser as any)?.phone || "",
     email: currentUser?.email || "",
   });
   const [preferences, setPreferences] = useState({
@@ -53,11 +78,17 @@ export default function Profile() {
     emergencyAlerts: currentUser?.preferences?.emergencyAlerts ?? true,
   });
 
+  // ⭐ estado extra para cuidador
+  const [caregiverProfile, setCaregiverProfile] =
+    useState<CaregiverProfileType | null>(null);
+  const [reviews, setReviews] = useState<CaregiverReview[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+
   // Mantém os campos do formulário sincronizados se o usuário mudar
   useEffect(() => {
     setFormData({
       name: currentUser?.name || "",
-      phone: currentUser?.phone || "",
+      phone: (currentUser as any)?.phone || "",
       email: currentUser?.email || "",
     });
     setPreferences({
@@ -66,6 +97,57 @@ export default function Profile() {
       emergencyAlerts: currentUser?.preferences?.emergencyAlerts ?? true,
     });
   }, [currentUser?.id]);
+
+  // 🔥 se o usuário for CUIDADOR, carrega perfil de cuidador + avaliações
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== "CAREGIVER") return;
+    void loadCaregiverAndReviews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser]);
+
+  const loadCaregiverAndReviews = async () => {
+    if (!currentUser) return;
+
+    try {
+      setLoadingReviews(true);
+
+      // 1) Pega o id do cuidador a partir do currentUser
+      const caregiverId =
+        (currentUser as any)?.caregiverProfile?.id ?? null;
+
+      if (!caregiverId) {
+        console.warn(
+          "Usuário é CAREGIVER mas não possui caregiverProfile.id no currentUser",
+        );
+        return;
+      }
+
+      // 2) Busca dados frescos do cuidador (inclui rating/reviewCount)
+      const data = await fetchCaregiverProfileFromAPI(caregiverId);
+
+      if (data) {
+        setCaregiverProfile({
+          id: data.id,
+          avatarPath: data.avatarPath,
+          rating: data.rating ?? 0,
+          reviewCount: data.reviewCount ?? 0,
+        });
+      }
+
+      // 3) Busca avaliações desse cuidador
+      const { data: reviewsData } = await api.get<CaregiverReview[]>(
+        `/appointments/reviews?caregiverId=${caregiverId}`,
+      );
+      setReviews(reviewsData);
+    } catch (error) {
+      console.error(
+        "❌ Erro ao carregar perfil/avaliações do cuidador:",
+        error,
+      );
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -102,7 +184,7 @@ export default function Profile() {
   const handleCancel = () => {
     setFormData({
       name: currentUser?.name || "",
-      phone: currentUser?.phone || "",
+      phone: (currentUser as any)?.phone || "",
       email: currentUser?.email || "",
     });
     setIsEditing(false);
@@ -115,6 +197,8 @@ export default function Profile() {
       </div>
     );
   }
+
+  const isCaregiver = currentUser.role === "CAREGIVER";
 
   return (
     <div className="min-h-dvh bg-background overflow-x-hidden flex flex-col">
@@ -183,7 +267,7 @@ export default function Profile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Avatar grande + dados */}
+            {/* Dados gerais */}
             <div className="flex items-center gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
@@ -209,7 +293,6 @@ export default function Profile() {
             {/* Campos editáveis */}
             <div className="space-y-4">
               <div>
-          
                 <Label htmlFor="name">Nome completo</Label>
                 {isEditing ? (
                   <Input
@@ -239,7 +322,9 @@ export default function Profile() {
                     }
                   />
                 ) : (
-                  <p className="text-foreground mt-1">{currentUser.phone}</p>
+                  <p className="text-foreground mt-1">
+                    {(currentUser as any).phone}
+                  </p>
                 )}
               </div>
 
@@ -330,6 +415,89 @@ export default function Profile() {
             </div>
           </CardContent>
         </Card>
+
+        {/* ⭐ MINHAS AVALIAÇÕES – só para cuidador */}
+        {isCaregiver && (
+          <Card className="mb-6 healthcare-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-medical-warning" />
+                Minhas avaliações
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Resumo da nota */}
+              <div className="flex items-center gap-3">
+                <RatingStars
+                  rating={caregiverProfile?.rating ?? 0}
+                  reviewCount={caregiverProfile?.reviewCount ?? 0}
+                  size="md"
+                />
+              </div>
+
+              <Separator />
+
+              {loadingReviews ? (
+                <p className="text-sm text-muted-foreground">
+                  Carregando avaliações...
+                </p>
+              ) : reviews.length === 0 ? (
+                <EmptyState
+                  icon={Star}
+                  title="Nenhuma avaliação ainda"
+                  description="Você ainda não recebeu avaliações."
+                  variant="default"
+                />
+              ) : (
+                <div className="space-y-3">
+                  {reviews.map((review) => (
+                    <div
+                      key={review.id}
+                      className="border border-border rounded-xl p-3 space-y-2"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {review.familyName || "Família"}
+                          </p>
+                          {review.elderName && (
+                            <p className="text-xs text-muted-foreground">
+                              Paciente: {review.elderName}
+                            </p>
+                          )}
+                        </div>
+                        <RatingStars
+                          rating={review.rating ?? 0}
+                          size="sm"
+                          showNumber={false}
+                          interactive={false}
+                        />
+                      </div>
+
+                      {review.comment && (
+                        <p className="text-sm text-muted-foreground">
+                          {review.comment}
+                        </p>
+                      )}
+
+                      <p className="text-xs text-muted-foreground">
+                        {review.appointmentDate
+                          ? `Atendimento em ${new Date(
+                              review.appointmentDate,
+                            ).toLocaleDateString("pt-BR")}`
+                          : review.createdAt
+                          ? `Avaliação em ${new Date(
+                              review.createdAt,
+                            ).toLocaleDateString("pt-BR")}`
+                          : null}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Configurações / Legal */}
         <Card>

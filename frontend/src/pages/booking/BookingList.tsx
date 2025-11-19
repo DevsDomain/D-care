@@ -1,5 +1,21 @@
+import { RatingStars } from '@/components/common/RatingStars'; // ajuste o path
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, Clock, MapPin, Phone, MessageCircle } from 'lucide-react';
+import {
+  Plus,
+  Calendar,
+  Clock,
+  MapPin,
+  Phone,
+  MessageCircle,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button-variants';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -27,29 +43,35 @@ type AppointmentApi = {
   elderId: string | null;
   caregiverId: string | null;
   datetimeStart: string; // ISO
-  datetimeEnd: string;   // ISO
+  datetimeEnd: string; // ISO
   status: AppointmentApiStatus;
   emergency: boolean | null;
   notes: string | null;
   totalPrice: number;
   createdAt: string;
   updatedAt: string;
-  elder?: {
-    id: string;
-    name: string | null;
-    avatarPath?: string | null;
-    address?: string | null;
-    city?: string | null;
-    state?: string | null;
-    zipCode?: string | null;
-  } | null;
-  caregiver?: {
-    id: string;
-    avatarPath?: string | null;
-    user?: {
-      userProfile: Array<{ id: string; name: string | null }>;
-    } | null;
-  } | null;
+  elder?:
+    | {
+        id: string;
+        name: string | null;
+        avatarPath?: string | null;
+        address?: string | null;
+        city?: string | null;
+        state?: string | null;
+        zipCode?: string | null;
+      }
+    | null;
+  caregiver?:
+    | {
+        id: string;
+        avatarPath?: string | null;
+        user?:
+          | {
+              userProfile: Array<{ id: string; name: string | null }>;
+            }
+          | null;
+      }
+    | null;
 };
 
 // Config visual de status no front
@@ -115,7 +137,6 @@ function mapStatusToApi(status: BookingStatus): AppointmentApiStatus {
     case 'completed':
       return 'COMPLETED';
     // 'in-progress' e 'expired' não temos no backend;
-    // se algum dia usar, dá pra mapear para ACCEPTED/CANCELLED, etc.
     default:
       return 'PENDING';
   }
@@ -136,10 +157,85 @@ export default function BookingList() {
   const { toast } = useToast();
   const { currentUser } = useAppStore();
 
+  // ⭐ estados da avaliação
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   useEffect(() => {
     loadBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // abre o modal
+  const handleOpenReview = (booking: Booking) => {
+    setReviewBooking(booking);
+    setReviewRating(0);
+    setReviewComment('');
+  };
+
+  // envia avaliação
+  const handleSubmitReview = async () => {
+    if (!reviewBooking || reviewRating === 0) {
+      toast({
+        title: 'Ops',
+        description: 'Escolha uma nota de 1 a 5 estrelas antes de salvar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+
+      // ajuste essa rota/payload conforme sua API
+      await api.post(`/appointments/${reviewBooking.id}/review`, {
+        caregiverId: reviewBooking.caregiverId,
+        rating: reviewRating,
+        comment: reviewComment || null,
+      });
+
+      // (opcional) atualizar rating local do cuidador nessa lista
+      setBookings((prev) =>
+        prev.map((b) =>
+          b.id === reviewBooking.id && b.caregiver
+            ? {
+                ...b,
+                caregiver: {
+                  ...b.caregiver,
+                  rating:
+                    b.caregiver.rating && b.caregiver.reviewCount
+                      ? (b.caregiver.rating * b.caregiver.reviewCount +
+                          reviewRating) /
+                        (b.caregiver.reviewCount + 1)
+                      : reviewRating,
+                  reviewCount: (b.caregiver.reviewCount || 0) + 1,
+                },
+              }
+            : b,
+        ),
+      );
+
+      toast({
+        title: 'Obrigado!',
+        description: 'Sua avaliação foi registrada com sucesso.',
+      });
+
+      setReviewBooking(null);
+      setReviewRating(0);
+      setReviewComment('');
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Erro',
+        description: 'Não foi possível salvar sua avaliação.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const loadBookings = async () => {
     if (!currentUser) return;
@@ -149,8 +245,6 @@ export default function BookingList() {
       const isFamily =
         currentUser.role === 'FAMILY' || currentUser.role === 'family';
 
-      // familyId do banco = id da tabela "families".
-      // você já usa elder.familyId, então derivamos daqui
       const derivedFamilyId =
         (currentUser as any)?.elders?.[0]?.familyId ??
         (currentUser as any)?.familyId ??
@@ -253,13 +347,12 @@ export default function BookingList() {
       });
 
       // 🔥 MOCK APENAS PARA TESTAR UM CARD "ACEITO"
-      // quando não precisar mais, pode apagar esse bloco inteiro
       const mockAcceptedBooking: Booking = {
         id: 'mock-accepted-1',
         caregiverId: 'mock-caregiver-1',
         elderId: 'mock-elder-1',
-        // data futura para cair em "Próximas"
-        dateISO: new Date('2025-12-13T17:00:00-03:00').toISOString(),
+        // coloque uma data no passado se quiser ver o botão Avaliar
+        dateISO: new Date('2025-11-10T17:00:00-03:00').toISOString(),
         duration: 8,
         status: 'accepted',
         emergency: false,
@@ -392,11 +485,9 @@ export default function BookingList() {
 
       switch (tab) {
         case 'upcoming':
-          // futuras que ainda não foram canceladas/finalizadas
           return isFuture && (isRequested || isAccepted);
 
         case 'active':
-          // acontecendo agora e efetivamente "ativas"
           return isOngoing && isAccepted;
 
         case 'completed':
@@ -511,135 +602,234 @@ export default function BookingList() {
                 }
               />
             ) : (
-              getTabBookings(activeTab).map((booking) => (
-                <Card key={booking.id} className="healthcare-card">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={booking.caregiver?.photo} />
-                          <AvatarFallback>
-                            {getCaregiverInitials(booking)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold text-foreground">
-                            {getCaregiverName(booking)}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Para {getElderName(booking)}
-                          </p>
+              getTabBookings(activeTab).map((booking) => {
+                // ⏰ cálculo se essa reserva já terminou
+                const start = new Date(booking.dateISO).getTime();
+                const end = start + booking.duration * 60 * 60 * 1000;
+                const now = Date.now();
+                const isPast = end < now;
+
+                // pode avaliar se está ACEITA e já passou
+                const canReview =
+                  booking.status === 'accepted' && isPast;
+
+                return (
+                  <Card key={booking.id} className="healthcare-card">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={booking.caregiver?.photo} />
+                            <AvatarFallback>
+                              {getCaregiverInitials(booking)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold text-foreground">
+                              {getCaregiverName(booking)}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Para {getElderName(booking)}
+                            </p>
+                          </div>
                         </div>
+                        <Badge
+                          className={`${statusConfig[booking.status].color} text-xs font-medium`}
+                        >
+                          {statusConfig[booking.status].label}
+                        </Badge>
                       </div>
-                      <Badge
-                        className={`${
-                          statusConfig[booking.status].color
-                        } text-xs font-medium`}
-                      >
-                        {statusConfig[booking.status].label}
-                      </Badge>
-                    </div>
-                  </CardHeader>
+                    </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    {/* Date & Time */}
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-healthcare-light" />
-                      <span>{formatDate(booking.dateISO)}</span>
-                      <Clock className="w-4 h-4 text-healthcare-light ml-4" />
-                      <span>
-                        {formatTime(booking.dateISO)} ({booking.duration}h)
-                      </span>
-                    </div>
+                    <CardContent className="space-y-4">
+                      {/* Date & Time */}
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-healthcare-light" />
+                        <span>{formatDate(booking.dateISO)}</span>
+                        <Clock className="w-4 h-4 text-healthcare-light ml-4" />
+                        <span>
+                          {formatTime(booking.dateISO)} ({booking.duration}h)
+                        </span>
+                      </div>
 
-                    {/* Address */}
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-healthcare-light" />
-                      <span className="text-muted-foreground">
-                        {[booking.address?.street, booking.address?.city]
-                          .filter(Boolean)
-                          .join(', ')}
-                      </span>
-                    </div>
+                      {/* Address */}
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-healthcare-light" />
+                        <span className="text-muted-foreground">
+                          {[booking.address?.street, booking.address?.city]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </span>
+                      </div>
 
-                    {/* Services */}
-                    {Array.isArray(booking.services) &&
-                      booking.services.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {booking.services.map((service) => (
-                            <Badge
-                              key={service}
-                              variant="secondary"
-                              className="text-xs bg-healthcare-soft text-healthcare-dark"
-                            >
-                              {service}
-                            </Badge>
-                          ))}
-                        </div>
+                      {/* Services */}
+                      {Array.isArray(booking.services) &&
+                        booking.services.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {booking.services.map((service) => (
+                              <Badge
+                                key={service}
+                                variant="secondary"
+                                className="text-xs bg-healthcare-soft text-healthcare-dark"
+                              >
+                                {service}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                      {/* Emergency Badge */}
+                      {booking.emergency && (
+                        <Badge className="emergency-badge w-fit">
+                          Emergência
+                        </Badge>
                       )}
 
-                    {/* Emergency Badge */}
-                    {booking.emergency && (
-                      <Badge className="emergency-badge w-fit">
-                        Emergência
-                      </Badge>
-                    )}
+                      {/* Price + Actions */}
+                      <div className="flex justify-between items-center pt-2 border-t border-border">
+                        <span className="text-lg font-semibold text-foreground">
+                          R$ {Number(booking.totalPrice || 0).toFixed(2)}
+                        </span>
 
-                    {/* Price + Actions */}
-                    <div className="flex justify-between items-center pt-2 border-t border-border">
-                      <span className="text-lg font-semibold text-foreground">
-                        R$ {Number(booking.totalPrice || 0).toFixed(2)}
-                      </span>
+                        <div className="flex gap-2">
+                          {booking.status === 'accepted' && (
+                            <>
+                              <Button variant="outline" size="sm" asChild>
+                                <a
+                                  href={`tel:${booking.caregiver?.phone ?? ''}`}
+                                >
+                                  <Phone className="w-4 h-4" />
+                                </a>
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <MessageCircle className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
 
-                      <div className="flex gap-2">
-                        {booking.status === 'accepted' && (
-                          <>
-                            <Button variant="outline" size="sm" asChild>
-                              <a href={`tel:${booking.caregiver?.phone ?? ''}`}>
-                                <Phone className="w-4 h-4" />
-                              </a>
+                          {['requested', 'accepted'].includes(
+                            booking.status,
+                          ) && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                handleStatusUpdate(booking.id, 'canceled')
+                              }
+                            >
+                              Cancelar
                             </Button>
-                            <Button variant="outline" size="sm">
-                              <MessageCircle className="w-4 h-4" />
+                          )}
+
+                          {canReview && (
+                            <Button
+                              variant="healthcare"
+                              size="sm"
+                              onClick={() => handleOpenReview(booking)}
+                            >
+                              Avaliar
                             </Button>
-                          </>
-                        )}
-
-                        {['requested', 'accepted'].includes(booking.status) && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleStatusUpdate(booking.id, 'canceled')
-                            }
-                          >
-                            Cancelar
-                          </Button>
-                        )}
-
-                        {booking.status === 'completed' && (
-                          <Button variant="healthcare" size="sm">
-                            Avaliar
-                          </Button>
-                        )}
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Notes */}
-                    {booking.notes && (
-                      <div className="p-3 rounded-xl bg-muted">
-                        <p className="text-sm text-muted-foreground">
-                          <strong>Observações:</strong> {booking.notes}
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+                      {/* Notes */}
+                      {booking.notes && (
+                        <div className="p-3 rounded-xl bg-muted">
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Observações:</strong> {booking.notes}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de avaliação ⭐ */}
+      <Dialog
+        open={!!reviewBooking}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReviewBooking(null);
+            setReviewRating(0);
+            setReviewComment('');
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Avaliar cuidador</DialogTitle>
+            <DialogDescription>
+              Como foi a experiência com{' '}
+              <strong>
+                {reviewBooking?.caregiver?.name ?? 'o cuidador'}
+              </strong>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Selecione de 1 a 5 estrelas:
+              </span>
+
+              <RatingStars
+                rating={reviewRating}
+                maxRating={5}
+                size="lg"
+                showNumber={false}
+                interactive
+                onRatingChange={setReviewRating}
+              />
+
+              {reviewRating > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Você escolheu {reviewRating} estrela
+                  {reviewRating > 1 ? 's' : ''}.
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-1 w-full">
+              <label className="text-sm font-medium text-foreground">
+                Comentário (opcional)
+              </label>
+              <textarea
+                className="w-full min-h-[80px] rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-healthcare-light"
+                placeholder="Conte brevemente como foi o atendimento..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReviewBooking(null);
+                setReviewRating(0);
+                setReviewComment('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="healthcare"
+              onClick={handleSubmitReview}
+              disabled={submittingReview}
+            >
+              {submittingReview ? 'Salvando...' : 'Salvar avaliação'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -46,7 +46,7 @@ export function RatingStars({
   };
 
   return (
-    <div className={cn("flex-col items-center gap-1", className)}>
+    <div className={cn("flex flex-col items-center gap-1", className)}>
       <div className="flex items-center gap-0.5">
         {Array.from({ length: maxRating }, (_, index) => {
           const starRating = index + 1;
