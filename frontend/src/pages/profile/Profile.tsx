@@ -32,11 +32,10 @@ import { useAppStore } from "@/lib/stores/appStore";
 import { mockApi } from "@/lib/api/mock";
 import { useLogout } from "@/components/hooks/use-logout";
 
-// ⭐ novos imports
 import { RatingStars } from "@/components/common/RatingStars";
 import { EmptyState } from "@/components/common/EmptyState";
 import { api } from "@/lib/api/api";
-import { fetchCaregiverProfileFromAPI } from "@/lib/api/caregiver";
+import { fetchCaregiverProfile } from "@/lib/api/caregiver";
 
 /** --------- TYPES PARA AVALIAÇÕES ---------- */
 type CaregiverReview = {
@@ -78,7 +77,7 @@ export default function Profile() {
     emergencyAlerts: currentUser?.preferences?.emergencyAlerts ?? true,
   });
 
-  // ⭐ estado extra para cuidador
+  // estado extra para cuidador
   const [caregiverProfile, setCaregiverProfile] =
     useState<CaregiverProfileType | null>(null);
   const [reviews, setReviews] = useState<CaregiverReview[]>([]);
@@ -98,12 +97,12 @@ export default function Profile() {
     });
   }, [currentUser?.id]);
 
-  // 🔥 se o usuário for CUIDADOR, carrega perfil de cuidador + avaliações
+  // se o usuário for CUIDADOR, carrega perfil de cuidador + avaliações
   useEffect(() => {
     if (!currentUser || currentUser.role !== "CAREGIVER") return;
     void loadCaregiverAndReviews();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const loadCaregiverAndReviews = async () => {
     if (!currentUser) return;
@@ -111,38 +110,40 @@ export default function Profile() {
     try {
       setLoadingReviews(true);
 
-      // 1) Pega o id do cuidador a partir do currentUser
-      const caregiverId =
-        (currentUser as any)?.caregiverProfile?.id ?? null;
+      // 1) Busca o cuidador pela rota /perfis/:userId
+      const caregiver = (await fetchCaregiverProfile(
+        currentUser.id
+      )) as any as CaregiverProfileType & {
+        rating?: number | null;
+        reviewCount?: number | null;
+        avatarPath?: string | null;
+      };
 
-      if (!caregiverId) {
-        console.warn(
-          "Usuário é CAREGIVER mas não possui caregiverProfile.id no currentUser",
-        );
+      console.log("Caregiver (via /perfis/:userId):", caregiver);
+
+      if (!caregiver || !caregiver.id) {
+        console.warn("fetchCaregiverProfile não retornou id do cuidador");
         return;
       }
 
-      // 2) Busca dados frescos do cuidador (inclui rating/reviewCount)
-      const data = await fetchCaregiverProfileFromAPI(caregiverId);
+      const caregiverId = caregiver.id;
 
-      if (data) {
-        setCaregiverProfile({
-          id: data.id,
-          avatarPath: data.avatarPath,
-          rating: data.rating ?? 0,
-          reviewCount: data.reviewCount ?? 0,
-        });
-      }
+      setCaregiverProfile({
+        id: caregiverId,
+        avatarPath: caregiver.avatarPath ?? null,
+        rating: caregiver.rating ?? 0,
+        reviewCount: caregiver.reviewCount ?? 0,
+      });
 
-      // 3) Busca avaliações desse cuidador
+      // 2) Busca avaliações desse cuidador
       const { data: reviewsData } = await api.get<CaregiverReview[]>(
-        `/appointments/reviews?caregiverId=${caregiverId}`,
+        `/appointments/reviews?caregiverId=${caregiverId}`
       );
       setReviews(reviewsData);
     } catch (error) {
       console.error(
         "❌ Erro ao carregar perfil/avaliações do cuidador:",
-        error,
+        error
       );
     } finally {
       setLoadingReviews(false);
@@ -202,7 +203,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-dvh bg-background overflow-x-hidden flex flex-col">
-      {/* HEADER (sem avatar, só saudação + editar) */}
+      {/* HEADER */}
       <header className="sticky top-0 z-20 bg-gradient-to-r from-healthcare-dark to-healthcare-light text-white pt-[env(safe-area-inset-top)]">
         <div className="px-3 py-2 sm:px-4 sm:py-3">
           <div className="flex items-center justify-between gap-3">
@@ -416,7 +417,7 @@ export default function Profile() {
           </CardContent>
         </Card>
 
-        {/* ⭐ MINHAS AVALIAÇÕES – só para cuidador */}
+        {/* MINHAS AVALIAÇÕES – só para cuidador */}
         {isCaregiver && (
           <Card className="mb-6 healthcare-card">
             <CardHeader>
@@ -483,11 +484,11 @@ export default function Profile() {
                       <p className="text-xs text-muted-foreground">
                         {review.appointmentDate
                           ? `Atendimento em ${new Date(
-                              review.appointmentDate,
+                              review.appointmentDate
                             ).toLocaleDateString("pt-BR")}`
                           : review.createdAt
                           ? `Avaliação em ${new Date(
-                              review.createdAt,
+                              review.createdAt
                             ).toLocaleDateString("pt-BR")}`
                           : null}
                       </p>
