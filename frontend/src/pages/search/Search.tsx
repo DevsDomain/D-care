@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   Search as SearchIcon,
   Filter,
-  Shield,
   Star,
   AlertTriangle,
 } from "lucide-react";
@@ -43,8 +42,7 @@ export default function Search() {
   const globalFilters = useSearchFilters || {};
 
   const [filters, setFilters] = useState<SearchFilters>({
-    distanceKm: 30,
-    verified: false,
+    distanceKm: 200,
     emergency: false,
     rating: 0,
     ...globalFilters,
@@ -63,7 +61,6 @@ export default function Search() {
         minRating: filters.rating ?? undefined,
         availableForEmergency: filters.emergency ?? undefined,
         specialization: searchQuery || undefined,
-
       });
 
       setCaregivers(response);
@@ -123,7 +120,7 @@ export default function Search() {
 
       <div className="p-4">
         {/* Filters Bar */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex  gap-3 mb-6">
           <Sheet open={showFilters} onOpenChange={setShowFilters}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="shrink-0">
@@ -145,7 +142,7 @@ export default function Search() {
                     onValueChange={([value]) =>
                       handleFilterChange("distanceKm", value)
                     }
-                    max={50}
+                    max={200}
                     min={1}
                     step={1}
                     className="w-full"
@@ -171,19 +168,6 @@ export default function Search() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Shield className="w-4 h-4 text-trust-blue" />
-                      <Label>Apenas verificados</Label>
-                    </div>
-                    <Switch
-                      checked={filters.verified}
-                      onCheckedChange={(checked) =>
-                        handleFilterChange("verified", checked)
-                      }
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-medical-critical" />
                       <Label>Disponível para emergência</Label>
                     </div>
@@ -204,7 +188,6 @@ export default function Search() {
                     onClick={() => {
                       setFilters({
                         distanceKm: 10,
-                        verified: false,
                         emergency: false,
                         rating: 0,
                       });
@@ -225,16 +208,7 @@ export default function Search() {
           </Sheet>
 
           {/* Quick Filter Pills */}
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            <Button
-              variant={filters.verified ? "healthcare" : "outline"}
-              size="sm"
-              onClick={() => handleFilterChange("verified", !filters.verified)}
-            >
-              <Shield className="w-3 h-3 mr-1" />
-              Verificados
-            </Button>
-
+          <div className="flex items-center  gap-2 overflow-x-auto pb-2">
             <Button
               variant={filters.emergency ? "emergency" : "outline"}
               size="sm"
@@ -273,7 +247,6 @@ export default function Search() {
             onAction={() => {
               setFilters({
                 distanceKm: 10,
-                verified: false,
                 emergency: false,
                 rating: 0,
               });

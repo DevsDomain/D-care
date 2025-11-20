@@ -1,17 +1,15 @@
-// src/pages/caregiver/CaregiverDashboard.tsx
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
-  MapPin,
   User,
-  Bell,
   AlertCircle,
   Check,
   X,
   Phone,
-  Avatar as LucideAvatar,
+  Star,
+  FileClock,
+  CalendarCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -19,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CaregiverCardSkeleton } from "@/components/common/LoadingSkeleton";
-import { EmptyState } from "@/components/common/EmptyState";
 import { useToast } from "@/components/hooks/use-toast";
 import type { Caregiver, Booking } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
@@ -29,10 +26,7 @@ import {
   toggleCaregiverAvailability,
   toggleCaregiverEmergencyAvailability,
 } from "@/lib/api/caregiver";
-import {
-  fetchAppointments,
-  updateAppointmentStatus,
-} from "@/lib/api/appointment";
+
 import { api } from "@/lib/api/api";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -46,37 +40,6 @@ type AppointmentApiStatus =
   | "REJECTED"
   | "CANCELLED"
   | "COMPLETED";
-
-type AppointmentApi = {
-  id: string;
-  familyId: string | null;
-  elderId: string | null;
-  caregiverId: string | null;
-  datetimeStart: string;
-  datetimeEnd: string;
-  status: AppointmentApiStatus;
-  emergency: boolean | null;
-  notes: string | null;
-  totalPrice: number;
-  createdAt: string;
-  updatedAt: string;
-
-  elder?: {
-    id: string;
-    name: string | null;
-    avatarPath?: string | null;
-    address?: string | null;
-    city?: string | null;
-    state?: string | null;
-    zipCode?: string | null;
-  } | null;
-
-  family?: {
-    user?: {
-      userProfile: Array<{ id: string; name: string | null; phone?: string }>;
-    };
-  } | null;
-};
 
 /* ===========================
    Front status map
@@ -132,9 +95,6 @@ function calcDurationHours(startISO: string, endISO: string) {
    Component
    =========================== */
 export default function CaregiverDashboard() {
-  // local UI state
-  const [bookingRequests, setBookingRequests] = useState<Booking[]>([]);
-  const [upcomingBookings, setUpcomingBookings] = useState<Booking[]>([]);
   const [caregiverUser, setCaregiverUser] = useState<Partial<Caregiver>>({});
   const [emergencyAvailable, setEmergencyAvailable] = useState<
     boolean | undefined
@@ -144,7 +104,7 @@ export default function CaregiverDashboard() {
   );
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentUser, setCurrentUser } = useAppStore();
+  const { currentUser } = useAppStore();
   const [processingBookingIds, setProcessingBookingIds] = useState<string[]>(
     []
   );
@@ -155,44 +115,19 @@ export default function CaregiverDashboard() {
 
   const navigate = useNavigate();
 
-  /* -------------------------
-     Debug helper
-     ------------------------- */
-  const log = (...args: any[]) => {
-    // visible and consistent prefix
-    // eslint-disable-next-line no-console
-    console.debug("[CaregiverDashboard]", ...args);
-  };
-
-  /* -------------------------
-     Fetch caregiver profile (first load)
-     ------------------------- */
-  /* -------------------------
-   Fetch caregiver profile (first load)
-   ------------------------- */
-  // -----------------------------------------------------
-  // Fetch caregiver profile once we know currentUser.id
-  // -----------------------------------------------------
   useEffect(() => {
     async function loadCaregiver() {
       if (!currentUser?.id) {
-        log("No currentUser yet. Waiting...");
         return;
       }
       if (currentUser.role !== "CAREGIVER") {
-        log("User is not caregiver:", currentUser.role);
         return;
       }
 
       try {
-        log("Fetching caregiver profile for userId:", currentUser.id);
-
         const caregiver = await fetchCaregiverProfile(currentUser.id);
 
-        log("Caregiver fetched:", caregiver);
-
         if (!caregiver) {
-          log("No caregiver record found for this user.");
           return;
         }
 
@@ -221,26 +156,23 @@ export default function CaregiverDashboard() {
   // -----------------------------------------------------
   async function loadAppointmentsForCaregiver(caregiver: any) {
     if (!caregiver) {
-      log("loadAppointmentsForCaregiver: caregiver is null");
       return;
     }
 
     const caregiverId = caregiver.userId; // <-- ✔ correto!
 
     if (!caregiverId) {
-      log("loadAppointmentsForCaregiver: caregiver.userId is missing");
       return;
     }
 
     try {
       setLoading(true);
       const url = `appointments?caregiverId=${caregiverId}`;
-      log("GET", url);
 
       const { data } = await api.get(url);
 
-      log("Appointments fetched:", data);
-
+      console.log("Raw appointments data:", data);
+      
       const mapped = data.map((a: any) => ({
         id: a.id,
         elderName: a.elder?.name ?? "Paciente",
@@ -253,6 +185,7 @@ export default function CaregiverDashboard() {
         emergency: Boolean(a.emergency),
         totalPrice: a.totalPrice ?? 0,
         notes: a.notes ?? "",
+        latestResponse: a.latestResponse,
       }));
 
       setAppointments(mapped);
@@ -314,14 +247,8 @@ export default function CaregiverDashboard() {
       log("Toggling availability (current caregiverUser):", caregiverUser);
       await toggleCaregiverAvailability(caregiverUser.userId!, !activeToday);
       setActiveToday((v) => !v);
-      toast({ title: "Sucesso", description: "Disponibilidade atualizada" });
     } catch (err) {
       console.error("handleActive error:", err);
-      toast({
-        title: "Erro",
-        description: "Falha ao alterar disponibilidade",
-        variant: "destructive",
-      });
     }
   };
 
@@ -333,17 +260,8 @@ export default function CaregiverDashboard() {
         !emergencyAvailable
       );
       setEmergencyAvailable((v) => !v);
-      toast({
-        title: "Sucesso",
-        description: "Disponibilidade de emergência atualizada",
-      });
     } catch (err) {
       console.error("handleEmergency error:", err);
-      toast({
-        title: "Erro",
-        description: "Falha ao alterar disponibilidade",
-        variant: "destructive",
-      });
     }
   };
 
@@ -438,11 +356,12 @@ export default function CaregiverDashboard() {
 
           {/* Status toggles */}
           <div className="mt-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-healthcare-soft rounded-2xl">
+            <div className="flex sm:flex-row items-center justify-between p-4 bg-healthcare-soft rounded-2xl">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-3 h-3 rounded-full ${activeToday ? "bg-medical-success" : "bg-neutral-400"
-                    }`}
+                  className={`w-2 h-2 rounded-full ${
+                    activeToday ? "bg-medical-success" : "bg-neutral-400"
+                  }`}
                 />
                 <div>
                   <p className="font-medium text-foreground text-sm sm:text-base">
@@ -461,7 +380,7 @@ export default function CaregiverDashboard() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-medical-critical/10 rounded-2xl border border-medical-critical/20">
+            <div className="flex items-center justify-between gap-3 p-4 bg-medical-critical/10 rounded-2xl border border-medical-critical/20">
               <div className="flex items-center gap-3">
                 <AlertCircle className="w-5 h-5 text-medical-critical shrink-0" />
                 <div>
@@ -481,6 +400,52 @@ export default function CaregiverDashboard() {
               </div>
             </div>
           </div>
+        </div>
+        {/* Statistics */}
+        <div className="grid grid-cols-3 gap-4 mt-6">
+          <Card className="text-center">
+            <CardContent className="pt-4">
+              <Star className="w-8 h-8 text-medical-warning mx-auto mb-2" />
+              <p className="text-2xl font-bold text-foreground">
+                {caregiverUser.rating?.toFixed(1) || "0.0"}
+              </p>
+              <p className="text-xs text-muted-foreground">Avaliação</p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardContent className="pt-4">
+              <CalendarCheck className="w-8 h-8 text-medical-success mx-auto mb-2" />
+              <p className="text-2xl font-bold text-foreground">
+                {
+                  appointments.filter((a) => {
+                    const apptDate = new Date(a.dateISO);
+                    const now = new Date();
+                    return (
+                      apptDate.getMonth() === now.getMonth() &&
+                      apptDate.getFullYear() === now.getFullYear() &&
+                      a.status === "completed"
+                    );
+                  }).length
+                }
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Finalizadas este mês
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardContent className="pt-4">
+              <FileClock className="w-8 h-8 text-healthcare-light mx-auto mb-2" />
+              <p className="text-2xl font-bold text-foreground">
+                {appointments.filter((a) => a.status === "requested").length}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Solicitações pendentes
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -523,12 +488,14 @@ export default function CaregiverDashboard() {
                             {a.elderName}
                           </h3>
                           <p className="text-sm text-muted-foreground truncate">
-                            Familiar: {a.familyName}
+                            Familiar: {a.familyName.split(" ")[0]}
                           </p>
                         </div>
 
                         <Badge
-                          className={`${statusConfig[a.status].color} ml-auto mt-1 sm:mt-0 px-3 py-1`}
+                          className={`${
+                            statusConfig[a.status].color
+                          } ml-auto mt-1 sm:mt-0 px-3 py-1`}
                         >
                           {statusConfig[a.status].label}
                         </Badge>
@@ -536,6 +503,21 @@ export default function CaregiverDashboard() {
                     </CardHeader>
 
                     <CardContent className="space-y-3">
+                      {a.latestResponse ? (
+                        <div>
+                          <p className="text-sm text-muted-foreground truncate">
+                            <strong className="text-healthcare-dark">
+                              IVCF20
+                            </strong>
+                            <p>
+                              Score:{a.latestResponse.score} |{" "}
+                              {a.latestResponse.result}
+                            </p>
+                          </p>
+                        </div>
+                      ) : (
+                        <></>
+                      )}
                       <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base">
                         <Calendar className="w-4 h-4 text-healthcare-light" />
                         <span>{formatDate(a.dateISO)}</span>
@@ -593,9 +575,7 @@ export default function CaregiverDashboard() {
                             >
                               <a href={`tel:${a.familyPhone}`}>
                                 <Phone className="w-4 h-4 mr-1" />
-                                <span className="hidden sm:inline">
-                                  Ligar
-                                </span>
+                                <span className="hidden sm:inline">Ligar</span>
                               </a>
                             </Button>
 

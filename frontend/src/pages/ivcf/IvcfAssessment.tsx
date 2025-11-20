@@ -94,6 +94,8 @@ export default function IvcfAssessment() {
         const response = await getIVCF20ByElderId(selectedElder!);
 
         if (response.data && response.data.id) {
+
+          console.log(response.data)
           // 2. AWAIT a segunda chamada (para obter tips e recommendations)
           const tipsResponse = await mockApi.submitIvcfAssessment(
             response.data.id,
@@ -107,7 +109,7 @@ export default function IvcfAssessment() {
             completedAt: response.data.updatedAt,
             answers: JSON.parse(response.data.answers),
             score: response.data.score,
-            category: response.data.category,
+            category: response.data.result,
             id: response.data.id,
             elderId: response.data.elderId,
             validUntil: response.data.updatedAt,

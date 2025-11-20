@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   User,
   Settings,
-  Bell,
   Shield,
   HelpCircle,
   LogOut,
@@ -18,7 +17,6 @@ import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -208,7 +206,10 @@ function FamilyProfileScreen() {
       if (removeAvatar) {
         updatedUser.avatarPath = null;
         updatedUser.photo = null;
-      } else if ((currentUser as any).avatarPath || (currentUser as any).photo) {
+      } else if (
+        (currentUser as any).avatarPath ||
+        (currentUser as any).photo
+      ) {
         updatedUser.avatarPath =
           (currentUser as any).avatarPath || (currentUser as any).photo;
         updatedUser.photo = updatedUser.avatarPath;
@@ -269,8 +270,8 @@ function FamilyProfileScreen() {
               <Heart className="w-6 h-6" />
               <div className="min-w-0">
                 <h1 className="text-lg sm:text-xl font-semibold truncate">
-                  {currentUser.name
-                    ? `Olá, ${currentUser.name.split(" ")[0]}!`
+                  {currentUser!.name
+                    ? `Olá, ${currentUser!.name.split(" ")[0]}!`
                     : "Olá!"}
                 </h1>
                 <p className="text-xs sm:text-sm text-white/90">
@@ -331,12 +332,9 @@ function FamilyProfileScreen() {
               {/* Avatar + ações */}
               <div className="flex flex-col items-center gap-2">
                 <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
-                  <AvatarImage
-                    src={userAvatar || undefined}
-                    alt={currentUser.name}
-                  />
+                  <AvatarImage src={userAvatar || undefined} />
                   <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold">
-                    {getInitials(currentUser.name)}
+                    {getInitials(currentUser!.name)}
                   </AvatarFallback>
                 </Avatar>
 
@@ -349,9 +347,7 @@ function FamilyProfileScreen() {
                       size="sm"
                       className="h-auto px-3 py-1 text-xs"
                       onClick={() =>
-                        document
-                          .getElementById("profile-avatar-input")
-                          ?.click()
+                        document.getElementById("profile-avatar-input")?.click()
                       }
                     >
                       Alterar foto
@@ -385,18 +381,18 @@ function FamilyProfileScreen() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <h3 className="font-semibold text-foreground">
-                    {currentUser.name}
+                    {currentUser!.name}
                   </h3>
                   <Badge
                     variant="secondary"
                     className="bg-healthcare-soft text-healthcare-dark text-xs"
                   >
-                    {currentUser.role === "FAMILY" ? "Família" : "Cuidador"}
+                    {currentUser!.role === "FAMILY" ? "Família" : "Cuidador"}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
                   Membro desde{" "}
-                  {new Date(currentUser.createdAt).toLocaleDateString("pt-BR")}
+                  {new Date(currentUser!.createdAt).toLocaleDateString("pt-BR")}
                 </p>
               </div>
             </div>
@@ -416,7 +412,7 @@ function FamilyProfileScreen() {
                     }
                   />
                 ) : (
-                  <p className="text-foreground mt-1">{currentUser.name}</p>
+                  <p className="text-foreground mt-1">{currentUser!.name}</p>
                 )}
               </div>
 
@@ -456,7 +452,7 @@ function FamilyProfileScreen() {
                     }
                   />
                 ) : (
-                  <p className="text-foreground mt-1">{currentUser.email}</p>
+                  <p className="text-foreground mt-1">{currentUser!.email}</p>
                 )}
               </div>
             </div>
@@ -464,7 +460,7 @@ function FamilyProfileScreen() {
         </Card>
 
         {/* Notificações */}
-        <Card className="mb-6">
+        {/*        <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="w-5 h-5 text-healthcare-light" />
@@ -530,7 +526,7 @@ function FamilyProfileScreen() {
               />
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* Configurações / Legal */}
         <Card>
@@ -586,12 +582,9 @@ function FamilyProfileScreen() {
               className="w-full justify-start p-4 h-auto text-medical-critical hover:text-medical-critical"
               onClick={logout}
             >
-              <LogOut className="w-5 h-5 mr-3" />
-              <div className="flex-1 text-left">
+              <LogOut className="w-5 h-5 mr-3 " />
+              <div className="flex-1 text-left hover:text-medical-critical">
                 <p className="font-medium">Sair da conta</p>
-                <p className="text-sm text-muted-foreground">
-                  Fazer logout do aplicativo
-                </p>
               </div>
             </Button>
           </CardContent>
@@ -752,7 +745,10 @@ function CaregiverProfileScreen() {
       );
       setReviews(reviewsData);
     } catch (error) {
-      console.error("❌ Erro ao carregar perfil/avaliações do cuidador:", error);
+      console.error(
+        "❌ Erro ao carregar perfil/avaliações do cuidador:",
+        error
+      );
     } finally {
       setLoadingReviews(false);
     }
@@ -966,7 +962,7 @@ function CaregiverProfileScreen() {
         </Card>
 
         {/* Notificações */}
-        <Card className="mb-6">
+        {/*    <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Bell className="w-5 h-5 text-healthcare-light" />
@@ -1032,7 +1028,7 @@ function CaregiverProfileScreen() {
               />
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
 
         {/* MINHAS AVALIAÇÕES – só para cuidador */}
         {isCaregiver && (
@@ -1118,7 +1114,7 @@ function CaregiverProfileScreen() {
         )}
 
         {/* Configurações / Legal */}
-        <Card>
+        <Card className="hover:text-healthcare-light">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5 text-healthcare-light" />

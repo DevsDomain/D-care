@@ -36,6 +36,7 @@ const navItems: NavItem[] = [
     label: 'Agendamentos',
     icon: Calendar,
     path: '/bookings',
+    roles: ['FAMILY'],
   },
   {
     id: 'guide',

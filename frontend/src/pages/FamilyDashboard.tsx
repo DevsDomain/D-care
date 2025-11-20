@@ -146,9 +146,7 @@ export default function FamilyDashboard() {
 
   // avatar do usuário logado (vindo do backend)
   const userAvatar =
-    (currentUser as any)?.avatarPath ??
-    (currentUser as any)?.photo ??
-    null;
+    (currentUser as any)?.avatarPath ?? (currentUser as any)?.photo ?? null;
 
   // tira o skeleton do topo quando já temos o nome
   useEffect(() => {
@@ -315,9 +313,9 @@ export default function FamilyDashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="bg-gradient-to-r from-healthcare-dark to-healthcare-light text-white">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
+      <header className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-healthcare-dark to-healthcare-light text-white shadow-md">
+        <div className="p-3">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-xl font-bold">Olá, {currentUser.name}</h1>
               <p className="text-healthcare-accent text-sm">
@@ -332,7 +330,7 @@ export default function FamilyDashboard() {
                   alt={currentUser.name || "userName"}
                 />
                 <AvatarFallback className="bg-white/20 text-white">
-                  {getInitials(currentUser.name)}
+                  {getInitials(currentUser!.name)}
                 </AvatarFallback>
               </Avatar>
 
@@ -349,173 +347,127 @@ export default function FamilyDashboard() {
         </div>
       </header>
 
-      <div className="p-4 space-y-6">
-        {/* Ações rápidas */}
-        <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="healthcare"
-            className="h-auto py-4 flex-col gap-2"
-            onClick={handleFindCaregiver}
-          >
-            <Search className="w-6 h-6" />
-            <span className="text-xs">Buscar Cuidador</span>
-          </Button>
+      {/* Main Content */}
+      <div className="p-2 mt-20">
+        <div className="healthcare-card text-center mb-6">
+          <div className="p-2">
+            <h2 className="text-xl font-semibold text-foreground mb-2">
+              Bem-vindo ao D-care
+            </h2>
 
-          <Button
-            variant="trust"
-            className="h-auto py-4 flex-col gap-2"
-            onClick={handleOpenGuide}
-          >
-            <MessageCircle className="w-6 h-6" />
-            <span className="text-xs">Guia IA</span>
-          </Button>
+            <p className="text-muted-foreground ">
+              Gerencie as informações das pessoas sob seus cuidados e acesse
+              recursos especializados como <strong>IVCF20 Digital</strong>, busca por cuidadores e <strong>Guia com IA</strong>
+            </p>
+          </div>
+        </div>
+      </div>
 
-          <Button
-            variant="soft"
-            className="h-auto py-4 flex-col gap-2"
-            onClick={handleViewBookings}
-          >
-            <Calendar className="w-6 h-6" />
-            <span className="text-xs">Agendamentos</span>
-          </Button>
-
-          <Button
-            variant="soft"
-            className="h-auto py-4 flex-col gap-2"
-            onClick={handleAddElder}
-          >
-            <Plus className="w-6 h-6" />
-            <span className="text-xs">Cadastrar Idoso</span>
-          </Button>
+      
+      {/* Cards de Idosos */}
+      <div className="space-y-4">
+        <div className="w-full m-auto text-center mb-6">
+          <h1 className="text-xl font-semibold text-healthcare-dark">
+            Pessoas sob seus cuidados
+          </h1>
         </div>
 
-        {/* Cards de Idosos */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">
-              Pessoas sob seus cuidados
-            </h2>
-          </div>
+        {loadingElders ? (
+          <Card className="p-6">
+            <p className="text-sm text-muted-foreground">Carregando...</p>
+          </Card>
+        ) : (
+          (currentUser.elders ?? []).map((elder: any) => {
+            const age =
+              elder?.birthDate || elder?.birthdate
+                ? `${AgeCalculator(elder.birthDate ?? elder.birthdate)} anos`
+                : "Idade não informada";
 
-          {loadingElders ? (
-            <Card className="p-4">
-              <p className="text-sm text-muted-foreground">Carregando...</p>
-            </Card>
-          ) : (
-            (currentUser.elders ?? []).map((elder: any) => {
-              const age =
-                elder?.birthDate || elder?.birthdate
-                  ? `${AgeCalculator(elder.birthDate ?? elder.birthdate)} anos`
-                  : "Idade não informada";
+            const conditions = Array.isArray(elder?.conditions)
+              ? elder.conditions
+              : [];
 
-              const conditions = Array.isArray(elder?.conditions)
-                ? elder.conditions
-                : [];
+            return (
+              <Card key={elder.id} className="w-10/12 m-auto healthcare-card">
+                <CardContent className="px-0 py-3">
+                  <div className="flex items-start gap-4">
+                    <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
+                      <AvatarImage
+                        src={elder.photo || elder.avatarPath}
+                        alt={elder.name}
+                      />
+                      <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold text-lg">
+                        {getInitials(elder.name)}
+                      </AvatarFallback>
+                    </Avatar>
 
-              return (
-                <Card key={elder.id} className="healthcare-card">
-                  <CardContent className="px-0 py-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
-                        <AvatarImage
-                          src={elder.photo || elder.avatarPath}
-                          alt={elder.name}
-                        />
-                        <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold text-lg">
-                          {getInitials(elder.name)}
-                        </AvatarFallback>
-                      </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-lg text-foreground mb-1 truncate">
+                        {elder.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {age}
+                      </p>
 
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-lg text-foreground mb-1 truncate">
-                          {elder.name}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mb-2">
-                          {age}
-                        </p>
-
-                        {/* Condições (até 3 + “+N”) */}
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {conditions.length ? (
-                            <>
-                              {conditions
-                                .slice(0, 3)
-                                .map((c: any, idx: number) => (
-                                  <Badge
-                                    key={`${elder.id}-cond-${idx}`}
-                                    variant="outline"
-                                    className="text-xs rounded-full px-3 py-1"
-                                  >
-                                    {getConditionLabel(c)}
-                                  </Badge>
-                                ))}
-                              {conditions.length > 3 && (
+                      {/* Condições (até 3 + “+N”) */}
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {conditions.length ? (
+                          <>
+                            {conditions
+                              .slice(0, 3)
+                              .map((c: any, idx: number) => (
                                 <Badge
-                                  variant="secondary"
+                                  key={`${elder.id}-cond-${idx}`}
+                                  variant="outline"
                                   className="text-xs rounded-full px-3 py-1"
                                 >
-                                  +{conditions.length - 3}
+                                  {getConditionLabel(c)}
                                 </Badge>
-                              )}
-                            </>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">
-                              Sem condições cadastradas
-                            </span>
-                          )}
-                        </div>
+                              ))}
+                            {conditions.length > 3 && (
+                              <Badge
+                                variant="secondary"
+                                className="text-xs rounded-full px-3 py-1"
+                              >
+                                +{conditions.length - 3}
+                              </Badge>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            Sem condições cadastradas
+                          </span>
+                        )}
+                      </div>
 
-                        {/* Ações */}
-                        <div className="flex gap-2">
-                          <Button
-                            variant="healthcare"
-                            size="sm"
-                            onClick={() => handleStartIvcf(elder)}
-                          >
-                            <Activity className="w-4 h-4 mr-1" />
-                            IVCF-20
-                          </Button>
+                      {/* Ações */}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="healthcare"
+                          size="sm"
+                          onClick={() => handleStartIvcf(elder)}
+                        >
+                          <Activity className="w-4 h-4 mr-1" />
+                          IVCF-20
+                        </Button>
 
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditElder(elder.id)}
-                          >
-                            <User className="w-4 h-4 mr-1" />
-                            Editar
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditElder(elder.id)}
+                        >
+                          <User className="w-4 h-4 mr-1" />
+                          Editar
+                        </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
-
-        {/* Status */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Atividade Recente
-          </h2>
-
-          <Card className="bg-gradient-to-r from-medical-success/10 to-healthcare-soft/30 border-medical-success/20">
-            <CardContent className="px-10 py-6">
-              <div className="flex items-center gap-3">
-                <div className="bg-medical-success/20 p-2 rounded-full">
-                  <Shield className="w-5 h-5 text-medical-success" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-sm">Sistema Ativo</h3>
-                  <p className="text-xs text-muted-foreground">
-                    Monitoramento 24h funcionando normalmente
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })
+        )}
+        
       </div>
     </div>
   );

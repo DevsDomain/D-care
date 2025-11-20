@@ -176,7 +176,6 @@ export interface SearchFilters {
     endTime: string;
   };
   emergency?: boolean;
-  verified?: boolean;
   skills?: string[];
   priceRange?: {
     min: number;

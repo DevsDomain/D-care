@@ -65,35 +65,68 @@ export class AppointmentService {
     if (params.familyId) where.familyId = params.familyId;
     if (params.caregiverId) where.caregiverId = params.caregiverId;
 
-    const rows = await this.prisma.appointments.findMany({
+    // 1) Get all appointments
+    const appointments = await this.prisma.appointments.findMany({
       where,
-      orderBy: { datetimeStart: 'asc' },
+      orderBy: { datetimeStart: 'desc' },
       include: {
         elder: true,
-
         caregiver: {
           include: {
             user: {
-              include: {
-                userProfile: true,
-              },
+              include: { userProfile: true },
             },
           },
         },
-
         family: {
           include: {
-            user: {
-              include: {
-                userProfile: true,
-              },
-            },
+            user: { include: { userProfile: true } },
           },
         },
       },
     });
 
-    return rows;
+    if (appointments.length === 0) return [];
+
+    // 2) Extract unique elder IDs
+    const elderIds = [
+      ...new Set(
+        appointments
+          .map((a) => a.elderId)
+          .filter((id): id is string => id !== null),
+      ),
+    ];
+
+    // 3) Fetch latest iVCF20Responses for all elders IN ONE QUERY
+    const responses = await this.prisma.iVCF20Responses.findMany({
+      where: { elderId: { in: elderIds } },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    const latestResponseMap = new Map<string, any>();
+
+    for (const r of responses) {
+      if (r.elderId === null) continue; // 🔥 Type narrowing here
+
+      if (!latestResponseMap.has(r.elderId)) {
+        latestResponseMap.set(r.elderId, r);
+      }
+    }
+
+    const results = appointments.map((a) => {
+      const elderId = a.elderId; // string | null
+
+      if (!elderId) {
+        return { ...a, latestResponse: null }; // no elderId -> no response
+      }
+
+      return {
+        ...a,
+        latestResponse: latestResponseMap.get(elderId) ?? null,
+      };
+    });
+
+    return results;
   }
 
   async updateStatus(id: string, status: AppointmentStatusString) {
@@ -175,6 +208,14 @@ export class AppointmentService {
       },
     });
 
+    // 4.1 Atualiza o status do agentamento para COMPLETE
+    await this.prisma.appointments.update({
+      where: { id: appointmentId },
+      data: {
+        status: 'COMPLETED',
+      },
+    });
+
     // 5) Recalcula média e quantidade de avaliações do cuidador
     const agg = await this.prisma.reviews.aggregate({
       where: {
@@ -235,8 +276,7 @@ export class AppointmentService {
       createdAt: r.createdAt,
       appointmentDate: r.appointment?.datetimeStart ?? null,
       elderName: r.appointment?.elder?.name ?? null,
-      familyName:
-        r.appointment?.family?.user?.userProfile?.[0]?.name ?? null,
+      familyName: r.appointment?.family?.user?.userProfile?.[0]?.name ?? null,
     }));
   }
 }
