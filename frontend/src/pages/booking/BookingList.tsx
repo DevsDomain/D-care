@@ -52,27 +52,27 @@ type AppointmentApi = {
   updatedAt: string;
   hasReview?: boolean | null;
   elder?:
-  | {
-    id: string;
-    name: string | null;
-    avatarPath?: string | null;
-    address?: string | null;
-    city?: string | null;
-    state?: string | null;
-    zipCode?: string | null;
-  }
-  | null;
-  caregiver?:
-  | {
-    id: string;
-    avatarPath?: string | null;
-    user?:
     | {
-      userProfile: Array<{ id: string; name: string | null }>;
-    }
+        id: string;
+        name: string | null;
+        avatarPath?: string | null;
+        address?: string | null;
+        city?: string | null;
+        state?: string | null;
+        zipCode?: string | null;
+      }
     | null;
-  }
-  | null;
+  caregiver?:
+    | {
+        id: string;
+        avatarPath?: string | null;
+        user?:
+          | {
+              userProfile: Array<{ id: string; name: string | null }>;
+            }
+          | null;
+      }
+    | null;
 };
 
 // Config visual de status no front
@@ -174,7 +174,8 @@ export default function BookingList() {
     if (booking.hasReview) {
       toast({
         title: 'Avaliação já registrada',
-        description: 'Você já avaliou esta reserva. Não é possível avaliá-la novamente.',
+        description:
+          'Você já avaliou esta reserva. Não é possível avaliá-la novamente.',
         variant: 'destructive',
       });
       return;
@@ -220,7 +221,7 @@ export default function BookingList() {
           const newRating =
             caregiver.rating && caregiver.reviewCount
               ? (caregiver.rating * caregiver.reviewCount + reviewRating) /
-              newReviewCount
+                newReviewCount
               : reviewRating;
 
           return {
@@ -234,7 +235,6 @@ export default function BookingList() {
           };
         }),
       );
-
 
       toast({
         title: 'Obrigado!',
@@ -271,7 +271,9 @@ export default function BookingList() {
 
       const queryParam = isFamily
         ? `familyId=${derivedFamilyId}`
-        : `caregiverId=${(currentUser as any)?.caregiverProfile?.id ?? currentUser.id}`;
+        : `caregiverId=${
+            (currentUser as any)?.caregiverProfile?.id ?? currentUser.id
+          }`;
 
       const { data } = await api.get<AppointmentApi[]>(
         `appointments?${queryParam}`,
@@ -313,58 +315,57 @@ export default function BookingList() {
           caregiver:
             caregiverPhoto || caregiverName
               ? ({
-                id: a.caregiverId ?? '',
-                userId: '',
-                name: caregiverName,
-                photo: caregiverPhoto || '',
-                verified: false,
-                address: '',
-                city: '',
-                state: '',
-                zipCode: '',
-                avatarPath: null,
-                rating: 0,
-                reviewCount: 0,
-                distanceKm: 0,
-                skills: [],
-                experience: '',
-                price_range: '',
-                emergency: false,
-                availability: true,
-                bio: '',
-                phone: '',
-                languages: [],
-                specializations: [],
-                verificationBadges: [],
-              } as any)
+                  id: a.caregiverId ?? '',
+                  userId: '',
+                  name: caregiverName,
+                  photo: caregiverPhoto || '',
+                  verified: false,
+                  address: '',
+                  city: '',
+                  state: '',
+                  zipCode: '',
+                  avatarPath: null,
+                  rating: 0,
+                  reviewCount: 0,
+                  distanceKm: 0,
+                  skills: [],
+                  experience: '',
+                  price_range: '',
+                  emergency: false,
+                  availability: true,
+                  bio: '',
+                  phone: '',
+                  languages: [],
+                  specializations: [],
+                  verificationBadges: [],
+                } as any)
               : undefined,
 
           elder:
             elderPhoto || elderName
               ? ({
-                id: a.elderId ?? '',
-                name: elderName,
-                birthDate: new Date(a.datetimeStart),
-                familyId: a.familyId ?? '',
-                photo: elderPhoto || undefined,
-                avatarFile: null,
-                conditions: [],
-                medications: [],
-                address: {
-                  street: a.elder?.address ?? '',
-                  city: a.elder?.city ?? '',
-                  state: a.elder?.state ?? '',
-                  zipCode: a.elder?.zipCode ?? '',
-                  number: '',
-                },
-                preferences: {},
-                createdAt: a.createdAt,
-              } as any)
+                  id: a.elderId ?? '',
+                  name: elderName,
+                  birthDate: new Date(a.datetimeStart),
+                  familyId: a.familyId ?? '',
+                  photo: elderPhoto || undefined,
+                  avatarFile: null,
+                  conditions: [],
+                  medications: [],
+                  address: {
+                    street: a.elder?.address ?? '',
+                    city: a.elder?.city ?? '',
+                    state: a.elder?.state ?? '',
+                    zipCode: a.elder?.zipCode ?? '',
+                    number: '',
+                  },
+                  preferences: {},
+                  createdAt: a.createdAt,
+                } as any)
               : undefined,
         };
       });
 
-      // 👇 agora só os dados reais da API
       setBookings(mapped);
     } catch (error) {
       console.error(error);
@@ -377,11 +378,24 @@ export default function BookingList() {
       setLoading(false);
     }
   };
+
   // ✅ Atualiza status usando o PATCH real no backend
   const handleStatusUpdate = async (
     bookingId: string,
     status: BookingStatus,
   ) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+
+    // proteção extra: não deixa cancelar se já foi avaliado
+    if (booking?.hasReview && status === 'canceled') {
+      toast({
+        title: 'Ação não permitida',
+        description: 'Não é possível cancelar uma reserva que já foi avaliada.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const apiStatus = mapStatusToApi(status);
 
@@ -395,8 +409,9 @@ export default function BookingList() {
 
       toast({
         title: 'Sucesso',
-        description: `Reserva ${status === 'canceled' ? 'cancelada' : 'atualizada'
-          } com sucesso`,
+        description: `Reserva ${
+          status === 'canceled' ? 'cancelada' : 'atualizada'
+        } com sucesso`,
       });
     } catch (error) {
       console.error(error);
@@ -529,14 +544,17 @@ export default function BookingList() {
                 description={
                   activeTab === 'all'
                     ? 'Você ainda não tem reservas. Comece procurando um cuidador.'
-                    : `Não há reservas ${activeTab === 'upcoming'
-                      ? 'próximas'
-                      : activeTab === 'active'
-                        ? 'ativas'
-                        : 'finalizadas'
-                    }.`
+                    : `Não há reservas ${
+                        activeTab === 'upcoming'
+                          ? 'próximas'
+                          : activeTab === 'active'
+                          ? 'ativas'
+                          : 'finalizadas'
+                      }.`
                 }
-                actionLabel={activeTab === 'all' ? 'Buscar Cuidador' : undefined}
+                actionLabel={
+                  activeTab === 'all' ? 'Buscar Cuidador' : undefined
+                }
                 onAction={
                   activeTab === 'all'
                     ? () => (window.location.href = '/search')
@@ -547,13 +565,17 @@ export default function BookingList() {
               getTabBookings(activeTab).map((booking) => {
                 // ⏰ cálculo se essa reserva já terminou
                 const start = new Date(booking.dateISO).getTime();
-                const end = start + booking.duration * 60 * 60 * 1000;
+                const end =
+                  start + booking.duration * 60 * 60 * 1000;
                 const now = Date.now();
                 const isPast = end < now;
 
-                // pode avaliar se está ACEITA e já passou
+                // pode avaliar se está ACEITA/CONCLUÍDA e já passou
                 const canReview =
-                  booking.status === 'accepted' && isPast && !booking.hasReview;
+                  ['accepted', 'completed'].includes(booking.status) &&
+                  isPast &&
+                  !booking.hasReview;
+
                 return (
                   <Card key={booking.id} className="healthcare-card">
                     <CardHeader className="pb-4">
@@ -589,7 +611,8 @@ export default function BookingList() {
                         <span>{formatDate(booking.dateISO)}</span>
                         <Clock className="w-4 h-4 text-healthcare-light ml-4" />
                         <span>
-                          {formatTime(booking.dateISO)} ({booking.duration}h)
+                          {formatTime(booking.dateISO)} (
+                          {booking.duration}h)
                         </span>
                       </div>
 
@@ -597,7 +620,10 @@ export default function BookingList() {
                       <div className="flex items-center gap-2 text-sm">
                         <MapPin className="w-4 h-4 text-healthcare-light" />
                         <span className="text-muted-foreground">
-                          {[booking.address?.street, booking.address?.city]
+                          {[
+                            booking.address?.street,
+                            booking.address?.city,
+                          ]
                             .filter(Boolean)
                             .join(', ')}
                         </span>
@@ -635,8 +661,14 @@ export default function BookingList() {
                         <div className="flex gap-2 items-center">
                           {booking.status === 'accepted' && (
                             <>
-                              <Button variant="outline" size="sm" asChild>
-                                <a href={`tel:${booking.caregiver?.phone ?? ''}`}>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                asChild
+                              >
+                                <a
+                                  href={`tel:${booking.caregiver?.phone ?? ''}`}
+                                >
                                   <Phone className="w-4 h-4" />
                                 </a>
                               </Button>
@@ -646,13 +678,18 @@ export default function BookingList() {
                             </>
                           )}
 
-                          {['requested', 'accepted'].includes(booking.status) &&
+                          {['requested', 'accepted'].includes(
+                            booking.status,
+                          ) &&
                             !booking.hasReview && (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() =>
-                                  handleStatusUpdate(booking.id, 'canceled')
+                                  handleStatusUpdate(
+                                    booking.id,
+                                    'canceled',
+                                  )
                                 }
                               >
                                 Cancelar
@@ -663,7 +700,9 @@ export default function BookingList() {
                             <Button
                               variant="healthcare"
                               size="sm"
-                              onClick={() => handleOpenReview(booking)}
+                              onClick={() =>
+                                handleOpenReview(booking)
+                              }
                             >
                               Avaliar
                             </Button>
@@ -677,12 +716,12 @@ export default function BookingList() {
                         </div>
                       </div>
 
-
                       {/* Notes */}
                       {booking.notes && (
                         <div className="p-3 rounded-xl bg-muted">
                           <p className="text-sm text-muted-foreground">
-                            <strong>Observações:</strong> {booking.notes}
+                            <strong>Observações:</strong>{' '}
+                            {booking.notes}
                           </p>
                         </div>
                       )}
