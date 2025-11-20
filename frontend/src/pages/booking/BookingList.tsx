@@ -75,6 +75,33 @@ type AppointmentApi = {
     | null;
 };
 
+// ========= helpers só no front pra “lembrar” avaliações =========
+
+const REVIEWED_APPOINTMENTS_KEY = 'dcare_reviewed_appointments';
+
+function getReviewedAppointments(): string[] {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem(REVIEWED_APPOINTMENTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function addReviewedAppointment(id: string) {
+  if (typeof window === 'undefined') return;
+
+  const current = getReviewedAppointments();
+  if (current.includes(id)) return;
+
+  const updated = [...current, id];
+  window.localStorage.setItem(REVIEWED_APPOINTMENTS_KEY, JSON.stringify(updated));
+}
+
 // Config visual de status no front
 const statusConfig = {
   requested: {
@@ -107,7 +134,7 @@ const statusConfig = {
     color: 'bg-neutral-400 text-white',
     description: 'Prazo expirado',
   },
-};
+} as const;
 
 // Map enum backend -> front
 function mapStatusFromApi(status: AppointmentApiStatus): BookingStatus {
@@ -207,6 +234,9 @@ export default function BookingList() {
         comment: reviewComment || null,
       });
 
+      // marca no localStorage também
+      addReviewedAppointment(reviewBooking.id);
+
       setBookings((prev) =>
         prev.map((b) => {
           if (b.id !== reviewBooking.id) return b;
@@ -244,13 +274,42 @@ export default function BookingList() {
       setReviewBooking(null);
       setReviewRating(0);
       setReviewComment('');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível salvar sua avaliação.',
-        variant: 'destructive',
-      });
+
+      const message: string =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Não foi possível salvar sua avaliação.';
+
+      // se o backend disser que já existe avaliação, vamos só marcar no front
+      if (message.includes('Já existe uma avaliação para este atendimento')) {
+        if (reviewBooking) {
+          addReviewedAppointment(reviewBooking.id);
+
+          setBookings((prev) =>
+            prev.map((b) =>
+              b.id === reviewBooking.id ? { ...b, hasReview: true } : b,
+            ),
+          );
+        }
+
+        toast({
+          title: 'Avaliação já registrada',
+          description:
+            'Você já havia avaliado este atendimento anteriormente.',
+        });
+
+        setReviewBooking(null);
+        setReviewRating(0);
+        setReviewComment('');
+      } else {
+        toast({
+          title: 'Erro',
+          description: message,
+          variant: 'destructive',
+        });
+      }
     } finally {
       setSubmittingReview(false);
     }
@@ -279,6 +338,9 @@ export default function BookingList() {
         `appointments?${queryParam}`,
       );
 
+      // ids que já foram avaliados e salvos no localStorage
+      const reviewedFromStorage = getReviewedAppointments();
+
       const mapped: Booking[] = data.map((a) => {
         const status = mapStatusFromApi(a.status);
         const duration = calcDurationHours(a.datetimeStart, a.datetimeEnd);
@@ -289,6 +351,9 @@ export default function BookingList() {
 
         const elderName = a.elder?.name ?? 'Paciente';
         const elderPhoto = a.elder?.avatarPath ?? undefined;
+
+        const hasReview =
+          Boolean(a.hasReview) || reviewedFromStorage.includes(a.id);
 
         return {
           id: a.id,
@@ -310,7 +375,7 @@ export default function BookingList() {
           updatedAt: a.updatedAt,
           completedAt: a.status === 'COMPLETED' ? a.updatedAt : undefined,
           services: [],
-          hasReview: Boolean(a.hasReview),
+          hasReview,
 
           caregiver:
             caregiverPhoto || caregiverName
@@ -565,8 +630,7 @@ export default function BookingList() {
               getTabBookings(activeTab).map((booking) => {
                 // ⏰ cálculo se essa reserva já terminou
                 const start = new Date(booking.dateISO).getTime();
-                const end =
-                  start + booking.duration * 60 * 60 * 1000;
+                const end = start + booking.duration * 60 * 60 * 1000;
                 const now = Date.now();
                 const isPast = end < now;
 
