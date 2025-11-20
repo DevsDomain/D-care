@@ -92,6 +92,7 @@ export interface Booking {
   status: BookingStatus;
   emergency: boolean;
   notes?: string;
+  hasReview?: boolean;
   address: {
     street: string;
     city: string;

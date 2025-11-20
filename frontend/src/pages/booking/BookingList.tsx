@@ -50,28 +50,29 @@ type AppointmentApi = {
   totalPrice: number;
   createdAt: string;
   updatedAt: string;
+  hasReview?: boolean | null;
   elder?:
-    | {
-        id: string;
-        name: string | null;
-        avatarPath?: string | null;
-        address?: string | null;
-        city?: string | null;
-        state?: string | null;
-        zipCode?: string | null;
-      }
-    | null;
+  | {
+    id: string;
+    name: string | null;
+    avatarPath?: string | null;
+    address?: string | null;
+    city?: string | null;
+    state?: string | null;
+    zipCode?: string | null;
+  }
+  | null;
   caregiver?:
+  | {
+    id: string;
+    avatarPath?: string | null;
+    user?:
     | {
-        id: string;
-        avatarPath?: string | null;
-        user?:
-          | {
-              userProfile: Array<{ id: string; name: string | null }>;
-            }
-          | null;
-      }
+      userProfile: Array<{ id: string; name: string | null }>;
+    }
     | null;
+  }
+  | null;
 };
 
 // Config visual de status no front
@@ -170,6 +171,15 @@ export default function BookingList() {
 
   // abre o modal
   const handleOpenReview = (booking: Booking) => {
+    if (booking.hasReview) {
+      toast({
+        title: 'Avaliação já registrada',
+        description: 'Você já avaliou esta reserva. Não é possível avaliá-la novamente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setReviewBooking(booking);
     setReviewRating(0);
     setReviewComment('');
@@ -196,26 +206,35 @@ export default function BookingList() {
         comment: reviewComment || null,
       });
 
-      // (opcional) atualizar rating local do cuidador nessa lista
       setBookings((prev) =>
-        prev.map((b) =>
-          b.id === reviewBooking.id && b.caregiver
-            ? {
-                ...b,
-                caregiver: {
-                  ...b.caregiver,
-                  rating:
-                    b.caregiver.rating && b.caregiver.reviewCount
-                      ? (b.caregiver.rating * b.caregiver.reviewCount +
-                          reviewRating) /
-                        (b.caregiver.reviewCount + 1)
-                      : reviewRating,
-                  reviewCount: (b.caregiver.reviewCount || 0) + 1,
-                },
-              }
-            : b,
-        ),
+        prev.map((b) => {
+          if (b.id !== reviewBooking.id) return b;
+
+          // se não tiver caregiver (por alguma razão), só marca como avaliado
+          if (!b.caregiver) {
+            return { ...b, hasReview: true };
+          }
+
+          const { caregiver } = b;
+          const newReviewCount = (caregiver.reviewCount || 0) + 1;
+          const newRating =
+            caregiver.rating && caregiver.reviewCount
+              ? (caregiver.rating * caregiver.reviewCount + reviewRating) /
+              newReviewCount
+              : reviewRating;
+
+          return {
+            ...b,
+            hasReview: true, // 👈 chave da lógica
+            caregiver: {
+              ...caregiver,
+              rating: newRating,
+              reviewCount: newReviewCount,
+            },
+          };
+        }),
       );
+
 
       toast({
         title: 'Obrigado!',
@@ -252,9 +271,7 @@ export default function BookingList() {
 
       const queryParam = isFamily
         ? `familyId=${derivedFamilyId}`
-        : `caregiverId=${
-            (currentUser as any)?.caregiverProfile?.id ?? currentUser.id
-          }`;
+        : `caregiverId=${(currentUser as any)?.caregiverProfile?.id ?? currentUser.id}`;
 
       const { data } = await api.get<AppointmentApi[]>(
         `appointments?${queryParam}`,
@@ -291,136 +308,64 @@ export default function BookingList() {
           updatedAt: a.updatedAt,
           completedAt: a.status === 'COMPLETED' ? a.updatedAt : undefined,
           services: [],
+          hasReview: Boolean(a.hasReview),
 
           caregiver:
             caregiverPhoto || caregiverName
               ? ({
-                  id: a.caregiverId ?? '',
-                  userId: '',
-                  name: caregiverName,
-                  photo: caregiverPhoto || '',
-                  verified: false,
-                  address: '',
-                  city: '',
-                  state: '',
-                  zipCode: '',
-                  avatarPath: null,
-                  rating: 0,
-                  reviewCount: 0,
-                  distanceKm: 0,
-                  skills: [],
-                  experience: '',
-                  price_range: '',
-                  emergency: false,
-                  availability: true,
-                  bio: '',
-                  phone: '',
-                  languages: [],
-                  specializations: [],
-                  verificationBadges: [],
-                } as any)
+                id: a.caregiverId ?? '',
+                userId: '',
+                name: caregiverName,
+                photo: caregiverPhoto || '',
+                verified: false,
+                address: '',
+                city: '',
+                state: '',
+                zipCode: '',
+                avatarPath: null,
+                rating: 0,
+                reviewCount: 0,
+                distanceKm: 0,
+                skills: [],
+                experience: '',
+                price_range: '',
+                emergency: false,
+                availability: true,
+                bio: '',
+                phone: '',
+                languages: [],
+                specializations: [],
+                verificationBadges: [],
+              } as any)
               : undefined,
 
           elder:
             elderPhoto || elderName
               ? ({
-                  id: a.elderId ?? '',
-                  name: elderName,
-                  birthDate: new Date(a.datetimeStart),
-                  familyId: a.familyId ?? '',
-                  photo: elderPhoto || undefined,
-                  avatarFile: null,
-                  conditions: [],
-                  medications: [],
-                  address: {
-                    street: a.elder?.address ?? '',
-                    city: a.elder?.city ?? '',
-                    state: a.elder?.state ?? '',
-                    zipCode: a.elder?.zipCode ?? '',
-                    number: '',
-                  },
-                  preferences: {},
-                  createdAt: a.createdAt,
-                } as any)
+                id: a.elderId ?? '',
+                name: elderName,
+                birthDate: new Date(a.datetimeStart),
+                familyId: a.familyId ?? '',
+                photo: elderPhoto || undefined,
+                avatarFile: null,
+                conditions: [],
+                medications: [],
+                address: {
+                  street: a.elder?.address ?? '',
+                  city: a.elder?.city ?? '',
+                  state: a.elder?.state ?? '',
+                  zipCode: a.elder?.zipCode ?? '',
+                  number: '',
+                },
+                preferences: {},
+                createdAt: a.createdAt,
+              } as any)
               : undefined,
         };
       });
 
-      // 🔥 MOCK APENAS PARA TESTAR UM CARD "ACEITO"
-      const mockAcceptedBooking: Booking = {
-        id: 'mock-accepted-1',
-        caregiverId: 'mock-caregiver-1',
-        elderId: 'mock-elder-1',
-        // coloque uma data no passado se quiser ver o botão Avaliar
-        dateISO: new Date('2025-11-10T17:00:00-03:00').toISOString(),
-        duration: 8,
-        status: 'accepted',
-        emergency: false,
-        notes: 'Reserva de teste aceita para visualizar o card.',
-        address: {
-          street: 'Rua Exemplo, 123',
-          city: 'São Paulo',
-          state: 'SP',
-          zipCode: '01234-567',
-        },
-        totalPrice: 1200,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        completedAt: undefined,
-        services: ['Cuidados gerais', 'Administração de medicamentos'],
-
-        caregiver: {
-          id: 'mock-caregiver-1',
-          userId: '',
-          name: 'Marcelo Antonio',
-          photo:
-            'https://images.unsplash.com/photo-1535916707207-35f97e715e1b?w=150&h=150&fit=crop&crop=face',
-          verified: true,
-          address: '',
-          city: 'São Paulo',
-          state: 'SP',
-          zipCode: '01234-567',
-          avatarPath: null,
-          rating: 4.9,
-          reviewCount: 120,
-          distanceKm: 2,
-          skills: [],
-          experience: '8 anos',
-          price_range: 'R$ 150/h',
-          emergency: false,
-          availability: true,
-          bio: '',
-          phone: '+55 11 99999-0000',
-          languages: ['Português'],
-          specializations: [],
-          verificationBadges: [],
-        } as any,
-
-        elder: {
-          id: 'mock-elder-1',
-          name: 'Paciente Teste',
-          birthDate: new Date('1950-01-10'),
-          familyId: 'mock-family',
-          photo:
-            'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=150&h=150&fit=crop&crop=face',
-          avatarFile: null,
-          conditions: ['Hipertensão'],
-          medications: ['Losartana'],
-          address: {
-            street: 'Rua Exemplo, 123',
-            city: 'São Paulo',
-            state: 'SP',
-            zipCode: '01234-567',
-            number: '123',
-          },
-          preferences: {},
-          createdAt: new Date().toISOString(),
-        } as any,
-      };
-
-      const withMock = [...mapped, mockAcceptedBooking];
-
-      setBookings(withMock);
+      // 👇 agora só os dados reais da API
+      setBookings(mapped);
     } catch (error) {
       console.error(error);
       toast({
@@ -432,7 +377,6 @@ export default function BookingList() {
       setLoading(false);
     }
   };
-
   // ✅ Atualiza status usando o PATCH real no backend
   const handleStatusUpdate = async (
     bookingId: string,
@@ -451,9 +395,8 @@ export default function BookingList() {
 
       toast({
         title: 'Sucesso',
-        description: `Reserva ${
-          status === 'canceled' ? 'cancelada' : 'atualizada'
-        } com sucesso`,
+        description: `Reserva ${status === 'canceled' ? 'cancelada' : 'atualizada'
+          } com sucesso`,
       });
     } catch (error) {
       console.error(error);
@@ -586,13 +529,12 @@ export default function BookingList() {
                 description={
                   activeTab === 'all'
                     ? 'Você ainda não tem reservas. Comece procurando um cuidador.'
-                    : `Não há reservas ${
-                        activeTab === 'upcoming'
-                          ? 'próximas'
-                          : activeTab === 'active'
-                          ? 'ativas'
-                          : 'finalizadas'
-                      }.`
+                    : `Não há reservas ${activeTab === 'upcoming'
+                      ? 'próximas'
+                      : activeTab === 'active'
+                        ? 'ativas'
+                        : 'finalizadas'
+                    }.`
                 }
                 actionLabel={activeTab === 'all' ? 'Buscar Cuidador' : undefined}
                 onAction={
@@ -611,8 +553,7 @@ export default function BookingList() {
 
                 // pode avaliar se está ACEITA e já passou
                 const canReview =
-                  booking.status === 'accepted' && isPast;
-
+                  booking.status === 'accepted' && isPast && !booking.hasReview;
                 return (
                   <Card key={booking.id} className="healthcare-card">
                     <CardHeader className="pb-4">
@@ -691,13 +632,11 @@ export default function BookingList() {
                           R$ {Number(booking.totalPrice || 0).toFixed(2)}
                         </span>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           {booking.status === 'accepted' && (
                             <>
                               <Button variant="outline" size="sm" asChild>
-                                <a
-                                  href={`tel:${booking.caregiver?.phone ?? ''}`}
-                                >
+                                <a href={`tel:${booking.caregiver?.phone ?? ''}`}>
                                   <Phone className="w-4 h-4" />
                                 </a>
                               </Button>
@@ -707,19 +646,18 @@ export default function BookingList() {
                             </>
                           )}
 
-                          {['requested', 'accepted'].includes(
-                            booking.status,
-                          ) && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleStatusUpdate(booking.id, 'canceled')
-                              }
-                            >
-                              Cancelar
-                            </Button>
-                          )}
+                          {['requested', 'accepted'].includes(booking.status) &&
+                            !booking.hasReview && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleStatusUpdate(booking.id, 'canceled')
+                                }
+                              >
+                                Cancelar
+                              </Button>
+                            )}
 
                           {canReview && (
                             <Button
@@ -730,8 +668,15 @@ export default function BookingList() {
                               Avaliar
                             </Button>
                           )}
+
+                          {booking.hasReview && (
+                            <span className="text-xs text-muted-foreground">
+                              Você já avaliou esta reserva.
+                            </span>
+                          )}
                         </div>
                       </div>
+
 
                       {/* Notes */}
                       {booking.notes && (
