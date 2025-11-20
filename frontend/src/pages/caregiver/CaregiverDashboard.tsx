@@ -393,202 +393,239 @@ export default function CaregiverDashboard() {
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
       <div className="bg-card border-b border-border px-4 py-6">
-        <div className="flex items-center justify-around">
-          <Avatar className="border-2 border-white/20 w-16 h-16">
-            <AvatarImage
-              width={200}
-              height={200}
-              src={(caregiverUser as any)?.avatarUrl}
-              alt={(caregiverUser as any)?.name || "userName"}
-            />
-            <AvatarFallback className="bg-white/20 text-white">
-              {(caregiverUser as any)?.name ?? "Cuidador"}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Painel do Cuidador
-            </h1>
-            <p className="text-muted-foreground">
-              Bem-vindo de volta, {currentUser?.name}
-            </p>
-          </div>
-          <Button variant="outline" size="icon" title="Editar Cuidador">
-            <User
-              className="w-5 h-5"
-              onClick={() => navigate("/editCaregiver")}
-            />
-          </Button>
-        </div>
+        {/* limita a largura no desktop e centraliza */}
+        <div className="mx-auto w-full max-w-4xl">
+          {/* avatar + texto + botão */}
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            {/* avatar + infos */}
+            <div className="flex items-center gap-4">
+              <Avatar className="border-2 border-white/20 w-16 h-16 shrink-0">
+                <AvatarImage
+                  width={200}
+                  height={200}
+                  src={(caregiverUser as any)?.avatarUrl}
+                  alt={(caregiverUser as any)?.name || "userName"}
+                />
+                <AvatarFallback className="bg-white/20 text-white text-sm text-center">
+                  {(caregiverUser as any)?.name ?? "Cuidador"}
+                </AvatarFallback>
+              </Avatar>
 
-        {/* Status toggles */}
-        <div className="mt-6 space-y-4">
-          <div className="flex items-center justify-between p-4 bg-healthcare-soft rounded-2xl">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-3 h-3 rounded-full ${
-                  activeToday ? "bg-medical-success" : "bg-neutral-400"
-                }`}
-              />
-              <div>
-                <p className="font-medium text-foreground">Ativo hoje</p>
-                <p className="text-sm text-muted-foreground">
-                  Aceitar novas solicitações
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
+                  Painel do Cuidador
+                </h1>
+                <p className="text-sm sm:text-base text-muted-foreground truncate">
+                  Bem-vindo de volta, {currentUser?.name}
                 </p>
               </div>
             </div>
-            <Switch
-              checked={Boolean(activeToday)}
-              onCheckedChange={handleActive}
-            />
+
+            {/* Botão editar – desce para baixo no mobile */}
+            <div className="self-stretch sm:self-auto">
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto flex items-center justify-center gap-2"
+                title="Editar dados profissionais Cuidador"
+                onClick={() => navigate("/editCaregiver")}
+              >
+                <User className="w-5 h-5" />
+                {/* texto some no mobile e aparece em telas >= sm */}
+                <span>Edição dados profissionais</span>
+              </Button>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between p-4 bg-medical-critical/10 rounded-2xl border border-medical-critical/20">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-medical-critical" />
-              <div>
-                <p className="font-medium text-foreground">Emergências</p>
-                <p className="text-sm text-muted-foreground">
-                  Disponível para chamadas urgentes
-                </p>
+          {/* Status toggles */}
+          <div className="mt-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-healthcare-soft rounded-2xl">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-3 h-3 rounded-full ${activeToday ? "bg-medical-success" : "bg-neutral-400"
+                    }`}
+                />
+                <div>
+                  <p className="font-medium text-foreground text-sm sm:text-base">
+                    Ativo hoje
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Aceitar novas solicitações
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Switch
+                  checked={Boolean(activeToday)}
+                  onCheckedChange={handleActive}
+                />
               </div>
             </div>
-            <Switch
-              checked={Boolean(emergencyAvailable)}
-              onCheckedChange={handleEmergency}
-            />
+
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-medical-critical/10 rounded-2xl border border-medical-critical/20">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-medical-critical shrink-0" />
+                <div>
+                  <p className="font-medium text-foreground text-sm sm:text-base">
+                    Emergências
+                  </p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Disponível para chamadas urgentes
+                  </p>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Switch
+                  checked={Boolean(emergencyAvailable)}
+                  onCheckedChange={handleEmergency}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="p-4 space-y-6">
-        {/* Tabs */}
-        <Tabs
-          value={tab}
-          onValueChange={(v: any) => setTab(v)}
-          className="space-y-6"
-        >
-          <TabsList className="grid w-full grid-cols-3 bg-muted rounded-xl p-1">
-            <TabsTrigger value="requests">Solicitações</TabsTrigger>
-            <TabsTrigger value="accepted">Aceitas</TabsTrigger>
-            <TabsTrigger value="completed">Finalizadas</TabsTrigger>
-          </TabsList>
+      {/* Conteúdo principal */}
+      <div className="p-4">
+        <div className="mx-auto w-full max-w-4xl space-y-6">
+          {/* Tabs */}
+          <Tabs
+            value={tab}
+            onValueChange={(v: any) => setTab(v)}
+            className="space-y-6"
+          >
+            <TabsList className="grid w-full grid-cols-3 bg-muted rounded-xl p-1 text-xs sm:text-sm">
+              <TabsTrigger value="requests">Solicitações</TabsTrigger>
+              <TabsTrigger value="accepted">Aceitas</TabsTrigger>
+              <TabsTrigger value="completed">Finalizadas</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value={tab}>
-            {loading ? (
-              <p className="text-center">Carregando...</p>
-            ) : filtered.length === 0 ? (
-              <p className="text-center text-muted-foreground">
-                Nenhuma reserva
-              </p>
-            ) : (
-              filtered.map((a) => (
-                <Card key={a.id} className="mb-4 healthcare-card">
-                  <CardHeader>
-                    <div className="flex items-center gap-3 w-full">
-                      <Avatar>
-                        <AvatarImage src={a.elderPhoto} />
-                        <AvatarFallback>
-                          {(a.elderName || "P").slice(0, 1)}
-                        </AvatarFallback>
-                      </Avatar>
+            <TabsContent value={tab}>
+              {loading ? (
+                <p className="text-center">Carregando...</p>
+              ) : filtered.length === 0 ? (
+                <p className="text-center text-muted-foreground">
+                  Nenhuma reserva
+                </p>
+              ) : (
+                filtered.map((a) => (
+                  <Card key={a.id} className="mb-4 healthcare-card">
+                    <CardHeader>
+                      <div className="flex flex-wrap items-start sm:items-center gap-3 w-full">
+                        <Avatar className="shrink-0">
+                          <AvatarImage src={a.elderPhoto} />
+                          <AvatarFallback>
+                            {(a.elderName || "P").slice(0, 1)}
+                          </AvatarFallback>
+                        </Avatar>
 
-                      <div>
-                        <h3 className="font-semibold">{a.elderName}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Familiar: {a.familyName}
-                        </p>
+                        <div className="min-w-0">
+                          <h3 className="font-semibold truncate">
+                            {a.elderName}
+                          </h3>
+                          <p className="text-sm text-muted-foreground truncate">
+                            Familiar: {a.familyName}
+                          </p>
+                        </div>
+
+                        <Badge
+                          className={`${statusConfig[a.status].color} ml-auto mt-1 sm:mt-0 px-3 py-1`}
+                        >
+                          {statusConfig[a.status].label}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="space-y-3">
+                      <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base">
+                        <Calendar className="w-4 h-4 text-healthcare-light" />
+                        <span>{formatDate(a.dateISO)}</span>
+                        <Clock className="w-4 h-4 text-healthcare-light ml-0 sm:ml-4" />
+                        <span>
+                          {formatTime(a.dateISO)} ({a.duration}h)
+                        </span>
                       </div>
 
-                      <Badge
-                        className={`${
-                          statusConfig[a.status].color
-                        } ml-auto px-3 py-1`}
-                      >
-                        {statusConfig[a.status].label}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-healthcare-light" />
-                      <span>{formatDate(a.dateISO)}</span>
-                      <Clock className="w-4 h-4 text-healthcare-light ml-4" />
-                      <span>
-                        {formatTime(a.dateISO)} ({a.duration}h)
-                      </span>
-                    </div>
-
-                    {a.emergency && (
-                      <Badge className="bg-red-600 text-white">
-                        EMERGÊNCIA
-                      </Badge>
-                    )}
-
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <span className="text-lg font-semibold">
-                        R$ {Number(a.totalPrice || 0).toFixed(2)}
-                      </span>
-
-                      {/* ACTIONS */}
-                      {a.status === "requested" && (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="healthcare"
-                            size="sm"
-                            onClick={() => updateStatus(a.id, "accepted")}
-                            disabled={processingBookingIds.includes(a.id)}
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Aceitar
-                          </Button>
-
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => updateStatus(a.id, "canceled")}
-                            disabled={processingBookingIds.includes(a.id)}
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Recusar
-                          </Button>
-                        </div>
+                      {a.emergency && (
+                        <Badge className="bg-red-600 text-white">
+                          EMERGÊNCIA
+                        </Badge>
                       )}
 
-                      {a.status === "accepted" && (
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={`tel:${a.familyPhone}`}>
-                              <Phone className="w-4 h-4" />
-                            </a>
-                          </Button>
+                      <div className="flex flex-col gap-3 pt-2 border-t sm:flex-row sm:items-center sm:justify-between">
+                        <span className="text-lg font-semibold">
+                          R$ {Number(a.totalPrice || 0).toFixed(2)}
+                        </span>
 
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateStatus(a.id, "canceled")}
-                            disabled={processingBookingIds.includes(a.id)}
-                          >
-                            Cancelar
-                          </Button>
-                        </div>
-                      )}
-                    </div>
+                        {/* ACTIONS */}
+                        {a.status === "requested" && (
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="healthcare"
+                              size="sm"
+                              className="flex-1 sm:flex-none"
+                              onClick={() => updateStatus(a.id, "accepted")}
+                              disabled={processingBookingIds.includes(a.id)}
+                            >
+                              <Check className="w-4 h-4 mr-1" />
+                              Aceitar
+                            </Button>
 
-                    {a.notes && (
-                      <div className="p-3 rounded-xl bg-muted">
-                        <p className="text-sm">
-                          <strong>Observações:</strong> {a.notes}
-                        </p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 sm:flex-none"
+                              onClick={() => updateStatus(a.id, "canceled")}
+                              disabled={processingBookingIds.includes(a.id)}
+                            >
+                              <X className="w-4 h-4 mr-1" />
+                              Recusar
+                            </Button>
+                          </div>
+                        )}
+
+                        {a.status === "accepted" && (
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              asChild
+                              className="flex-1 sm:flex-none"
+                            >
+                              <a href={`tel:${a.familyPhone}`}>
+                                <Phone className="w-4 h-4 mr-1" />
+                                <span className="hidden sm:inline">
+                                  Ligar
+                                </span>
+                              </a>
+                            </Button>
+
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 sm:flex-none"
+                              onClick={() => updateStatus(a.id, "canceled")}
+                              disabled={processingBookingIds.includes(a.id)}
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
+
+                      {a.notes && (
+                        <div className="p-3 rounded-xl bg-muted">
+                          <p className="text-sm break-words">
+                            <strong>Observações:</strong> {a.notes}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
