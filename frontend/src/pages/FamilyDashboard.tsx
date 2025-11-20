@@ -144,6 +144,12 @@ export default function FamilyDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadingElders, setLoadingElders] = useState(false);
 
+  // avatar do usuário logado (vindo do backend)
+  const userAvatar =
+    (currentUser as any)?.avatarPath ??
+    (currentUser as any)?.photo ??
+    null;
+
   // tira o skeleton do topo quando já temos o nome
   useEffect(() => {
     if (currentUser?.name) setIsLoading(false);
@@ -161,33 +167,30 @@ export default function FamilyDashboard() {
       }
 
       // 2. Pega o ID da família.
-      // Renomeei 'userId' para 'familyId' para ficar mais claro,
-      // já que é isso que a API espera.
       const familyId =
         (currentUser as any)?.id ?? (currentUser as any)?.userId ?? null;
 
-      // Se não tiver um ID de família, não há o que buscar.
       if (!familyId) return;
 
       try {
         setLoadingElders(true);
 
-        // 3. Constroi a URL correta (com query param, como definimos antes)
+        // 3. Constroi a URL correta
         const url = `idosos/family?familyId=${familyId}`;
         console.log("Buscando idosos em:", url);
 
         const { data } = await api.get<ElderApi[]>(url);
 
-        // 4. Normaliza os dados recebidos da API
+        // 4. Normaliza
         const fetchedElders = (data ?? []).map(normalizeElder);
         console.log("IDOSOS ENCONTRADOS E NORMALIZADOS:", fetchedElders);
 
-        // 5. Atualiza o usuário ATUAL com a lista de idosos vinda da API
+        // 5. Atualiza o usuário ATUAL com a lista de idosos
         const updatedUser = { ...currentUser, elders: fetchedElders };
 
         setCurrentUser(updatedUser);
 
-        // 6. Salva a versão atualizada no localStorage
+        // 6. Salva no localStorage
         try {
           localStorage.setItem("user", JSON.stringify(updatedUser));
         } catch (err) {
@@ -201,7 +204,7 @@ export default function FamilyDashboard() {
     };
 
     fetchElders();
-  }, [currentUser?.id, currentUser?.role, setCurrentUser]); // Dependências estão corretas
+  }, [currentUser?.id, currentUser?.role, setCurrentUser]);
 
   const handleAddElder = () => navigate("/elder/register");
   const handleStartIvcf = (elder: Elder) => {
@@ -325,7 +328,7 @@ export default function FamilyDashboard() {
             <div className="flex items-center gap-3">
               <Avatar className="border-2 border-white/20">
                 <AvatarImage
-                  src={currentUser.photo}
+                  src={userAvatar || undefined}
                   alt={currentUser.name || "userName"}
                 />
                 <AvatarFallback className="bg-white/20 text-white">

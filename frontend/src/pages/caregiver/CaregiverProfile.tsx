@@ -9,7 +9,12 @@ import {
   Phone,
   Calendar,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button-variants";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -20,17 +25,33 @@ import { ListSkeleton } from "@/components/common/LoadingSkeleton";
 
 import type { Caregiver } from "@/lib/types";
 import { fetchCaregiverProfileFromAPI } from "@/lib/api/caregiver";
+import { api } from "@/lib/api/api";
+
+type CaregiverReview = {
+  id: string;
+  rating: number | null;
+  comment: string | null;
+  createdAt: string | null;
+  appointmentDate: string | null;
+  elderName: string | null;
+  familyName: string | null;
+};
 
 export default function CaregiverProfile() {
   const { id } = useParams<{ id: string }>();
-  console.log("ID", id);
   const navigate = useNavigate();
 
   const [caregiver, setCaregiver] = useState<Caregiver | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [reviews, setReviews] = useState<CaregiverReview[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+
   useEffect(() => {
-    if (id) loadCaregiverData();
+    if (id) {
+      void loadCaregiverData();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadCaregiverData = async () => {
@@ -42,7 +63,6 @@ export default function CaregiverProfile() {
       console.log("Caregiver data:", data);
 
       if (data) {
-        // Normaliza para o tipo Caregiver
         const caregiverData: Caregiver = {
           id: data.id,
           userId: data.userId,
@@ -61,16 +81,33 @@ export default function CaregiverProfile() {
           specializations: data.specializations || [],
           verificationBadges: data.verificationBadges || [],
           photo: data.avatarPath || null,
-          distanceKm: 0, // opcional, usado apenas em listagens
-          availability: data.availability || true,
+          distanceKm: 0,
+          availability: data.availability ?? true,
         };
 
         setCaregiver(caregiverData);
+
+        // 👇 carrega as avaliações desse cuidador
+        void loadReviews(caregiverData.id);
       }
     } catch (error) {
       console.error("❌ Falha ao carregar cuidador:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadReviews = async (caregiverId: string) => {
+    try {
+      setLoadingReviews(true);
+      const { data } = await api.get<CaregiverReview[]>(
+        `/appointments/reviews?caregiverId=${caregiverId}`,
+      );
+      setReviews(data);
+    } catch (error) {
+      console.error("❌ Falha ao carregar avaliações:", error);
+    } finally {
+      setLoadingReviews(false);
     }
   };
 
@@ -96,7 +133,6 @@ export default function CaregiverProfile() {
   }
 
   const handleBookCaregiver = (caregiver: Caregiver) => {
-    //const userId = caregiver.userId;
     navigate(`/book/${caregiver.id}/${caregiver.price_range}`);
   };
 
@@ -285,18 +321,68 @@ export default function CaregiverProfile() {
           </Card>
         )}
 
-        {/* Reviews placeholder */}
+        {/* Reviews */}
         <Card className="healthcare-card">
           <CardHeader>
             <CardTitle>Avaliações</CardTitle>
           </CardHeader>
-          <CardContent>
-            <EmptyState
-              icon={Star}
-              title="Nenhuma avaliação ainda"
-              description="Este cuidador ainda não recebeu avaliações."
-              variant="default"
-            />
+          <CardContent className="space-y-4">
+            {loadingReviews ? (
+              <p className="text-sm text-muted-foreground">
+                Carregando avaliações...
+              </p>
+            ) : reviews.length === 0 ? (
+              <EmptyState
+                icon={Star}
+                title="Nenhuma avaliação ainda"
+                description="Este cuidador ainda não recebeu avaliações."
+                variant="default"
+              />
+            ) : (
+              reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="border border-border rounded-xl p-3 space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {review.familyName || "Família"}
+                      </p>
+                      {review.elderName && (
+                        <p className="text-xs text-muted-foreground">
+                          Paciente: {review.elderName}
+                        </p>
+                      )}
+                    </div>
+                    <RatingStars
+                      rating={review.rating ?? 0}
+                      size="sm"
+                      showNumber={false}
+                      interactive={false}
+                    />
+                  </div>
+
+                  {review.comment && (
+                    <p className="text-sm text-muted-foreground">
+                      {review.comment}
+                    </p>
+                  )}
+
+                  <p className="text-xs text-muted-foreground">
+                    {review.appointmentDate
+                      ? `Atendimento em ${new Date(
+                          review.appointmentDate,
+                        ).toLocaleDateString("pt-BR")}`
+                      : review.createdAt
+                      ? `Avaliação em ${new Date(
+                          review.createdAt,
+                        ).toLocaleDateString("pt-BR")}`
+                      : null}
+                  </p>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       </div>

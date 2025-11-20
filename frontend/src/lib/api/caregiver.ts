@@ -1,5 +1,14 @@
 import type { Caregiver } from "@/lib/types";
 import { api } from "./api";
+import { API_BASE } from "./config";
+
+interface SearchCaregiversParams {
+  zipCode?: string;
+  maxDistance?: number;
+  minRating?: number;
+  specialization?: string;
+  availableForEmergency?: boolean;
+}
 
 export async function toggleCaregiverAvailability(id: string, status: boolean) {
   try {
@@ -34,6 +43,10 @@ export async function toggleCaregiverEmergencyAvailability(
   }
 }
 
+/**
+ * Busca perfil do cuidador a partir do **userId** (auth.users.id).
+ * Essa rota /perfis/:userId retorna user + caregiver + userProfile.
+ */
 export async function fetchCaregiverProfile(userId: string) {
   try {
     const { data } = await api.get(`/perfis/${userId}`);
@@ -43,8 +56,13 @@ export async function fetchCaregiverProfile(userId: string) {
       throw new Error("Caregiver not found for this user.");
     }
 
-    // Normalize fields to match your Caregiver type
+    // ⚠️ Aqui colocamos *também* o id do cuidador
     return {
+      // id REAL do cuidador (tabela caregiver.caregivers)
+      id: caregiver.id,
+      // mantém compatível com o resto do código (Dashboard usa userId como caregiverId)
+      userId: caregiver.id,
+
       crm_coren: caregiver.crmCoren,
       bio: caregiver.bio,
       address: caregiver.address,
@@ -52,20 +70,30 @@ export async function fetchCaregiverProfile(userId: string) {
       state: caregiver.state,
       zipCode: caregiver.zipCode,
       avatarPath: caregiver.avatarPath,
-      userId: caregiver.id,
       avatarUrl: caregiver.avatarPath,
+
       skills: caregiver.skills || [],
       specializations: caregiver.specializations || [],
       priceRange: caregiver.priceRange || "",
       experience: caregiver.experience || "",
-      availability: data.caregiver[0].availability,
-      emergency: data.caregiver[0].emergency,
-    } as Partial<Caregiver>;
+      availability: caregiver.availability,
+      emergency: caregiver.emergency,
+
+      // ⭐ importantíssimo para o /profile
+      rating: caregiver.rating ?? 0,
+      reviewCount: caregiver.reviewCount ?? 0,
+    } as Partial<Caregiver> & { id: string };
   } catch (err) {
     console.error("Error fetching caregiver profile:", err);
     throw err;
   }
 }
+
+/**
+ * Perfil público do cuidador (usado em /caregiver/:id e em bookings)
+ * Aqui o parâmetro é o **caregiverId**.
+ * Mantive como você já tinha, porque essa parte está funcionando.
+ */
 export async function fetchCaregiverProfileFromAPI(userId: string) {
   try {
     const { data } = await api.get(`/perfis/${userId}`);
@@ -75,7 +103,7 @@ export async function fetchCaregiverProfileFromAPI(userId: string) {
     return {
       id: caregiver?.id,
       userId: data.userId,
-      name: profile?.name ?? "Sem nome", // ✅ inclui o nome
+      name: profile?.name ?? "Sem nome",
       phone: profile?.phone ?? "",
       email: data.email,
       crm_coren: caregiver?.crmCoren,
@@ -139,4 +167,58 @@ export async function updateCaregiverProfile(
     console.error("Error updating caregiver profile:", err);
     throw err;
   }
+}
+
+/**
+ * Busca cuidadores por CEP / filtros
+ */
+export async function searchCaregivers(params: SearchCaregiversParams = {}) {
+  let currentUser: any = null;
+
+  try {
+    const rawUser = localStorage.getItem("user");
+    currentUser = rawUser ? JSON.parse(rawUser) : null;
+  } catch {
+    console.warn("⚠️ Não foi possível ler o usuário do localStorage");
+  }
+
+  const fallbackZip =
+    currentUser?.elders?.[0]?.zipCode ?? currentUser?.zipCode ?? null;
+
+  const zipCode = params.zipCode ?? fallbackZip;
+  if (!zipCode) {
+    throw new Error(
+      "CEP não encontrado. Informe manualmente ou associe um idoso com endereço."
+    );
+  }
+
+  const token = localStorage.getItem("accessToken");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const queryParams = new URLSearchParams();
+
+  if (zipCode) queryParams.append("zipCode", zipCode);
+  if (params.maxDistance)
+    queryParams.append("maxDistance", params.maxDistance.toString());
+  if (params.minRating)
+    queryParams.append("minRating", params.minRating.toString());
+  if (params.specialization)
+    queryParams.append("specialization", params.specialization);
+  if (params.availableForEmergency)
+    queryParams.append("availableForEmergency", "true");
+
+  const url = `${API_BASE}/perfis/caregivers/search?${queryParams.toString()}`;
+
+  const response = await fetch(url, { headers });
+  if (!response.ok) {
+    const msg = await response.text();
+    throw new Error(`Erro ao buscar cuidadores: ${msg}`);
+  }
+
+  const data = await response.json();
+  console.log("✅ Cuidadores encontrados:", data);
+  return data;
 }

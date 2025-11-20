@@ -1,5 +1,21 @@
+import { RatingStars } from '@/components/common/RatingStars'; // ajuste o path
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { useState, useEffect } from 'react';
-import { Plus, Calendar, Clock, MapPin, Phone, MessageCircle } from 'lucide-react';
+import {
+  Plus,
+  Calendar,
+  Clock,
+  MapPin,
+  Phone,
+  MessageCircle,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button-variants';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -27,30 +43,64 @@ type AppointmentApi = {
   elderId: string | null;
   caregiverId: string | null;
   datetimeStart: string; // ISO
-  datetimeEnd: string;   // ISO
+  datetimeEnd: string; // ISO
   status: AppointmentApiStatus;
   emergency: boolean | null;
   notes: string | null;
   totalPrice: number;
   createdAt: string;
   updatedAt: string;
-  elder?: {
-    id: string;
-    name: string | null;
-    avatarPath?: string | null;
-    address?: string | null;
-    city?: string | null;
-    state?: string | null;
-    zipCode?: string | null;
-  } | null;
-  caregiver?: {
-    id: string;
-    avatarPath?: string | null;
-    user?: {
-      userProfile: Array<{ id: string; name: string | null }>;
-    } | null;
-  } | null;
+  hasReview?: boolean | null;
+  elder?:
+    | {
+        id: string;
+        name: string | null;
+        avatarPath?: string | null;
+        address?: string | null;
+        city?: string | null;
+        state?: string | null;
+        zipCode?: string | null;
+      }
+    | null;
+  caregiver?:
+    | {
+        id: string;
+        avatarPath?: string | null;
+        user?:
+          | {
+              userProfile: Array<{ id: string; name: string | null }>;
+            }
+          | null;
+      }
+    | null;
 };
+
+// ========= helpers só no front pra “lembrar” avaliações =========
+
+const REVIEWED_APPOINTMENTS_KEY = 'dcare_reviewed_appointments';
+
+function getReviewedAppointments(): string[] {
+  if (typeof window === 'undefined') return [];
+
+  try {
+    const raw = window.localStorage.getItem(REVIEWED_APPOINTMENTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function addReviewedAppointment(id: string) {
+  if (typeof window === 'undefined') return;
+
+  const current = getReviewedAppointments();
+  if (current.includes(id)) return;
+
+  const updated = [...current, id];
+  window.localStorage.setItem(REVIEWED_APPOINTMENTS_KEY, JSON.stringify(updated));
+}
 
 // Config visual de status no front
 const statusConfig = {
@@ -84,7 +134,7 @@ const statusConfig = {
     color: 'bg-neutral-400 text-white',
     description: 'Prazo expirado',
   },
-};
+} as const;
 
 // Map enum backend -> front
 function mapStatusFromApi(status: AppointmentApiStatus): BookingStatus {
@@ -115,7 +165,6 @@ function mapStatusToApi(status: BookingStatus): AppointmentApiStatus {
     case 'completed':
       return 'COMPLETED';
     // 'in-progress' e 'expired' não temos no backend;
-    // se algum dia usar, dá pra mapear para ACCEPTED/CANCELLED, etc.
     default:
       return 'PENDING';
   }
@@ -136,10 +185,135 @@ export default function BookingList() {
   const { toast } = useToast();
   const { currentUser } = useAppStore();
 
+  // ⭐ estados da avaliação
+  const [reviewBooking, setReviewBooking] = useState<Booking | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [reviewComment, setReviewComment] = useState<string>('');
+  const [submittingReview, setSubmittingReview] = useState(false);
+
   useEffect(() => {
     loadBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // abre o modal
+  const handleOpenReview = (booking: Booking) => {
+    if (booking.hasReview) {
+      toast({
+        title: 'Avaliação já registrada',
+        description:
+          'Você já avaliou esta reserva. Não é possível avaliá-la novamente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setReviewBooking(booking);
+    setReviewRating(0);
+    setReviewComment('');
+  };
+
+  // envia avaliação
+  const handleSubmitReview = async () => {
+    if (!reviewBooking || reviewRating === 0) {
+      toast({
+        title: 'Ops',
+        description: 'Escolha uma nota de 1 a 5 estrelas antes de salvar.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSubmittingReview(true);
+
+      // ajuste essa rota/payload conforme sua API
+      await api.post(`/appointments/${reviewBooking.id}/review`, {
+        caregiverId: reviewBooking.caregiverId,
+        rating: reviewRating,
+        comment: reviewComment || null,
+      });
+
+      // marca no localStorage também
+      addReviewedAppointment(reviewBooking.id);
+
+      setBookings((prev) =>
+        prev.map((b) => {
+          if (b.id !== reviewBooking.id) return b;
+
+          // se não tiver caregiver (por alguma razão), só marca como avaliado
+          if (!b.caregiver) {
+            return { ...b, hasReview: true };
+          }
+
+          const { caregiver } = b;
+          const newReviewCount = (caregiver.reviewCount || 0) + 1;
+          const newRating =
+            caregiver.rating && caregiver.reviewCount
+              ? (caregiver.rating * caregiver.reviewCount + reviewRating) /
+                newReviewCount
+              : reviewRating;
+
+          return {
+            ...b,
+            hasReview: true, // 👈 chave da lógica
+            caregiver: {
+              ...caregiver,
+              rating: newRating,
+              reviewCount: newReviewCount,
+            },
+          };
+        }),
+      );
+
+      toast({
+        title: 'Obrigado!',
+        description: 'Sua avaliação foi registrada com sucesso.',
+      });
+
+      setReviewBooking(null);
+      setReviewRating(0);
+      setReviewComment('');
+    } catch (error: any) {
+      console.error(error);
+
+      const message: string =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Não foi possível salvar sua avaliação.';
+
+      // se o backend disser que já existe avaliação, vamos só marcar no front
+      if (message.includes('Já existe uma avaliação para este atendimento')) {
+        if (reviewBooking) {
+          addReviewedAppointment(reviewBooking.id);
+
+          setBookings((prev) =>
+            prev.map((b) =>
+              b.id === reviewBooking.id ? { ...b, hasReview: true } : b,
+            ),
+          );
+        }
+
+        toast({
+          title: 'Avaliação já registrada',
+          description:
+            'Você já havia avaliado este atendimento anteriormente.',
+        });
+
+        setReviewBooking(null);
+        setReviewRating(0);
+        setReviewComment('');
+      } else {
+        toast({
+          title: 'Erro',
+          description: message,
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
 
   const loadBookings = async () => {
     if (!currentUser) return;
@@ -149,8 +323,6 @@ export default function BookingList() {
       const isFamily =
         currentUser.role === 'FAMILY' || currentUser.role === 'family';
 
-      // familyId do banco = id da tabela "families".
-      // você já usa elder.familyId, então derivamos daqui
       const derivedFamilyId =
         (currentUser as any)?.elders?.[0]?.familyId ??
         (currentUser as any)?.familyId ??
@@ -166,6 +338,9 @@ export default function BookingList() {
         `appointments?${queryParam}`,
       );
 
+      // ids que já foram avaliados e salvos no localStorage
+      const reviewedFromStorage = getReviewedAppointments();
+
       const mapped: Booking[] = data.map((a) => {
         const status = mapStatusFromApi(a.status);
         const duration = calcDurationHours(a.datetimeStart, a.datetimeEnd);
@@ -176,6 +351,9 @@ export default function BookingList() {
 
         const elderName = a.elder?.name ?? 'Paciente';
         const elderPhoto = a.elder?.avatarPath ?? undefined;
+
+        const hasReview =
+          Boolean(a.hasReview) || reviewedFromStorage.includes(a.id);
 
         return {
           id: a.id,
@@ -197,6 +375,7 @@ export default function BookingList() {
           updatedAt: a.updatedAt,
           completedAt: a.status === 'COMPLETED' ? a.updatedAt : undefined,
           services: [],
+          hasReview,
 
           caregiver:
             caregiverPhoto || caregiverName
@@ -252,82 +431,7 @@ export default function BookingList() {
         };
       });
 
-      // 🔥 MOCK APENAS PARA TESTAR UM CARD "ACEITO"
-      // quando não precisar mais, pode apagar esse bloco inteiro
-      const mockAcceptedBooking: Booking = {
-        id: 'mock-accepted-1',
-        caregiverId: 'mock-caregiver-1',
-        elderId: 'mock-elder-1',
-        // data futura para cair em "Próximas"
-        dateISO: new Date('2025-12-13T17:00:00-03:00').toISOString(),
-        duration: 8,
-        status: 'accepted',
-        emergency: false,
-        notes: 'Reserva de teste aceita para visualizar o card.',
-        address: {
-          street: 'Rua Exemplo, 123',
-          city: 'São Paulo',
-          state: 'SP',
-          zipCode: '01234-567',
-        },
-        totalPrice: 1200,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        completedAt: undefined,
-        services: ['Cuidados gerais', 'Administração de medicamentos'],
-
-        caregiver: {
-          id: 'mock-caregiver-1',
-          userId: '',
-          name: 'Marcelo Antonio',
-          photo:
-            'https://images.unsplash.com/photo-1535916707207-35f97e715e1b?w=150&h=150&fit=crop&crop=face',
-          verified: true,
-          address: '',
-          city: 'São Paulo',
-          state: 'SP',
-          zipCode: '01234-567',
-          avatarPath: null,
-          rating: 4.9,
-          reviewCount: 120,
-          distanceKm: 2,
-          skills: [],
-          experience: '8 anos',
-          price_range: 'R$ 150/h',
-          emergency: false,
-          availability: true,
-          bio: '',
-          phone: '+55 11 99999-0000',
-          languages: ['Português'],
-          specializations: [],
-          verificationBadges: [],
-        } as any,
-
-        elder: {
-          id: 'mock-elder-1',
-          name: 'Paciente Teste',
-          birthDate: new Date('1950-01-10'),
-          familyId: 'mock-family',
-          photo:
-            'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=150&h=150&fit=crop&crop=face',
-          avatarFile: null,
-          conditions: ['Hipertensão'],
-          medications: ['Losartana'],
-          address: {
-            street: 'Rua Exemplo, 123',
-            city: 'São Paulo',
-            state: 'SP',
-            zipCode: '01234-567',
-            number: '123',
-          },
-          preferences: {},
-          createdAt: new Date().toISOString(),
-        } as any,
-      };
-
-      const withMock = [...mapped, mockAcceptedBooking];
-
-      setBookings(withMock);
+      setBookings(mapped);
     } catch (error) {
       console.error(error);
       toast({
@@ -345,6 +449,18 @@ export default function BookingList() {
     bookingId: string,
     status: BookingStatus,
   ) => {
+    const booking = bookings.find((b) => b.id === bookingId);
+
+    // proteção extra: não deixa cancelar se já foi avaliado
+    if (booking?.hasReview && status === 'canceled') {
+      toast({
+        title: 'Ação não permitida',
+        description: 'Não é possível cancelar uma reserva que já foi avaliada.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const apiStatus = mapStatusToApi(status);
 
@@ -392,11 +508,9 @@ export default function BookingList() {
 
       switch (tab) {
         case 'upcoming':
-          // futuras que ainda não foram canceladas/finalizadas
           return isFuture && (isRequested || isAccepted);
 
         case 'active':
-          // acontecendo agora e efetivamente "ativas"
           return isOngoing && isAccepted;
 
         case 'completed':
@@ -503,7 +617,9 @@ export default function BookingList() {
                           : 'finalizadas'
                       }.`
                 }
-                actionLabel={activeTab === 'all' ? 'Buscar Cuidador' : undefined}
+                actionLabel={
+                  activeTab === 'all' ? 'Buscar Cuidador' : undefined
+                }
                 onAction={
                   activeTab === 'all'
                     ? () => (window.location.href = '/search')
@@ -511,135 +627,257 @@ export default function BookingList() {
                 }
               />
             ) : (
-              getTabBookings(activeTab).map((booking) => (
-                <Card key={booking.id} className="healthcare-card">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={booking.caregiver?.photo} />
-                          <AvatarFallback>
-                            {getCaregiverInitials(booking)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <h3 className="font-semibold text-foreground">
-                            {getCaregiverName(booking)}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Para {getElderName(booking)}
-                          </p>
+              getTabBookings(activeTab).map((booking) => {
+                // ⏰ cálculo se essa reserva já terminou
+                const start = new Date(booking.dateISO).getTime();
+                const end = start + booking.duration * 60 * 60 * 1000;
+                const now = Date.now();
+                const isPast = end < now;
+
+                // pode avaliar se está ACEITA/CONCLUÍDA e já passou
+                const canReview =
+                  ['accepted', 'completed'].includes(booking.status) &&
+                  isPast &&
+                  !booking.hasReview;
+
+                return (
+                  <Card key={booking.id} className="healthcare-card">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="w-12 h-12">
+                            <AvatarImage src={booking.caregiver?.photo} />
+                            <AvatarFallback>
+                              {getCaregiverInitials(booking)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <h3 className="font-semibold text-foreground">
+                              {getCaregiverName(booking)}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              Para {getElderName(booking)}
+                            </p>
+                          </div>
                         </div>
+                        <Badge
+                          className={`${statusConfig[booking.status].color} text-xs font-medium`}
+                        >
+                          {statusConfig[booking.status].label}
+                        </Badge>
                       </div>
-                      <Badge
-                        className={`${
-                          statusConfig[booking.status].color
-                        } text-xs font-medium`}
-                      >
-                        {statusConfig[booking.status].label}
-                      </Badge>
-                    </div>
-                  </CardHeader>
+                    </CardHeader>
 
-                  <CardContent className="space-y-4">
-                    {/* Date & Time */}
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-healthcare-light" />
-                      <span>{formatDate(booking.dateISO)}</span>
-                      <Clock className="w-4 h-4 text-healthcare-light ml-4" />
-                      <span>
-                        {formatTime(booking.dateISO)} ({booking.duration}h)
-                      </span>
-                    </div>
+                    <CardContent className="space-y-4">
+                      {/* Date & Time */}
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="w-4 h-4 text-healthcare-light" />
+                        <span>{formatDate(booking.dateISO)}</span>
+                        <Clock className="w-4 h-4 text-healthcare-light ml-4" />
+                        <span>
+                          {formatTime(booking.dateISO)} (
+                          {booking.duration}h)
+                        </span>
+                      </div>
 
-                    {/* Address */}
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="w-4 h-4 text-healthcare-light" />
-                      <span className="text-muted-foreground">
-                        {[booking.address?.street, booking.address?.city]
-                          .filter(Boolean)
-                          .join(', ')}
-                      </span>
-                    </div>
+                      {/* Address */}
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="w-4 h-4 text-healthcare-light" />
+                        <span className="text-muted-foreground">
+                          {[
+                            booking.address?.street,
+                            booking.address?.city,
+                          ]
+                            .filter(Boolean)
+                            .join(', ')}
+                        </span>
+                      </div>
 
-                    {/* Services */}
-                    {Array.isArray(booking.services) &&
-                      booking.services.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {booking.services.map((service) => (
-                            <Badge
-                              key={service}
-                              variant="secondary"
-                              className="text-xs bg-healthcare-soft text-healthcare-dark"
-                            >
-                              {service}
-                            </Badge>
-                          ))}
-                        </div>
+                      {/* Services */}
+                      {Array.isArray(booking.services) &&
+                        booking.services.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {booking.services.map((service) => (
+                              <Badge
+                                key={service}
+                                variant="secondary"
+                                className="text-xs bg-healthcare-soft text-healthcare-dark"
+                              >
+                                {service}
+                              </Badge>
+                            ))}
+                          </div>
+                        )}
+
+                      {/* Emergency Badge */}
+                      {booking.emergency && (
+                        <Badge className="emergency-badge w-fit">
+                          Emergência
+                        </Badge>
                       )}
 
-                    {/* Emergency Badge */}
-                    {booking.emergency && (
-                      <Badge className="emergency-badge w-fit">
-                        Emergência
-                      </Badge>
-                    )}
+                      {/* Price + Actions */}
+                      <div className="flex justify-between items-center pt-2 border-t border-border">
+                        <span className="text-lg font-semibold text-foreground">
+                          R$ {Number(booking.totalPrice || 0).toFixed(2)}
+                        </span>
 
-                    {/* Price + Actions */}
-                    <div className="flex justify-between items-center pt-2 border-t border-border">
-                      <span className="text-lg font-semibold text-foreground">
-                        R$ {Number(booking.totalPrice || 0).toFixed(2)}
-                      </span>
+                        <div className="flex gap-2 items-center">
+                          {booking.status === 'accepted' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                asChild
+                              >
+                                <a
+                                  href={`tel:${booking.caregiver?.phone ?? ''}`}
+                                >
+                                  <Phone className="w-4 h-4" />
+                                </a>
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                <MessageCircle className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
 
-                      <div className="flex gap-2">
-                        {booking.status === 'accepted' && (
-                          <>
-                            <Button variant="outline" size="sm" asChild>
-                              <a href={`tel:${booking.caregiver?.phone ?? ''}`}>
-                                <Phone className="w-4 h-4" />
-                              </a>
+                          {['requested', 'accepted'].includes(
+                            booking.status,
+                          ) &&
+                            !booking.hasReview && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  handleStatusUpdate(
+                                    booking.id,
+                                    'canceled',
+                                  )
+                                }
+                              >
+                                Cancelar
+                              </Button>
+                            )}
+
+                          {canReview && (
+                            <Button
+                              variant="healthcare"
+                              size="sm"
+                              onClick={() =>
+                                handleOpenReview(booking)
+                              }
+                            >
+                              Avaliar
                             </Button>
-                            <Button variant="outline" size="sm">
-                              <MessageCircle className="w-4 h-4" />
-                            </Button>
-                          </>
-                        )}
+                          )}
 
-                        {['requested', 'accepted'].includes(booking.status) && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              handleStatusUpdate(booking.id, 'canceled')
-                            }
-                          >
-                            Cancelar
-                          </Button>
-                        )}
-
-                        {booking.status === 'completed' && (
-                          <Button variant="healthcare" size="sm">
-                            Avaliar
-                          </Button>
-                        )}
+                          {booking.hasReview && (
+                            <span className="text-xs text-muted-foreground">
+                              Você já avaliou esta reserva.
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Notes */}
-                    {booking.notes && (
-                      <div className="p-3 rounded-xl bg-muted">
-                        <p className="text-sm text-muted-foreground">
-                          <strong>Observações:</strong> {booking.notes}
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))
+                      {/* Notes */}
+                      {booking.notes && (
+                        <div className="p-3 rounded-xl bg-muted">
+                          <p className="text-sm text-muted-foreground">
+                            <strong>Observações:</strong>{' '}
+                            {booking.notes}
+                          </p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                );
+              })
             )}
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Modal de avaliação ⭐ */}
+      <Dialog
+        open={!!reviewBooking}
+        onOpenChange={(open) => {
+          if (!open) {
+            setReviewBooking(null);
+            setReviewRating(0);
+            setReviewComment('');
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Avaliar cuidador</DialogTitle>
+            <DialogDescription>
+              Como foi a experiência com{' '}
+              <strong>
+                {reviewBooking?.caregiver?.name ?? 'o cuidador'}
+              </strong>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="flex flex-col items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                Selecione de 1 a 5 estrelas:
+              </span>
+
+              <RatingStars
+                rating={reviewRating}
+                maxRating={5}
+                size="lg"
+                showNumber={false}
+                interactive
+                onRatingChange={setReviewRating}
+              />
+
+              {reviewRating > 0 && (
+                <span className="text-xs text-muted-foreground">
+                  Você escolheu {reviewRating} estrela
+                  {reviewRating > 1 ? 's' : ''}.
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-1 w-full">
+              <label className="text-sm font-medium text-foreground">
+                Comentário (opcional)
+              </label>
+              <textarea
+                className="w-full min-h-[80px] rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-healthcare-light"
+                placeholder="Conte brevemente como foi o atendimento..."
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReviewBooking(null);
+                setReviewRating(0);
+                setReviewComment('');
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="healthcare"
+              onClick={handleSubmitReview}
+              disabled={submittingReview}
+            >
+              {submittingReview ? 'Salvando...' : 'Salvar avaliação'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
