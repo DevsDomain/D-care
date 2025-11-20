@@ -35,6 +35,7 @@ jobs:
               ! -name 'docker-compose.yml' \
               ! -name '.env' \
               ! -name '.git' \
+              ! -name 'ai-agent' \
 
               -exec sudo rm -rf {} \;
 
