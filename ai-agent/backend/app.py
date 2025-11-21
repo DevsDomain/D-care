@@ -100,8 +100,66 @@ class Query(BaseModel):
 def health():
     return {"status": "ok", "items": len(KNOWLEDGE_BASE)}
 
+
 @app.post("/query")
 def query(q: Query):
+    question = q.question
+    top_k = q.top_k or 3
+
+    # 1. Predição com MLP
+    tokens = preprocess_text(question)
+    embedding = get_sentence_embedding(tokens, w2v_model)
+    embedding = scaler.transform([embedding])
+    
+    probs = mlp.predict_proba(embedding)[0]
+    max_prob = np.max(probs)
+    pred = mlp.predict(embedding)[0]
+    intent_id = le.inverse_transform([pred])[0]
+    
+    results = []
+    
+    # 2. Verifica se é MLP com alta confiança
+    if max_prob > CONFIDENCE_THRESHOLD and intent_id in ID_TO_CONTENT:
+        item = ID_TO_CONTENT[intent_id]
+        results.append({
+            "topic": item['topic'],
+            "module": item.get('module', 'Geral'),
+            "content": item['content'],
+            "confidence": float(max_prob),
+            "source": "MLP"
+        })
+    else:
+        # 3. Fallback para BM25/TF-IDF se MLP falhar
+        fallback_results = fallback_search(question, top_k)
+        
+        # Filtra resultados do fallback que tenham um score mínimo aceitável
+        # (BM25 scores variam, mas geralmente algo > 0 mostra relevância)
+        valid_fallback = [res for res in fallback_results if res['score'] > 1.0] 
+        
+        if valid_fallback:
+            for res in valid_fallback:
+                results.append({
+                    "topic": res['topic'],
+                    "module": res.get('module', 'Geral'),
+                    "content": res['content'],
+                    "score": res['score'],
+                    "source": "Fallback Search"
+                })
+        else:
+            # 4. FALLBACK FINAL (Nenhum modelo encontrou resposta relevante)
+            # Retornamos a resposta amigável sugerindo reformulação
+            return {
+                "query": question,
+                "results": [{
+                    "topic": "Não entendi bem",
+                    "module": "Sistema",
+                    "content": "Desculpe, não encontrei essa informação no guia. Tente reformular sua pergunta ou use palavras-chave mais simples (ex: 'banho', 'alimentação', 'diabetes').",
+                    "confidence": 0.0,
+                    "source": "System Fallback"
+                }]
+            }
+    
+    return {"query": question, "results": results}
     question = q.question
     top_k = q.top_k or 3
 

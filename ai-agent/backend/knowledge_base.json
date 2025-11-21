@@ -485,5 +485,52 @@
       "movimento"
     ],
     "module": "Módulo 12"
+  },
+  {
+    "id": 1,
+    "topic": "saudacao",
+    "content": "Olá! Sou o Chatbot D-Care. Estou aqui para ajudar com dúvidas sobre o cuidado com idosos baseadas no manual 'Amar é Cuidar'. Como posso ajudar você hoje?",
+    "keywords": [
+      "oi",
+      "olá",
+      "bom dia",
+      "boa tarde",
+      "boa noite",
+      "e ai",
+      "tudo bem",
+      "iniciar",
+      "começar"
+    ],
+    "module": "Conversação"
+  },
+  {
+    "id": 2,
+    "topic": "despedida",
+    "content": "Foi um prazer ajudar! Se tiver mais dúvidas sobre os cuidados, estarei por aqui. Cuide-se bem!",
+    "keywords": [
+      "tchau",
+      "adeus",
+      "até logo",
+      "até mais",
+      "encerrar",
+      "fim",
+      "obrigado",
+      "obrigada"
+    ],
+    "module": "Conversação"
+  },
+  {
+    "id": 3,
+    "topic": "ajuda_fallback",
+    "content": "Ainda estou aprendendo. Tente perguntar de forma diferente, por exemplo: 'Como dar banho no leito?', 'Sinais de diabetes' ou 'Prevenção de quedas'.",
+    "keywords": [
+      "ajuda",
+      "não entendi",
+      "o que você faz",
+      "socorro",
+      "menu",
+      "opções"
+    ],
+    "module": "Conversação"
   }
 ]
