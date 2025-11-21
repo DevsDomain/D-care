@@ -17,7 +17,7 @@ COPY mlp_intent_classifier_improved.npy .
 # Instalar dependências
 RUN pip install --no-cache-dir -r requirements.txt \
     && python -m spacy download pt_core_news_sm \
-    && python -m nltk.downloader stopwords punkt
+    && python -m nltk.downloader stopwords punkt punkt_tab
 
 # Expor a porta do FastAPI
 EXPOSE 8000

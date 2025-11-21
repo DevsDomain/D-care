@@ -23,6 +23,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # Baixar recursos NLTK
 nltk.download('stopwords', quiet=True)
 nltk.download('punkt', quiet=True)
+nltk.download('punkt_tab', quiet=True)  
 
 # Configurações
 STOPWORDS = set(stopwords.words('portuguese')) - {'cuidador', 'idoso', 'saúde'}  # Manter palavras relevantes
@@ -72,15 +73,25 @@ def get_sentence_embedding(tokens, w2v_model):
     return np.mean(vectors, axis=0) if vectors else np.zeros(WORD2VEC_SIZE)
 
 # Gerar dados sintéticos mais robustos
+# No arquivo chatbot_ml.py
+
 def generate_synthetic_data():
     data = []
     labels = []
-    templates = [
+    
+    # Templates para conteúdo técnico (Módulos do manual)
+    technical_templates = [
         "O que é {topic}?", "Explique {topic}", "Como lidar com {topic}?", 
         "Dicas para {topic}", "Cuidados com {topic}", "O que fazer sobre {topic}?",
         "{topic} em idosos", "Como prevenir {topic}?", "Informações sobre {topic}",
         "Cuidados relacionados a {topic}", "Como ajudar com {topic}?",
         "O que significa {topic} no cuidado de idosos?", "{keywords}",
+        "Quero saber sobre {topic}"
+    ]
+
+    # Templates para conversação (Saudação, Despedida)
+    conversational_templates = [
+        "{keywords}", "{topic}", "Diga {topic}", "Fazer {topic}"
     ]
     
     for item in KNOWLEDGE_BASE:
@@ -88,28 +99,43 @@ def generate_synthetic_data():
         topic = item['topic']
         keywords = item.get('keywords', [])
         content = item['content']
+        module = item.get('module', 'Geral')
         
-        # Gerar variações com templates
-        for template in templates:
+        # Seleciona templates baseados no módulo
+        if module == "Conversação":
+            current_templates = conversational_templates
+            # Para conversação, as keywords são o principal gatilho
+            for kw in keywords:
+                data.extend([kw, kw.capitalize(), kw.upper()])
+                labels.extend([intent_id] * 3)
+        else:
+            current_templates = technical_templates
+            # Adiciona variações baseadas no conteúdo para itens técnicos
+            sentences = nltk.sent_tokenize(content, language='portuguese')
+            for sent in sentences[:2]:
+                data.append(sent)
+                labels.append(intent_id)
+        
+        # Gerar variações com templates gerais
+        for template in current_templates:
             if '{keywords}' in template:
-                data.append(' '.join(keywords))
+                # Se o template for apenas keywords, já tratamos acima para conversação, 
+                # mas para técnico adicionamos a string unida
+                if module != "Conversação":
+                    data.append(' '.join(keywords))
+                    labels.append(intent_id)
             else:
                 data.append(template.format(topic=topic))
-            labels.append(intent_id)
+                labels.append(intent_id)
         
-        # Variações com keywords
-        for kw in keywords:
-            data.extend([
-                f"O que significa {kw}?", f"Como prevenir {kw}?", 
-                f"Cuidados com {kw}", f"{kw} em idosos"
-            ])
-            labels.extend([intent_id] * 4)
-        
-        # Variações com trechos do conteúdo
-        sentences = nltk.sent_tokenize(content, language='portuguese')
-        for sent in sentences[:2]:  # Limitar a 2 sentenças
-            data.append(sent)
-            labels.append(intent_id)
+        # Para itens técnicos, reforçar keywords individuais
+        if module != "Conversação":
+            for kw in keywords:
+                data.extend([
+                    f"O que significa {kw}?", f"Como prevenir {kw}?", 
+                    f"Cuidados com {kw}", f"{kw} em idosos", kw
+                ])
+                labels.extend([intent_id] * 5)
     
     return data, labels
 
