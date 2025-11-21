@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
+import { Send, Bot, Sparkles } from "lucide-react"; // Ícones para melhor UX
 
 const topics = [
   "o que é cuidar",
@@ -36,7 +37,7 @@ const topics = [
   "exercícios de mobilização passiva",
 ];
 
-function getRandomSuggestions(num: number = 6): string[] {
+function getRandomSuggestions(num: number = 5): string[] {
   const shuffled = [...topics].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, num);
 }
@@ -45,7 +46,7 @@ export default function Guide() {
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>(
     [
       {
-        text: 'Olá! Sou seu assistente virtual para tirar dúvidas sobre cuidados com idosos. Posso ajudar com informações baseadas no manual "Amar é Cuidar" da PUC Minas. Como posso ajudar você hoje?',
+        text: 'Olá! Sou seu assistente virtual D-Care. Tire suas dúvidas sobre cuidados com idosos baseadas no manual "Amar é Cuidar".',
         isUser: false,
       },
     ]
@@ -58,10 +59,6 @@ export default function Guide() {
   const backendUrl =
     (import.meta.env.REACT_APP_CHATBOT_BACKEND_URL as string) ||
     "http://localhost:8888/query";
-
-  /* const backendUrl =
-    process.env.REACT_APP_CHATBOT_BACKEND_URL ||
-    "http://chatbot_backend_dcare:8000/query"; */
 
   useEffect(() => {
     setSuggestions(getRandomSuggestions());
@@ -76,15 +73,16 @@ export default function Guide() {
   const sendMessage = async (question: string) => {
     if (!question.trim()) return;
 
-    setMessages((prev) => [...prev, { text: question, isUser: true }]);
-    setInput("");
+    const currentInput = question;
+    setInput(""); // Limpa imediatamente para UX fluida
+    setMessages((prev) => [...prev, { text: currentInput, isUser: true }]);
     setIsTyping(true);
 
     try {
       const response = await fetch(backendUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, top_k: 3 }),
+        body: JSON.stringify({ question: currentInput, top_k: 3 }),
       });
 
       if (!response.ok) throw new Error("Erro na resposta");
@@ -94,32 +92,42 @@ export default function Guide() {
 
       let botResponse = "";
       results.forEach((res: any) => {
-        botResponse += `<strong>${res.topic}</strong> (${
+        // Formatação mais limpa
+        botResponse += `<div class="mb-4 last:mb-0">`;
+        botResponse += `<h3 class="font-bold text-[#2c6fb5]">${
+          res.topic
+        } <span class="text-xs text-gray-500 font-normal">(${
           res.module || "Geral"
-        })<br><br>`;
-        botResponse += `${res.content}<br><br>`;
+        })</span></h3>`;
+        botResponse += `<p class="mt-1 text-sm">${res.content}</p>`;
+
         if (res.confidence) {
-          botResponse += `<em>Confiança: ${(res.confidence * 100).toFixed(
-            2
-          )}%</em><br>`;
-        } else if (res.score) {
-          botResponse += `<em>Score: ${res.score.toFixed(2)}</em><br>`;
+          // Opcional: mostrar confiança apenas se for relevante para debug
+          // botResponse += `<span class="text-xs text-gray-400 mt-1 block">Confiança: ${(res.confidence * 100).toFixed(0)}%</span>`;
         }
-        botResponse += `<em>Fonte: Manual "Amar é Cuidar" - PUC Minas</em><br><br>`;
+        botResponse += `</div>`;
       });
+
+      if (!botResponse)
+        botResponse =
+          "Desculpe, não encontrei informações relevantes para essa dúvida.";
+      else
+        botResponse += `<div class="mt-2 pt-2 border-t border-gray-200 text-[10px] text-gray-400 italic">Fonte: Manual "Amar é Cuidar" - PUC Minas</div>`;
 
       setMessages((prev) => [
         ...prev,
         {
-          text:
-            botResponse || "Desculpe, não encontrei informações relevantes.",
+          text: botResponse,
           isUser: false,
         },
       ]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
-        { text: "Desculpe, ocorreu um erro. Tente novamente.", isUser: false },
+        {
+          text: "Desculpe, ocorreu um erro de conexão. Tente novamente.",
+          isUser: false,
+        },
       ]);
     } finally {
       setIsTyping(false);
@@ -133,67 +141,98 @@ export default function Guide() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-[#f0f4f8] text-[#333] p-5">
-      <div className="w-full max-w-[700px] bg-white rounded-[15px] shadow-[0_6px_20px_rgba(0,0,0,0.1)] flex flex-col h-[85vh]">
-        <div className="bg-[#2c6fb5] text-white p-5 text-center text-[1.5em] font-bold rounded-t-[15px]">
-          <span className="text-[1.2em] mr-2.5">👵🏻👴🏻</span> ChatBot D-Care
-          <div className="text-[0.9em] font-normal mt-1.5">
-            Baseado no manual "Amar é Cuidar" - PUC Minas
+    // Mudança 1: h-screen para mobile (h-[100dvh]) e bg ajustado
+    <div className="flex justify-center items-center w-full h-[100dvh] md:h-screen bg-[#f0f4f8] md:p-5">
+      {/* Container Principal: Removemos bordas arredondadas no mobile para parecer app nativo */}
+      <div className="w-full md:max-w-[500px] bg-white md:rounded-[20px] shadow-xl flex flex-col h-full md:h-[85vh] overflow-hidden">
+        {/* HEADER: Mais compacto */}
+        <div className="bg-[#2c6fb5] text-white p-3 flex items-center gap-3 shadow-sm z-10">
+          <div className="bg-white/20 p-2 rounded-full">
+            <Bot size={24} />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold leading-none">ChatBot D-Care</h1>
+            <p className="text-xs text-blue-100 opacity-90">
+              Assistente Virtual
+            </p>
           </div>
         </div>
+
+        {/* AREA DE MENSAGENS */}
         <div
           ref={messagesRef}
-          className="flex-1 p-5 overflow-y-auto flex flex-col gap-[15px]"
+          className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-[#f8fafc]"
         >
           {messages.map((msg, index) => (
             <div
               key={index}
-              className={`max-w-[75%] p-[12px_18px] rounded-[12px] leading-[1.5] text-base ${
+              className={`max-w-[85%] p-3 rounded-2xl text-sm shadow-sm ${
                 msg.isUser
-                  ? "bg-[#d1e7ff] self-end rounded-br-[4px]"
-                  : "bg-[#f5f5f5] self-start rounded-bl-[4px]"
+                  ? "bg-[#2c6fb5] text-white self-end rounded-br-none"
+                  : "bg-white border border-gray-100 text-gray-700 self-start rounded-bl-none"
               }`}
-              dangerouslySetInnerHTML={{ __html: msg.text }}
-            />
-          ))}
-          <div
-            className={`${
-              isTyping ? "block" : "hidden"
-            } self-start text-[#666] italic p-[10px_18px]`}
-          >
-            Digitando...
-          </div>
-        </div>
-        <div className="p-[10px_20px] bg-[#f9f9f9] border-t border-[#ddd] flex flex-wrap gap-[10px]">
-          {suggestions.map((sug, index) => (
-            <div
-              key={index}
-              className="bg-[#e6f0fa] p-[8px_15px] rounded-[20px] cursor-pointer text-[0.9em] hover:bg-[#d1e7ff]"
-              onClick={() => sendMessage(sug)}
             >
-              {sug}
+              <div dangerouslySetInnerHTML={{ __html: msg.text }} />
             </div>
           ))}
+
+          {isTyping && (
+            <div className="self-start bg-white border border-gray-100 p-3 rounded-2xl rounded-bl-none shadow-sm flex items-center gap-1 w-16">
+              <div
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: "0ms" }}
+              />
+              <div
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: "150ms" }}
+              />
+              <div
+                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                style={{ animationDelay: "300ms" }}
+              />
+            </div>
+          )}
         </div>
-        <div className="flex p-[15px] bg-[#f9f9f9] border-t border-[#ddd]">
-          <Input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Digite sua dúvida sobre cuidados com idosos..."
-            className="flex-1 p-3 border border-[#ccc] rounded-[25px] text-base outline-none mr-[10px]"
-          />
-          <Button
-            onClick={() => sendMessage(input)}
-            className="bg-[#2c6fb5] text-white border-none p-[12px_20px] rounded-[25px] cursor-pointer text-base hover:bg-[#1e4e8c]"
-          >
-            Enviar
-          </Button>
-        </div>
-        <div className="text-center p-[10px] bg-[#f9f9f9] rounded-b-[15px] text-[0.85em] text-[#666]">
-          Baseado no manual "Amar é Cuidar" - PUC Minas Betim | Solução com
-          embeddings locais
+
+        {/* SUGESTÕES E INPUT */}
+        <div className="bg-white border-t border-gray-100">
+          {/* SUGESTÕES: Scroll Horizontal (Carousel) para economizar altura */}
+          {suggestions.length > 0 && (
+            <div className="flex overflow-x-auto gap-2 p-3 pb-0 scrollbar-hide select-none mask-linear-gradient">
+              <div className="flex items-center text-xs font-bold text-[#2c6fb5] mr-1">
+                <Sparkles size={14} className="mr-1" /> Dicas:
+              </div>
+              {suggestions.map((sug, index) => (
+                <button
+                  key={index}
+                  onClick={() => sendMessage(sug)}
+                  className="whitespace-nowrap bg-blue-50 text-[#2c6fb5] px-3 py-1.5 rounded-full text-xs font-medium border border-blue-100 hover:bg-blue-100 transition-colors flex-shrink-0"
+                >
+                  {sug}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* INPUT AREA */}
+          <div className="p-3 flex gap-2 items-center">
+            <Input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Digite sua dúvida..."
+              className="flex-1 bg-gray-50 border-gray-200 rounded-full px-4 focus-visible:ring-[#2c6fb5] focus-visible:ring-1"
+            />
+            <Button
+              onClick={() => sendMessage(input)}
+              size="icon"
+              className="rounded-full bg-[#2c6fb5] hover:bg-[#1e4e8c] w-10 h-10 flex-shrink-0"
+              disabled={!input.trim()}
+            >
+              <Send size={18} />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
