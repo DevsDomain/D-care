@@ -57,7 +57,7 @@ export default function Guide() {
   const messagesRef = useRef<HTMLDivElement>(null);
 
   const backendUrl =
-    (import.meta.env.REACT_APP_CHATBOT_BACKEND_URL as string) ||
+    (import.meta.env.VITE_API_BASE_CHATBOT as string) ||
     "http://localhost:8888/query";
 
   useEffect(() => {

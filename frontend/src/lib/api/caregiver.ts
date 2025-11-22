@@ -219,6 +219,5 @@ export async function searchCaregivers(params: SearchCaregiversParams = {}) {
   }
 
   const data = await response.json();
-  console.log("✅ Cuidadores encontrados:", data);
   return data;
 }

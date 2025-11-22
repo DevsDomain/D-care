@@ -14,9 +14,6 @@ export async function fetchCaregiversFromAPI(
 ): Promise<Caregiver[]> {
   try {
     const caregivers = await searchCaregivers(filters);
-
-    console.log("FROM API CALL", caregivers[0]);
-
     // Ajuste de formato para o frontend
     return caregivers.map((c: any) => ({
       id: c.id,

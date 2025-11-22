@@ -592,37 +592,52 @@ function FamilyProfileScreen() {
       </main>
 
       {/* Privacy Dialog */}
-      <Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-healthcare-light" />
-              Privacidade e LGPD
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm">
-            <p>
-              A D-care está comprometida com a proteção de seus dados pessoais,
-              seguindo rigorosamente a Lei Geral de Proteção de Dados (LGPD).
-            </p>
-            <div className="space-y-2">
-              <h4 className="font-medium">Seus direitos incluem:</h4>
-              <ul className="space-y-1 text-muted-foreground ml-4">
-                <li>• Acesso aos seus dados</li>
-                <li>• Correção de informações</li>
-                <li>• Exclusão de dados</li>
-                <li>• Portabilidade</li>
-                <li>• Revogação de consentimento</li>
-              </ul>
-            </div>
-            <p className="text-muted-foreground">
-              Para exercer seus direitos ou esclarecer dúvidas sobre
-              privacidade, entre em contato conosco através do e-mail:
-              privacidade@dcare.com.br
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Privacy Dialog */}
+<Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle className="flex items-center gap-2">
+        <Shield className="w-5 h-5 text-healthcare-light" />
+        Privacidade e LGPD
+      </DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4 text-sm leading-relaxed">
+      <p>
+        A D-Care trata seus dados seguindo a LGPD (Lei 13.709/2018). Usamos suas 
+        informações apenas para cadastro, validação profissional, conexão com 
+        cuidadores, agendamentos e recursos assistidos por IA.
+      </p>
+
+      <p>
+        Não compartilhamos seus dados sem autorização, exceto quando exigido por 
+        lei. Adotamos medidas técnicas e organizacionais para garantir segurança 
+        e evitar acessos indevidos.
+      </p>
+
+      <div className="space-y-2">
+        <h4 className="font-medium">Seus direitos:</h4>
+        <ul className="space-y-1 text-muted-foreground ml-4">
+          <li>• Acessar e consultar seus dados</li>
+          <li>• Solicitar correção ou atualização</li>
+          <li>• Pedir anonimização, bloqueio ou exclusão</li>
+          <li>• Solicitar portabilidade</li>
+          <li>• Saber com quem compartilhamos</li>
+          <li>• Revogar consentimento</li>
+        </ul>
+      </div>
+
+      <p>
+        Para dúvidas ou solicitações, contate nosso DPO: 
+        <span className="font-medium"> privacidade@dcare.com.br</span>.
+      </p>
+
+      <p className="text-muted-foreground">
+        Ao continuar, você concorda com esta Política de Privacidade.
+      </p>
+    </div>
+  </DialogContent>
+</Dialog>
 
       {/* Terms Dialog */}
       <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
@@ -723,7 +738,6 @@ function CaregiverProfileScreen() {
         avatarPath?: string | null;
       };
 
-      console.log("Caregiver (via /perfis/:userId):", caregiver);
 
       if (!caregiver || !caregiver.id) {
         console.warn("fetchCaregiverProfile não retornou id do cuidador");
@@ -1180,37 +1194,53 @@ function CaregiverProfileScreen() {
       </main>
 
       {/* Privacy Dialog */}
-      <Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-healthcare-light" />
-              Privacidade e LGPD
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 text-sm">
-            <p>
-              A D-care está comprometida com a proteção de seus dados pessoais,
-              seguindo rigorosamente a Lei Geral de Proteção de Dados (LGPD).
-            </p>
-            <div className="space-y-2">
-              <h4 className="font-medium">Seus direitos incluem:</h4>
-              <ul className="space-y-1 text-muted-foreground ml-4">
-                <li>• Acesso aos seus dados</li>
-                <li>• Correção de informações</li>
-                <li>• Exclusão de dados</li>
-                <li>• Portabilidade</li>
-                <li>• Revogação de consentimento</li>
-              </ul>
-            </div>
-            <p className="text-muted-foreground">
-              Para exercer seus direitos ou esclarecer dúvidas sobre
-              privacidade, entre em contato conosco através do e-mail:
-              privacidade@dcare.com.br
-            </p>
-          </div>
-        </DialogContent>
-      </Dialog>
+ {/* Privacy Dialog */}
+<Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
+  <DialogContent className="max-w-md">
+    <DialogHeader>
+      <DialogTitle className="flex items-center gap-2">
+        <Shield className="w-5 h-5 text-healthcare-light" />
+        Privacidade e LGPD
+      </DialogTitle>
+    </DialogHeader>
+
+    <div className="space-y-4 text-sm leading-relaxed">
+      <p>
+        A D-Care trata seus dados seguindo a LGPD (Lei 13.709/2018). Usamos suas 
+        informações apenas para cadastro, validação profissional, conexão com 
+        cuidadores, agendamentos e recursos assistidos por IA.
+      </p>
+
+      <p>
+        Não compartilhamos seus dados sem autorização, exceto quando exigido por 
+        lei. Adotamos medidas técnicas e organizacionais para garantir segurança 
+        e evitar acessos indevidos.
+      </p>
+
+      <div className="space-y-2">
+        <h4 className="font-medium">Seus direitos:</h4>
+        <ul className="space-y-1 text-muted-foreground ml-4">
+          <li>• Acessar e consultar seus dados</li>
+          <li>• Solicitar correção ou atualização</li>
+          <li>• Pedir anonimização, bloqueio ou exclusão</li>
+          <li>• Solicitar portabilidade</li>
+          <li>• Saber com quem compartilhamos</li>
+          <li>• Revogar consentimento</li>
+        </ul>
+      </div>
+
+      <p>
+        Para dúvidas ou solicitações, contate nosso DPO: 
+        <span className="font-medium"> privacidade@dcare.com.br</span>.
+      </p>
+
+      <p className="text-muted-foreground">
+        Ao continuar, você concorda com esta Política de Privacidade.
+      </p>
+    </div>
+  </DialogContent>
+</Dialog>
+
 
       {/* Terms Dialog */}
       <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>

@@ -17,7 +17,6 @@ export type AppointmentRequest = {
 };
 
 export const requestAppointment = async (formData: AppointmentRequest) => {
-  console.log("chamou", formData);
 
   // 👉 Se vier string, usa do jeito que está (já no formato 'YYYY-MM-DD')
   // 👉 Se vier Date, converte para 'YYYY-MM-DD'

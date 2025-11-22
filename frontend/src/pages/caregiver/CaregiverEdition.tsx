@@ -123,7 +123,6 @@ export default function CaregiverEdition() {
     const fetchCaregiver = async () => {
       try {
         const caregiver = await fetchCaregiverProfile(currentUser!.id);
-        console.log("CAREGIVER", caregiver);
         setFormData({
           crm_coren: caregiver.crm_coren || "",
           bio: caregiver.bio,

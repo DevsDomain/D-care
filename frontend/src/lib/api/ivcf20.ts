@@ -2,8 +2,6 @@ import type { Elder, IvcfResult } from "../types";
 import { api } from "./api";
 
 export async function createIVCF20(elder: Partial<Elder>, result: IvcfResult) {
-    console.log("Creating IVCF20 result for elder:", elder);
-    console.log("IVCF20 result data:", result);
   try {
     const response = api.post("/ivcf20", {
      // id: elder.familyId,

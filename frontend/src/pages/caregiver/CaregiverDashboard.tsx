@@ -1,24 +1,27 @@
 import { useState, useEffect } from "react";
 import {
-  Calendar,
   Clock,
-  User,
-  AlertCircle,
-  Check,
-  X,
+  MapPin,
   Phone,
   Star,
-  FileClock,
+  Check,
+  X,
+  AlertCircle,
+  Settings,
+  Activity,
+  Power,
+  ClipboardList,
   CalendarCheck,
+  History,
+  Wallet,
 } from "lucide-react";
-import { Button } from "@/components/ui/button-variants";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Button } from "@/components/ui/button-variants"; // Using your custom variants
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CaregiverCardSkeleton } from "@/components/common/LoadingSkeleton";
 import { useToast } from "@/components/hooks/use-toast";
-import type { Caregiver, Booking } from "@/lib/types";
+import type { Caregiver } from "@/lib/types";
 import { useAppStore } from "@/lib/stores/appStore";
 import { useNavigate } from "react-router-dom";
 import {
@@ -26,587 +29,553 @@ import {
   toggleCaregiverAvailability,
   toggleCaregiverEmergencyAvailability,
 } from "@/lib/api/caregiver";
-
 import { api } from "@/lib/api/api";
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 /* ===========================
-   Backend types (used in mapping)
-   =========================== */
-type AppointmentApiStatus =
-  | "PENDING"
-  | "ACCEPTED"
-  | "REJECTED"
-  | "CANCELLED"
-  | "COMPLETED";
-
-/* ===========================
-   Front status map
+   Types & Maps
    =========================== */
 type BookingStatus = "requested" | "accepted" | "canceled" | "completed";
 
-const statusConfig: Record<BookingStatus, { label: string; color: string }> = {
-  requested: { label: "Solicitado", color: "bg-yellow-300 text-black" },
-  accepted: { label: "Aceito", color: "bg-green-600 text-white" },
-  canceled: { label: "Cancelado", color: "bg-red-600 text-white" },
-  completed: { label: "Concluído", color: "bg-neutral-600 text-white" },
-};
-
-/* API <-> Front maps */
-function mapStatusFromApi(s: AppointmentApiStatus): BookingStatus {
-  switch (s) {
-    case "PENDING":
-      return "requested";
-    case "ACCEPTED":
-      return "accepted";
-    case "REJECTED":
-    case "CANCELLED":
-      return "canceled";
-    case "COMPLETED":
-      return "completed";
-    default:
-      return "requested";
-  }
-}
-function mapStatusToApi(s: BookingStatus): AppointmentApiStatus {
-  switch (s) {
-    case "requested":
-      return "PENDING";
-    case "accepted":
-      return "ACCEPTED";
-    case "canceled":
-      return "CANCELLED";
-    case "completed":
-      return "COMPLETED";
-    default:
-      return "PENDING";
-  }
+function mapStatus(apiStatus: string): BookingStatus {
+  const map: Record<string, BookingStatus> = {
+    PENDING: "requested",
+    ACCEPTED: "accepted",
+    REJECTED: "canceled",
+    CANCELLED: "canceled",
+    COMPLETED: "completed",
+  };
+  return map[apiStatus] || "requested";
 }
 
-/* Duração em horas (a partir de ISO start/end) */
-function calcDurationHours(startISO: string, endISO: string) {
-  const s = new Date(startISO).getTime();
-  const e = new Date(endISO).getTime();
-  return Math.max(1, Math.round((e - s) / 3600000));
+function mapApiStatus(status: BookingStatus) {
+  const map: Record<string, string> = {
+    requested: "PENDING",
+    accepted: "ACCEPTED",
+    canceled: "CANCELLED",
+    completed: "COMPLETED",
+  };
+  return map[status] || "PENDING";
 }
 
-/* ===========================
-   Component
-   =========================== */
-export default function CaregiverDashboard() {
-  const [caregiverUser, setCaregiverUser] = useState<Partial<Caregiver>>({});
-  const [emergencyAvailable, setEmergencyAvailable] = useState<
-    boolean | undefined
-  >(caregiverUser?.emergency);
-  const [activeToday, setActiveToday] = useState<boolean | undefined>(
-    caregiverUser?.availability
+function calcDuration(start: string, end: string) {
+  return Math.max(
+    1,
+    Math.round((new Date(end).getTime() - new Date(start).getTime()) / 3600000)
   );
-  const [loading, setLoading] = useState(true);
+}
+
+export default function CaregiverDashboard() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { currentUser } = useAppStore();
-  const [processingBookingIds, setProcessingBookingIds] = useState<string[]>(
-    []
-  );
+
+  const [caregiver, setCaregiver] = useState<Partial<Caregiver>>({});
   const [appointments, setAppointments] = useState<any[]>([]);
-  const [tab, setTab] = useState<"requests" | "accepted" | "completed">(
+  const [loading, setLoading] = useState(true);
+
+  // Availability State
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [isEmergency, setIsEmergency] = useState(false);
+
+  // UI State
+  const [tab, setTab] = useState<"requests" | "accepted" | "history">(
     "requests"
   );
+  const [processingIds, setProcessingIds] = useState<string[]>([]);
 
-  const navigate = useNavigate();
-
+  // --- Data Loading ---
   useEffect(() => {
-    async function loadCaregiver() {
-      if (!currentUser?.id) {
-        return;
-      }
-      if (currentUser.role !== "CAREGIVER") {
-        return;
-      }
+    if (currentUser?.role !== "CAREGIVER" || !currentUser.id) return;
 
+    const init = async () => {
       try {
-        const caregiver = await fetchCaregiverProfile(currentUser.id);
+        const profile = await fetchCaregiverProfile(currentUser.id);
+        if (!profile) return;
 
-        if (!caregiver) {
-          return;
+        setCaregiver(profile);
+        setIsAvailable(!!profile.availability);
+        setIsEmergency(!!profile.emergency);
+
+        if (profile.userId) {
+          loadAppointments(profile.userId);
         }
-
-        setCaregiverUser(caregiver);
-
-        setActiveToday(!!caregiver?.availability);
-        setEmergencyAvailable(!!caregiver?.emergency);
-
-        // After we know caregiver info -> load appointments
-        await loadAppointmentsForCaregiver(caregiver);
-      } catch (err) {
-        console.error(err);
-        toast({
-          title: "Erro",
-          description: "Falha ao carregar perfil do cuidador",
-          variant: "destructive",
-        });
+      } catch (e) {
+        console.error(e);
       }
-    }
-
-    loadCaregiver();
+    };
+    init();
   }, [currentUser]);
 
-  // -----------------------------------------------------
-  // Load appointments using caregiver.userId
-  // -----------------------------------------------------
-  async function loadAppointmentsForCaregiver(caregiver: any) {
-    if (!caregiver) {
-      return;
-    }
-
-    const caregiverId = caregiver.userId; // <-- ✔ correto!
-
-    if (!caregiverId) {
-      return;
-    }
-
+  const loadAppointments = async (caregiverUserId: string) => {
     try {
       setLoading(true);
-      const url = `appointments?caregiverId=${caregiverId}`;
+      const { data } = await api.get(
+        `appointments?caregiverId=${caregiverUserId}`
+      );
 
-      const { data } = await api.get(url);
-
-      console.log("Raw appointments data:", data);
-      
       const mapped = data.map((a: any) => ({
         id: a.id,
         elderName: a.elder?.name ?? "Paciente",
-        elderPhoto: a.elder?.avatarPath ?? "",
-        familyName: a.family?.user?.userProfile?.[0]?.name ?? "Familiar",
-        familyPhone: a.family?.user?.userProfile?.[0]?.phone ?? "",
+        elderPhoto: a.elder?.avatarPath,
+        familyPhone: a.family?.user?.userProfile?.[0]?.phone,
         dateISO: a.datetimeStart,
-        duration: calcDurationHours(a.datetimeStart, a.datetimeEnd),
-        status: mapStatusFromApi(a.status),
+        duration: calcDuration(a.datetimeStart, a.datetimeEnd),
+        status: mapStatus(a.status),
         emergency: Boolean(a.emergency),
         totalPrice: a.totalPrice ?? 0,
-        notes: a.notes ?? "",
-        latestResponse: a.latestResponse,
+        notes: a.notes,
+        ivcfResult: a.latestResponse?.result,
+        ivcfScore: a.latestResponse?.score, // Getting the score as well
+        city: a.elder?.city || "Endereço não informado",
       }));
 
+      // Sort: Newest first
+      mapped.sort(
+        (a: any, b: any) =>
+          new Date(a.dateISO).getTime() - new Date(b.dateISO).getTime()
+      );
+
       setAppointments(mapped);
-    } catch (err) {
-      console.error(err);
-      toast({
-        title: "Erro",
-        description: "Falha ao carregar solicitações",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  /* ========================
-     Update status (PATCH)
-     ======================== */
-  async function updateStatus(id: string, newStatus: BookingStatus) {
+  // --- Actions ---
+  const handleStatusChange = async (id: string, status: BookingStatus) => {
+    setProcessingIds((prev) => [...prev, id]);
     try {
-      log("updateStatus called:", { id, newStatus });
-      setProcessingBookingIds((prev) => [...prev, id]);
-
       await api.patch(`appointments/${id}/status`, {
-        status: mapStatusToApi(newStatus),
+        status: mapApiStatus(status),
       });
 
-      // update local state
       setAppointments((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, status: newStatus } : a))
+        prev.map((a) => (a.id === id ? { ...a, status } : a))
       );
-      setBookingRequests((prev) => prev.filter((b) => b.id !== id));
-      if (newStatus === "accepted") {
-        const accepted = appointments.find((x) => x.id === id);
-        if (accepted)
-          setUpcomingBookings((prev) => [
-            ...prev,
-            { ...accepted, status: "accepted" },
-          ]);
-      }
-
-      log("updateStatus success, updated local states.");
-      toast({ title: "Sucesso", description: "Status atualizado!" });
-    } catch (err) {
-      console.error("[CaregiverDashboard] updateStatus error:", err);
       toast({
-        title: "Erro",
-        description: "Falha ao atualizar status",
-        variant: "destructive",
+        title: "Atualizado",
+        description: "Status da reserva alterado.",
       });
+
+      if (status === "accepted") setTab("accepted");
+    } catch (e) {
+      toast({ title: "Erro", variant: "destructive" });
     } finally {
-      setProcessingBookingIds((prev) => prev.filter((x) => x !== id));
-    }
-  }
-
-  /* Toggle availability */
-  const handleActive = async () => {
-    try {
-      log("Toggling availability (current caregiverUser):", caregiverUser);
-      await toggleCaregiverAvailability(caregiverUser.userId!, !activeToday);
-      setActiveToday((v) => !v);
-    } catch (err) {
-      console.error("handleActive error:", err);
+      setProcessingIds((prev) => prev.filter((x) => x !== id));
     }
   };
 
-  const handleEmergency = async () => {
+  const toggleStatus = async (type: "availability" | "emergency") => {
+    if (!caregiver.userId) return;
     try {
-      log("Toggling emergency availability (current):", caregiverUser);
-      await toggleCaregiverEmergencyAvailability(
-        caregiverUser.userId!,
-        !emergencyAvailable
+      if (type === "availability") {
+        await toggleCaregiverAvailability(caregiver.userId, !isAvailable);
+        setIsAvailable(!isAvailable);
+      } else {
+        await toggleCaregiverEmergencyAvailability(
+          caregiver.userId,
+          !isEmergency
+        );
+        setIsEmergency(!isEmergency);
+      }
+    } catch (e) {
+      toast({ title: "Erro ao atualizar status", variant: "destructive" });
+    }
+  };
+
+  // --- Stats Calculation ---
+  // --- Stats Calculation ---
+  const stats = {
+    rating: caregiver.rating?.toFixed(1) || "5.0",
+
+    completedMonth: appointments.filter((a) => {
+      const d = new Date(a.dateISO);
+      const n = new Date();
+      return (
+        d.getMonth() === n.getMonth() &&
+        d.getFullYear() === n.getFullYear() &&
+        a.status === "completed"
       );
-      setEmergencyAvailable((v) => !v);
-    } catch (err) {
-      console.error("handleEmergency error:", err);
-    }
+    }).length,
+
+    // New Metric: Earnings this month
+    earningsMonth: appointments
+      .filter((a) => {
+        const d = new Date(a.dateISO);
+        const n = new Date();
+        return (
+          d.getMonth() === n.getMonth() &&
+          d.getFullYear() === n.getFullYear() &&
+          a.status === "completed"
+        );
+      })
+      .reduce((sum, current) => sum + (Number(current.totalPrice) || 0), 0),
+
+    pending: appointments.filter((a) => a.status === "requested").length,
   };
 
-  /* Filters by tab */
+  // --- Filter ---
   const filtered = appointments.filter((a) => {
-    switch (tab) {
-      case "requests":
-        return a.status === "requested";
-      case "accepted":
-        return a.status === "accepted";
-      case "completed":
-        return a.status === "completed" || a.status === "canceled";
-      default:
-        return true;
-    }
+    if (tab === "requests") return a.status === "requested";
+    if (tab === "accepted") return a.status === "accepted";
+    return ["completed", "canceled"].includes(a.status);
   });
 
-  /* Date / Time format helpers (single definition) */
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString("pt-BR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-
-  const formatTime = (iso: string) =>
+  // --- Formatters ---
+  const getDay = (iso: string) => new Date(iso).getDate();
+  const getMonth = (iso: string) =>
+    new Date(iso)
+      .toLocaleDateString("pt-BR", { month: "short" })
+      .toUpperCase()
+      .replace(".", "");
+  const getTime = (iso: string) =>
     new Date(iso).toLocaleTimeString("pt-BR", {
       hour: "2-digit",
       minute: "2-digit",
     });
 
-  /* Loading skeleton */
-  if (loading) {
+  if (loading)
     return (
-      <div className="min-h-screen bg-background pb-24">
-        <div className="p-4">
-          <CaregiverCardSkeleton />
-        </div>
+      <div className="p-4 space-y-4">
+        <CaregiverCardSkeleton />
+        <CaregiverCardSkeleton />
       </div>
     );
-  }
 
-  /* ===========================
-     Render
-     =========================== */
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-6">
-        {/* limita a largura no desktop e centraliza */}
-        <div className="mx-auto w-full max-w-4xl">
-          {/* avatar + texto + botão */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            {/* avatar + infos */}
-            <div className="flex items-center gap-4">
-              <Avatar className="border-2 border-white/20 w-16 h-16 shrink-0">
-                <AvatarImage
-                  width={200}
-                  height={200}
-                  src={(caregiverUser as any)?.avatarUrl}
-                  alt={(caregiverUser as any)?.name || "userName"}
-                />
-                <AvatarFallback className="bg-white/20 text-white text-sm text-center">
-                  {(caregiverUser as any)?.name ?? "Cuidador"}
-                </AvatarFallback>
+    <div className="min-h-screen bg-slate-50/50 pb-24">
+      {/* Header Section */}
+      <header className="bg-white pt-6 pb-6 px-4 sticky top-0 z-20 shadow-sm border-b border-slate-100 rounded-b-3xl">
+        <div className="max-w-lg mx-auto">
+          {/* Profile Row */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-12 h-12 border-2 border-slate-100">
+                <AvatarImage src={(caregiver as any)?.avatarUrl} />
+                <AvatarFallback>{currentUser?.name?.[0]}</AvatarFallback>
               </Avatar>
-
-              <div className="min-w-0">
-                <h1 className="text-xl sm:text-2xl font-bold text-foreground truncate">
-                  Painel do Cuidador
+              <div>
+                <p className="text-xs text-slate-500 font-medium">
+                  Bem-vindo(a),
+                </p>
+                <h1 className="text-lg font-bold text-slate-900 leading-none">
+                  {currentUser?.name}
                 </h1>
-                <p className="text-sm sm:text-base text-muted-foreground truncate">
-                  Bem-vindo de volta, {currentUser?.name}
-                </p>
               </div>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/editCaregiver")}
+            >
+              <Settings className="w-6 h-6 text-slate-400" />
+            </Button>
+          </div>
 
-            {/* Botão editar – desce para baixo no mobile */}
-            <div className="self-stretch sm:self-auto">
-              <Button
-                variant="outline"
-                className="w-full sm:w-auto flex items-center justify-center gap-2"
-                title="Editar dados profissionais Cuidador"
-                onClick={() => navigate("/editCaregiver")}
-              >
-                <User className="w-5 h-5" />
-                {/* texto some no mobile e aparece em telas >= sm */}
-                <span>Edição dados profissionais</span>
-              </Button>
+          {/* Metrics / Stats Row */}
+          {/* Metrics / Stats Row */}
+          {/* Metrics / Stats Row */}
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {/* 1. Rating */}
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-center flex flex-col items-center justify-center">
+              <div className="flex items-center gap-1 text-amber-500 mb-1">
+                <Star className="w-4 h-4 fill-current" />
+              </div>
+              <span className="text-lg font-bold text-slate-800 leading-none">
+                {stats.rating}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium mt-1">
+                Avaliação
+              </span>
+            </div>
+
+            {/* 2. New Metric: Earnings */}
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-center flex flex-col items-center justify-center">
+              <div className="flex items-center gap-1 text-emerald-600 mb-1">
+                <Wallet className="w-4 h-4" />
+              </div>
+              <span className="text-lg font-bold text-slate-800 leading-none">
+                R${" "}
+                {stats.earningsMonth.toLocaleString("pt-BR", {
+                  minimumFractionDigits: 0,
+                })}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium mt-1">
+                Ganhos (Mês)
+              </span>
+            </div>
+
+            {/* 3. Completed Count */}
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-center flex flex-col items-center justify-center">
+              <div className="flex items-center gap-1 text-blue-600 mb-1">
+                <CalendarCheck className="w-4 h-4" />
+              </div>
+              <span className="text-lg font-bold text-slate-800 leading-none">
+                {stats.completedMonth}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium mt-1">
+                Finalizados (Mês)
+              </span>
+            </div>
+
+            {/* 4. Pending */}
+            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 text-center flex flex-col items-center justify-center">
+              <div className="flex items-center gap-1 text-slate-500 mb-1">
+                <ClipboardList className="w-4 h-4" />
+              </div>
+              <span className="text-lg font-bold text-slate-800 leading-none">
+                {stats.pending}
+              </span>
+              <span className="text-[10px] text-slate-400 font-medium mt-1">
+                Pendentes
+              </span>
             </div>
           </div>
 
-          {/* Status toggles */}
-          <div className="mt-6 space-y-4">
-            <div className="flex sm:flex-row items-center justify-between p-4 bg-healthcare-soft rounded-2xl">
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-2 h-2 rounded-full ${
-                    activeToday ? "bg-medical-success" : "bg-neutral-400"
-                  }`}
-                />
-                <div>
-                  <p className="font-medium text-foreground text-sm sm:text-base">
-                    Ativo hoje
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Aceitar novas solicitações
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Switch
-                  checked={Boolean(activeToday)}
-                  onCheckedChange={handleActive}
-                />
-              </div>
-            </div>
+          {/* Status Toggles */}
+          <div className="flex gap-3">
+            <button
+              onClick={() => toggleStatus("availability")}
+              className={`
+                      flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-semibold transition-all border
+                      ${
+                        isAvailable
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-700 shadow-sm"
+                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                      }
+                  `}
+            >
+              <div
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  isAvailable ? "bg-emerald-500" : "bg-slate-300"
+                }`}
+              />
+              {isAvailable ? "Disponível" : "Indisponível"}
+            </button>
 
-            <div className="flex items-center justify-between gap-3 p-4 bg-medical-critical/10 rounded-2xl border border-medical-critical/20">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-medical-critical shrink-0" />
-                <div>
-                  <p className="font-medium text-foreground text-sm sm:text-base">
-                    Emergências
-                  </p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    Disponível para chamadas urgentes
-                  </p>
-                </div>
-              </div>
-              <div className="flex justify-end">
-                <Switch
-                  checked={Boolean(emergencyAvailable)}
-                  onCheckedChange={handleEmergency}
-                />
-              </div>
-            </div>
+            <button
+              onClick={() => toggleStatus("emergency")}
+              className={`
+                      flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-semibold transition-all border
+                      ${
+                        isEmergency
+                          ? "bg-rose-50 border-rose-200 text-rose-700 shadow-sm"
+                          : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50"
+                      }
+                  `}
+            >
+              <Power
+                className={`w-3.5 h-3.5 ${
+                  isEmergency ? "text-rose-500" : "text-slate-400"
+                }`}
+              />
+              Plantão {isEmergency ? "ON" : "OFF"}
+            </button>
           </div>
         </div>
-        {/* Statistics */}
-        <div className="grid grid-cols-3 gap-4 mt-6">
-          <Card className="text-center">
-            <CardContent className="pt-4">
-              <Star className="w-8 h-8 text-medical-warning mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">
-                {caregiverUser.rating?.toFixed(1) || "0.0"}
-              </p>
-              <p className="text-xs text-muted-foreground">Avaliação</p>
-            </CardContent>
-          </Card>
+      </header>
 
-          <Card className="text-center">
-            <CardContent className="pt-4">
-              <CalendarCheck className="w-8 h-8 text-medical-success mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">
-                {
-                  appointments.filter((a) => {
-                    const apptDate = new Date(a.dateISO);
-                    const now = new Date();
-                    return (
-                      apptDate.getMonth() === now.getMonth() &&
-                      apptDate.getFullYear() === now.getFullYear() &&
-                      a.status === "completed"
-                    );
-                  }).length
-                }
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Finalizadas este mês
-              </p>
-            </CardContent>
-          </Card>
+      <main className="max-w-lg mx-auto px-4 pt-6 space-y-6">
+        <Tabs
+          value={tab}
+          onValueChange={(v: any) => setTab(v)}
+          className="w-full"
+        >
+          <TabsList className="w-full grid grid-cols-3 bg-slate-200/50 p-1 rounded-xl mb-6">
+            <TabsTrigger value="requests" className="text-xs py-2 rounded-lg">
+              Novos ({stats.pending})
+            </TabsTrigger>
+            <TabsTrigger value="accepted" className="text-xs py-2 rounded-lg">
+              Agenda
+            </TabsTrigger>
+            <TabsTrigger value="history" className="text-xs py-2 rounded-lg">
+              Histórico
+            </TabsTrigger>
+          </TabsList>
 
-          <Card className="text-center">
-            <CardContent className="pt-4">
-              <FileClock className="w-8 h-8 text-healthcare-light mx-auto mb-2" />
-              <p className="text-2xl font-bold text-foreground">
-                {appointments.filter((a) => a.status === "requested").length}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Solicitações pendentes
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-
-      {/* Conteúdo principal */}
-      <div className="p-4">
-        <div className="mx-auto w-full max-w-4xl space-y-6">
-          {/* Tabs */}
-          <Tabs
-            value={tab}
-            onValueChange={(v: any) => setTab(v)}
-            className="space-y-6"
-          >
-            <TabsList className="grid w-full grid-cols-3 bg-muted rounded-xl p-1 text-xs sm:text-sm">
-              <TabsTrigger value="requests">Solicitações</TabsTrigger>
-              <TabsTrigger value="accepted">Aceitas</TabsTrigger>
-              <TabsTrigger value="completed">Finalizadas</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value={tab}>
-              {loading ? (
-                <p className="text-center">Carregando...</p>
-              ) : filtered.length === 0 ? (
-                <p className="text-center text-muted-foreground">
-                  Nenhuma reserva
+          <TabsContent value={tab} className="space-y-3 focus-visible:ring-0">
+            {filtered.length === 0 ? (
+              <div className="text-center py-10 opacity-50">
+                <History className="w-10 h-10 mx-auto mb-2 text-slate-300" />
+                <p className="text-sm font-medium text-slate-500">
+                  Nenhum agendamento nesta lista
                 </p>
-              ) : (
-                filtered.map((a) => (
-                  <Card key={a.id} className="mb-4 healthcare-card">
-                    <CardHeader>
-                      <div className="flex flex-wrap items-start sm:items-center gap-3 w-full">
-                        <Avatar className="shrink-0">
-                          <AvatarImage src={a.elderPhoto} />
-                          <AvatarFallback>
-                            {(a.elderName || "P").slice(0, 1)}
-                          </AvatarFallback>
-                        </Avatar>
+              </div>
+            ) : (
+              filtered.map((item) => (
+                <Card
+                  key={item.id}
+                  className="border-none shadow-sm ring-1 ring-slate-100 overflow-hidden"
+                >
+                  <CardContent className="p-0 flex">
+                    {/* Left Column: Date Ticket */}
+                    <div className="w-16 bg-slate-50 border-r border-slate-100 flex flex-col items-center justify-center py-4 shrink-0">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        {getMonth(item.dateISO)}
+                      </span>
+                      <span className="text-2xl font-bold text-slate-800 leading-none mt-0.5">
+                        {getDay(item.dateISO)}
+                      </span>
+                    </div>
 
-                        <div className="min-w-0">
-                          <h3 className="font-semibold truncate">
-                            {a.elderName}
-                          </h3>
-                          <p className="text-sm text-muted-foreground truncate">
-                            Familiar: {a.familyName.split(" ")[0]}
-                          </p>
+                    {/* Right Column: Content */}
+                    <div className="flex-1 flex flex-col">
+                      {/* Top Row: Time & Price */}
+                      <div className="p-3 pb-2 flex justify-between items-start border-b border-slate-50">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                          <Clock className="w-4 h-4 text-healthcare-dark" />
+                          {getTime(item.dateISO)}{" "}
+                          <span className="text-slate-300 font-light">|</span>{" "}
+                          {item.duration}h
                         </div>
-
-                        <Badge
-                          className={`${
-                            statusConfig[a.status].color
-                          } ml-auto mt-1 sm:mt-0 px-3 py-1`}
-                        >
-                          {statusConfig[a.status].label}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent className="space-y-3">
-                      {a.latestResponse ? (
-                        <div>
-                          <p className="text-sm text-muted-foreground truncate">
-                            <strong className="text-healthcare-dark">
-                              IVCF20
-                            </strong>
-                            <p>
-                              Score:{a.latestResponse.score} |{" "}
-                              {a.latestResponse.result}
-                            </p>
-                          </p>
-                        </div>
-                      ) : (
-                        <></>
-                      )}
-                      <div className="flex flex-wrap items-center gap-2 text-sm sm:text-base">
-                        <Calendar className="w-4 h-4 text-healthcare-light" />
-                        <span>{formatDate(a.dateISO)}</span>
-                        <Clock className="w-4 h-4 text-healthcare-light ml-0 sm:ml-4" />
-                        <span>
-                          {formatTime(a.dateISO)} ({a.duration}h)
+                        <span className="font-bold text-slate-900 text-sm">
+                          R$ {Math.floor(item.totalPrice)}
                         </span>
                       </div>
 
-                      {a.emergency && (
-                        <Badge className="bg-red-600 text-white">
-                          EMERGÊNCIA
-                        </Badge>
-                      )}
-
-                      <div className="flex flex-col gap-3 pt-2 border-t sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-lg font-semibold">
-                          R$ {Number(a.totalPrice || 0).toFixed(2)}
-                        </span>
-
-                        {/* ACTIONS */}
-                        {a.status === "requested" && (
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              variant="healthcare"
-                              size="sm"
-                              className="flex-1 sm:flex-none"
-                              onClick={() => updateStatus(a.id, "accepted")}
-                              disabled={processingBookingIds.includes(a.id)}
-                            >
-                              <Check className="w-4 h-4 mr-1" />
-                              Aceitar
-                            </Button>
-
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 sm:flex-none"
-                              onClick={() => updateStatus(a.id, "canceled")}
-                              disabled={processingBookingIds.includes(a.id)}
-                            >
-                              <X className="w-4 h-4 mr-1" />
-                              Recusar
-                            </Button>
+                      <div className="p-3 flex flex-col gap-3">
+                        {/* Patient Info */}
+                        <div className="flex items-start gap-3">
+                          <Avatar className="w-11 h-11 border border-slate-100 shrink-0">
+                            <AvatarImage src={item.elderPhoto} />
+                            <AvatarFallback className="bg-slate-100 text-slate-500">
+                              {item.elderName[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0 flex flex-col justify-center h-11">
+                            <h4 className="text-sm font-bold text-slate-800 truncate leading-tight">
+                              {item.elderName}
+                            </h4>
+                            <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
+                              <MapPin className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{item.city}</span>
+                            </div>
                           </div>
-                        )}
-
-                        {a.status === "accepted" && (
-                          <div className="flex flex-wrap gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              asChild
-                              className="flex-1 sm:flex-none"
-                            >
-                              <a href={`tel:${a.familyPhone}`}>
-                                <Phone className="w-4 h-4 mr-1" />
-                                <span className="hidden sm:inline">Ligar</span>
-                              </a>
-                            </Button>
-
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1 sm:flex-none"
-                              onClick={() => updateStatus(a.id, "canceled")}
-                              disabled={processingBookingIds.includes(a.id)}
-                            >
-                              Cancelar
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-
-                      {a.notes && (
-                        <div className="p-3 rounded-xl bg-muted">
-                          <p className="text-sm break-words">
-                            <strong>Observações:</strong> {a.notes}
-                          </p>
                         </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))
-              )}
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
+
+                        {/* IVCF-20 & Emergency Alerts Block */}
+                        {(item.ivcfResult || item.emergency) && (
+                          <div className="flex flex-col gap-2">
+                            {/* IVCF-20 Explicit Info */}
+                            {item.ivcfResult && (
+                              <div className="bg-blue-50/60 border border-blue-100 rounded-lg p-2.5">
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <Activity className="w-3.5 h-3.5 text-blue-600" />
+                                  <span className="text-[10px] font-bold  text-blue-600 tracking-wide">
+                                    Índice de vulnerabilidade clínico funcional
+                                  </span>
+                                </div>
+                                <div className="flex items-baseline gap-2 pl-0.5">
+                                  <span className="text-xs font-semibold text-slate-700">
+                                    {item.ivcfResult}
+                                  </span>
+                                  {item.ivcfScore !== undefined && (
+                                    <span className="text-[10px] text-slate-500">
+                                      ({item.ivcfScore} pontos)
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Emergency Badge */}
+                            {item.emergency && (
+                              <div className="bg-red-50 border border-red-100 rounded-lg px-2.5 py-2 flex items-center gap-2">
+                                <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                                <span className="text-xs font-bold text-red-700">
+                                  EMERGÊNCIA MÉDICA
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {item.notes && (
+                          <p className="text-xs text-slate-500 italic bg-slate-50 p-2 rounded border border-slate-100">
+                            "Obs: {item.notes}"
+                          </p>
+                        )}
+
+                        {/* Actions Grid */}
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                          {item.status === "requested" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-full text-xs text-red-600 hover:bg-red-50 border border-transparent hover:border-red-100"
+                                onClick={() =>
+                                  handleStatusChange(item.id, "canceled")
+                                }
+                                disabled={processingIds.includes(item.id)}
+                              >
+                                Recusar
+                              </Button>
+                              <Button
+                                variant="healthcare" // Blue variant per request
+                                size="sm"
+                                className="h-9 w-full text-xs shadow-sm"
+                                onClick={() =>
+                                  handleStatusChange(item.id, "accepted")
+                                }
+                                disabled={processingIds.includes(item.id)}
+                              >
+                                Aceitar
+                              </Button>
+                            </>
+                          )}
+
+                          {item.status === "accepted" && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-9 w-full text-xs text-slate-500 hover:text-red-600"
+                                onClick={() =>
+                                  handleStatusChange(item.id, "canceled")
+                                }
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-9 w-full text-xs border-slate-200"
+                                asChild
+                              >
+                                <a
+                                  href={`https://wa.me/${item.familyPhone}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Phone className="w-3 h-3 mr-2" /> WhatsApp
+                                </a>
+                              </Button>
+                            </>
+                          )}
+
+                          {item.status === "canceled" && (
+                            <div className="col-span-2 text-center text-xs font-medium text-red-500 bg-red-50 py-2 rounded-md border border-red-100">
+                              Cancelado
+                            </div>
+                          )}
+                          {item.status === "completed" && (
+                            <div className="col-span-2 text-center text-xs font-medium text-slate-500 bg-slate-100 py-2 rounded-md border border-slate-200">
+                              Atendimento Finalizado
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+        </Tabs>
+      </main>
     </div>
   );
 }

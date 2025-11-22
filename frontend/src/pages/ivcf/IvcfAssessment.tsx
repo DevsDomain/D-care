@@ -95,7 +95,6 @@ export default function IvcfAssessment() {
 
         if (response.data && response.data.id) {
 
-          console.log(response.data)
           // 2. AWAIT a segunda chamada (para obter tips e recommendations)
           const tipsResponse = await mockApi.submitIvcfAssessment(
             response.data.id,

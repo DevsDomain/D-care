@@ -147,7 +147,6 @@ export default function BookingForm() {
         totalPrice: formData.duration * Number(caregiverPrice),
       };
 
-      console.log("FORM DATA ENVIADO PARA API:", bookingData);
       const response = await requestAppointment(bookingData);
 
       if (response.status === 201) {
