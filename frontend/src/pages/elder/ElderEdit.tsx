@@ -452,7 +452,7 @@ export default function ElderEdit() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>Condições</Label>
+              <Label className="mb-4">Condições</Label>
               <div className="flex flex-wrap gap-2 mb-3">
                 {formData.conditions.map((condition: string) => (
                   <Badge key={condition} variant="secondary">
@@ -491,7 +491,7 @@ export default function ElderEdit() {
             </div>
 
             <div>
-              <Label>Medicações</Label>
+              <Label className="mb-4">Medicações</Label>
               <div className="flex flex-wrap gap-2 mb-3">
                 {formData.medications.map((medication: string) => (
                   <Badge key={medication} variant="secondary">
