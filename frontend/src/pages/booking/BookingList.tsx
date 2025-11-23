@@ -346,7 +346,7 @@ export default function BookingList() {
             photo: a.caregiver?.avatarPath ?? "",
             rating: 0,
             reviewCount: 0,
-            phone: "",
+            phone: currentUser.phone ?? "",
           } as any,
           elder: {
             id: a.elderId ?? "",

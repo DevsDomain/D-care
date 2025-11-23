@@ -4,20 +4,17 @@ import {
   MapPin,
   Phone,
   Star,
-  Check,
-  X,
   AlertCircle,
-  Settings,
   Activity,
   Power,
   ClipboardList,
   CalendarCheck,
   History,
   Wallet,
+  UserRoundPen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants"; // Using your custom variants
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CaregiverCardSkeleton } from "@/components/common/LoadingSkeleton";
 import { useToast } from "@/components/hooks/use-toast";
@@ -251,25 +248,25 @@ export default function CaregiverDashboard() {
           {/* Profile Row */}
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-3">
-              <Avatar className="w-12 h-12 border-2 border-slate-100">
+              <Avatar className="w-14 h-14 border-2 border-slate-100">
                 <AvatarImage src={(caregiver as any)?.avatarUrl} />
                 <AvatarFallback>{currentUser?.name?.[0]}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-xs text-slate-500 font-medium">
+                <p className="text-md text-slate-500 font-medium">
                   Bem-vindo(a),
                 </p>
-                <h1 className="text-lg font-bold text-slate-900 leading-none">
+                <h1 className="text-xl font-bold text-slate-900 leading-none">
                   {currentUser?.name}
                 </h1>
               </div>
             </div>
             <Button
-              variant="ghost"
-              size="icon"
+              variant="trust"
+              size="icon-sm"
               onClick={() => navigate("/editCaregiver")}
             >
-              <Settings className="w-6 h-6 text-slate-400" />
+              <UserRoundPen className="w-6 h-6 text-white" />
             </Button>
           </div>
 
@@ -285,7 +282,7 @@ export default function CaregiverDashboard() {
               <span className="text-lg font-bold text-slate-800 leading-none">
                 {stats.rating}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium mt-1">
+              <span className="text-xs text-slate-400 font-medium mt-1">
                 Avaliação
               </span>
             </div>
@@ -301,7 +298,7 @@ export default function CaregiverDashboard() {
                   minimumFractionDigits: 0,
                 })}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium mt-1">
+              <span className="text-xs text-slate-400 font-medium mt-1">
                 Ganhos (Mês)
               </span>
             </div>
@@ -314,7 +311,7 @@ export default function CaregiverDashboard() {
               <span className="text-lg font-bold text-slate-800 leading-none">
                 {stats.completedMonth}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium mt-1">
+              <span className="text-xs text-slate-400 font-medium mt-1">
                 Finalizados (Mês)
               </span>
             </div>
@@ -327,7 +324,7 @@ export default function CaregiverDashboard() {
               <span className="text-lg font-bold text-slate-800 leading-none">
                 {stats.pending}
               </span>
-              <span className="text-[10px] text-slate-400 font-medium mt-1">
+              <span className="text-xs text-slate-400 font-medium mt-1">
                 Pendentes
               </span>
             </div>

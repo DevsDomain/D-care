@@ -528,12 +528,12 @@ function FamilyProfileScreen() {
           </CardContent>
         </Card> */}
 
-        {/* Configurações / Legal */}
+        {/* Privacidade e Termos de uso / Legal */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5 text-healthcare-light" />
-              Configurações
+              Privacidade e Termos de uso
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -564,7 +564,7 @@ function FamilyProfileScreen() {
                 </p>
               </div>
             </Button>
-
+            {/* 
             <Button variant="ghost" className="w-full justify-start p-4 h-auto">
               <HelpCircle className="w-5 h-5 mr-3 text-muted-foreground" />
               <div className="flex-1 text-left">
@@ -573,7 +573,7 @@ function FamilyProfileScreen() {
                   Central de ajuda
                 </p>
               </div>
-            </Button>
+            </Button> */}
 
             <Separator />
 
@@ -593,51 +593,52 @@ function FamilyProfileScreen() {
 
       {/* Privacy Dialog */}
       {/* Privacy Dialog */}
-<Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
-  <DialogContent className="max-w-md">
-    <DialogHeader>
-      <DialogTitle className="flex items-center gap-2">
-        <Shield className="w-5 h-5 text-healthcare-light" />
-        Privacidade e LGPD
-      </DialogTitle>
-    </DialogHeader>
+      <Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-healthcare-light" />
+              Privacidade e LGPD
+            </DialogTitle>
+          </DialogHeader>
 
-    <div className="space-y-4 text-sm leading-relaxed">
-      <p>
-        A D-Care trata seus dados seguindo a LGPD (Lei 13.709/2018). Usamos suas 
-        informações apenas para cadastro, validação profissional, conexão com 
-        cuidadores, agendamentos e recursos assistidos por IA.
-      </p>
+          <div className="space-y-4 text-sm leading-relaxed">
+            <p>
+              A D-Care trata seus dados seguindo a LGPD (Lei 13.709/2018).
+              Usamos suas informações apenas para cadastro, validação
+              profissional, conexão com cuidadores, agendamentos e recursos
+              assistidos por IA.
+            </p>
 
-      <p>
-        Não compartilhamos seus dados sem autorização, exceto quando exigido por 
-        lei. Adotamos medidas técnicas e organizacionais para garantir segurança 
-        e evitar acessos indevidos.
-      </p>
+            <p>
+              Não compartilhamos seus dados sem autorização, exceto quando
+              exigido por lei. Adotamos medidas técnicas e organizacionais para
+              garantir segurança e evitar acessos indevidos.
+            </p>
 
-      <div className="space-y-2">
-        <h4 className="font-medium">Seus direitos:</h4>
-        <ul className="space-y-1 text-muted-foreground ml-4">
-          <li>• Acessar e consultar seus dados</li>
-          <li>• Solicitar correção ou atualização</li>
-          <li>• Pedir anonimização, bloqueio ou exclusão</li>
-          <li>• Solicitar portabilidade</li>
-          <li>• Saber com quem compartilhamos</li>
-          <li>• Revogar consentimento</li>
-        </ul>
-      </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">Seus direitos:</h4>
+              <ul className="space-y-1 text-muted-foreground ml-4">
+                <li>• Acessar e consultar seus dados</li>
+                <li>• Solicitar correção ou atualização</li>
+                <li>• Pedir anonimização, bloqueio ou exclusão</li>
+                <li>• Solicitar portabilidade</li>
+                <li>• Saber com quem compartilhamos</li>
+                <li>• Revogar consentimento</li>
+              </ul>
+            </div>
 
-      <p>
-        Para dúvidas ou solicitações, contate nosso DPO: 
-        <span className="font-medium"> privacidade@dcare.com.br</span>.
-      </p>
+            <p>
+              Para dúvidas ou solicitações, contate nosso DPO:
+              <span className="font-medium"> privacidade@dcare.com.br</span>.
+            </p>
 
-      <p className="text-muted-foreground">
-        Ao continuar, você concorda com esta Política de Privacidade.
-      </p>
-    </div>
-  </DialogContent>
-</Dialog>
+            <p className="text-muted-foreground">
+              Ao continuar, você concorda com esta Política de Privacidade.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Terms Dialog */}
       <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>
@@ -684,6 +685,7 @@ function CaregiverProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [showTermsDialog, setShowTermsDialog] = useState(false);
   const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [formData, setFormData] = useState({
     name: currentUser?.name || "",
@@ -737,7 +739,6 @@ function CaregiverProfileScreen() {
         reviewCount?: number | null;
         avatarPath?: string | null;
       };
-
 
       if (!caregiver || !caregiver.id) {
         console.warn("fetchCaregiverProfile não retornou id do cuidador");
@@ -818,6 +819,15 @@ function CaregiverProfileScreen() {
   }
 
   const isCaregiver = currentUser.role === "CAREGIVER";
+
+  const REVIEWS_PER_PAGE = 3;
+
+  const totalPages = Math.ceil(reviews.length / REVIEWS_PER_PAGE);
+
+  const paginatedReviews = reviews.slice(
+    (currentPage - 1) * REVIEWS_PER_PAGE,
+    currentPage * REVIEWS_PER_PAGE
+  );
 
   return (
     <div className="min-h-dvh bg-background overflow-x-hidden flex flex-col">
@@ -1044,7 +1054,7 @@ function CaregiverProfileScreen() {
           </CardContent>
         </Card> */}
 
-        {/* MINHAS AVALIAÇÕES – só para cuidador */}
+        {/* MINHAS AVALIAÇÕES – somente para cuidador */}
         {isCaregiver && (
           <Card className="mb-6 healthcare-card">
             <CardHeader>
@@ -1053,6 +1063,7 @@ function CaregiverProfileScreen() {
                 Minhas avaliações
               </CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-4">
               {/* Resumo da nota */}
               <div className="flex items-center gap-3">
@@ -1077,62 +1088,94 @@ function CaregiverProfileScreen() {
                   variant="default"
                 />
               ) : (
-                <div className="space-y-3">
-                  {reviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="border border-border rounded-xl p-3 space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {review.familyName || "Família"}
-                          </p>
-                          {review.elderName && (
-                            <p className="text-xs text-muted-foreground">
-                              Paciente: {review.elderName}
+                <>
+                  {/* LISTAGEM PAGINADA */}
+                  <div className="space-y-3">
+                    {paginatedReviews.map((review) => (
+                      <div
+                        key={review.id}
+                        className="border border-border rounded-xl p-4 space-y-2 bg-card"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              {review.familyName || "Família"}
                             </p>
-                          )}
+
+                            {review.elderName && (
+                              <p className="text-xs text-muted-foreground">
+                                Paciente: {review.elderName}
+                              </p>
+                            )}
+                          </div>
+
+                          <RatingStars
+                            rating={review.rating ?? 0}
+                            size="sm"
+                            showNumber={false}
+                            interactive={false}
+                          />
                         </div>
-                        <RatingStars
-                          rating={review.rating ?? 0}
-                          size="sm"
-                          showNumber={false}
-                          interactive={false}
-                        />
-                      </div>
 
-                      {review.comment && (
-                        <p className="text-sm text-muted-foreground">
-                          {review.comment}
+                        {review.comment && (
+                          <p className="text-sm text-muted-foreground leading-relaxed">
+                            {review.comment}
+                          </p>
+                        )}
+
+                        <p className="text-xs text-muted-foreground">
+                          {review.appointmentDate
+                            ? `Atendimento em ${new Date(
+                                review.appointmentDate
+                              ).toLocaleDateString("pt-BR")}`
+                            : review.createdAt
+                            ? `Avaliação em ${new Date(
+                                review.createdAt
+                              ).toLocaleDateString("pt-BR")}`
+                            : null}
                         </p>
-                      )}
+                      </div>
+                    ))}
+                  </div>
 
-                      <p className="text-xs text-muted-foreground">
-                        {review.appointmentDate
-                          ? `Atendimento em ${new Date(
-                              review.appointmentDate
-                            ).toLocaleDateString("pt-BR")}`
-                          : review.createdAt
-                          ? `Avaliação em ${new Date(
-                              review.createdAt
-                            ).toLocaleDateString("pt-BR")}`
-                          : null}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+                  {/* PAGINAÇÃO */}
+                  <div className="flex justify-between items-center pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                      className="rounded-xl"
+                    >
+                      Anterior
+                    </Button>
+
+                    <p className="text-sm text-muted-foreground">
+                      Página {currentPage} de {totalPages}
+                    </p>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                      className="rounded-xl"
+                    >
+                      Próxima
+                    </Button>
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
         )}
 
-        {/* Configurações / Legal */}
+        {/* Privacidade e Termos de uso / Legal */}
         <Card className="hover:text-healthcare-light">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Settings className="w-5 h-5 text-healthcare-light" />
-              Configurações
+              Privacidade e Termos de uso
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -1164,7 +1207,7 @@ function CaregiverProfileScreen() {
               </div>
             </Button>
 
-            <Button variant="ghost" className="w-full justify-start p-4 h-auto">
+            {/* <Button variant="ghost" className="w-full justify-start p-4 h-auto">
               <HelpCircle className="w-5 h-5 mr-3 text-muted-foreground" />
               <div className="flex-1 text-left">
                 <p className="font-medium">Ajuda e Suporte</p>
@@ -1172,7 +1215,7 @@ function CaregiverProfileScreen() {
                   Central de ajuda
                 </p>
               </div>
-            </Button>
+            </Button> */}
 
             <Separator />
 
@@ -1194,53 +1237,53 @@ function CaregiverProfileScreen() {
       </main>
 
       {/* Privacy Dialog */}
- {/* Privacy Dialog */}
-<Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
-  <DialogContent className="max-w-md">
-    <DialogHeader>
-      <DialogTitle className="flex items-center gap-2">
-        <Shield className="w-5 h-5 text-healthcare-light" />
-        Privacidade e LGPD
-      </DialogTitle>
-    </DialogHeader>
+      {/* Privacy Dialog */}
+      <Dialog open={showPrivacyDialog} onOpenChange={setShowPrivacyDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-healthcare-light" />
+              Privacidade e LGPD
+            </DialogTitle>
+          </DialogHeader>
 
-    <div className="space-y-4 text-sm leading-relaxed">
-      <p>
-        A D-Care trata seus dados seguindo a LGPD (Lei 13.709/2018). Usamos suas 
-        informações apenas para cadastro, validação profissional, conexão com 
-        cuidadores, agendamentos e recursos assistidos por IA.
-      </p>
+          <div className="space-y-4 text-sm leading-relaxed">
+            <p>
+              A D-Care trata seus dados seguindo a LGPD (Lei 13.709/2018).
+              Usamos suas informações apenas para cadastro, validação
+              profissional, conexão com cuidadores, agendamentos e recursos
+              assistidos por IA.
+            </p>
 
-      <p>
-        Não compartilhamos seus dados sem autorização, exceto quando exigido por 
-        lei. Adotamos medidas técnicas e organizacionais para garantir segurança 
-        e evitar acessos indevidos.
-      </p>
+            <p>
+              Não compartilhamos seus dados sem autorização, exceto quando
+              exigido por lei. Adotamos medidas técnicas e organizacionais para
+              garantir segurança e evitar acessos indevidos.
+            </p>
 
-      <div className="space-y-2">
-        <h4 className="font-medium">Seus direitos:</h4>
-        <ul className="space-y-1 text-muted-foreground ml-4">
-          <li>• Acessar e consultar seus dados</li>
-          <li>• Solicitar correção ou atualização</li>
-          <li>• Pedir anonimização, bloqueio ou exclusão</li>
-          <li>• Solicitar portabilidade</li>
-          <li>• Saber com quem compartilhamos</li>
-          <li>• Revogar consentimento</li>
-        </ul>
-      </div>
+            <div className="space-y-2">
+              <h4 className="font-medium">Seus direitos:</h4>
+              <ul className="space-y-1 text-muted-foreground ml-4">
+                <li>• Acessar e consultar seus dados</li>
+                <li>• Solicitar correção ou atualização</li>
+                <li>• Pedir anonimização, bloqueio ou exclusão</li>
+                <li>• Solicitar portabilidade</li>
+                <li>• Saber com quem compartilhamos</li>
+                <li>• Revogar consentimento</li>
+              </ul>
+            </div>
 
-      <p>
-        Para dúvidas ou solicitações, contate nosso DPO: 
-        <span className="font-medium"> privacidade@dcare.com.br</span>.
-      </p>
+            <p>
+              Para dúvidas ou solicitações, contate nosso DPO:
+              <span className="font-medium"> privacidade@dcare.com.br</span>.
+            </p>
 
-      <p className="text-muted-foreground">
-        Ao continuar, você concorda com esta Política de Privacidade.
-      </p>
-    </div>
-  </DialogContent>
-</Dialog>
-
+            <p className="text-muted-foreground">
+              Ao continuar, você concorda com esta Política de Privacidade.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Terms Dialog */}
       <Dialog open={showTermsDialog} onOpenChange={setShowTermsDialog}>

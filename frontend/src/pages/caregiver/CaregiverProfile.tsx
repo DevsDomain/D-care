@@ -60,7 +60,6 @@ export default function CaregiverProfile() {
     try {
       setIsLoading(true);
       const data = await fetchCaregiverProfileFromAPI(id);
-      console.log("Caregiver data:", data);
 
       if (data) {
         const caregiverData: Caregiver = {
