@@ -14,16 +14,42 @@ Cada entrega será realizada a partir da criação de uma **tag** conforme rela�
 |:--:|:--:|:--:|:--:|:--:|:--:|
 | 01 | 16/09/2025 | 06/10/2025 | ​​​​☑️ Concluído | [Entregas Sprint 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) 
 | 02 | 13/10/2025 | 02/11/2025 | ☑️ Concluído | [Entregas Sprint 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) 
-| 03 | 06/11/2025 | 23/11/2025 | ☑️ Concluído | [Entregas Sprint 3](https://github.com/DevsDomain/D-care/releases/tag/Sprint3) | [Ver Sprint 3](https://github.com/orgs/DevsDomain/projects/41/views/6) 
+| 03 | 06/11/2025 | 24/11/2025 | ☑️ Concluído | [Entregas Sprint 3](https://github.com/DevsDomain/D-care/releases/tag/Sprint3) | [Ver Sprint 3](https://github.com/orgs/DevsDomain/projects/41/views/6) 
 
 ## ✍️ Product Backlog
 
-O [Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Product_Backlog.pdf)
- segue o padrão de priorização:
+O Product Backlog segue o padrão de priorização:
 - *A* Alta
 - *M* Média
 - *B* Baixa
 
+📌 Requisitos Funcionais 
+
+- **US01 (M)** – Como usuário, quero me cadastrar como família ou cuidador para acessar o sistema.
+- **US02 (B)** – Como usuário, quero entrar no sistema com login e senha.
+- **US03 (M)** – Como família, quero registrar um idoso (dados pessoais e de saúde).
+- **US04 (A)** – Como cuidador, quero editar meu perfil (dados pessoais, geolocalização, CRM/COREN, agenda).
+- **US05 (B)** – Como família, quero preencher o IVCF-20 de forma digital.
+- **US06 (A)** – Como cuidador, quero definir minha disponibilidade (agenda) e indicar disponibilidade para emergências.
+- **US07 (A)** – Como família, quero buscar cuidadores utilizando filtros.
+- **US08 (M)** – Como família, quero visualizar o perfil do cuidador.
+- **US09 (A)** – Como família, quero agendar um cuidador em uma data e horário específicos.
+- **US10 (B)** – Como cuidador, quero aceitar ou recusar solicitações de agendamento.
+- **US11 (B)** – Como família, quero avaliar o cuidador após o atendimento.
+- **US12 (B)** – Como família, quero visualizar os idosos cadastrados.
+- **US13 (A)** – Como usuário, quero consultar uma cartilha com apoio de IA.
+- **US14 (B)** – Como usuário, quero aceitar os termos de uso e o consentimento LGPD.
+- **US15 (M)** – Como sistema, preciso validar o CRM/COREN de cuidadores.
+- **US16 (M)** – Como família, quero editar os dados dos idosos cadastrados.
+- **US17 (M)** – Como família, quero visualizar meus agendamentos (futuros e passados).
+
+⚙️ Requisitos Não Funcionais
+
+- Protótipo (Figma)
+- Banco de Dados
+- Arquitetura do Sistema
+- Configuração Docker
+- GitHub
 
 # 📋 Requisitos Funcionais (User Stories Refinadas)
 
@@ -59,15 +85,6 @@ O [Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Pr
 | US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | Done         |
 | US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | Done         |
 | US17 | Como família, quero visualizar meus agendamentos (futuros e passados)        | Média        | 7            | 8               | Done         |
-
-
-### 2. Requisitos Não Funcionais
-
-- **Protótipo (Figma)** – Wireframes e protótipos navegáveis
-- **Banco de Dados** – Modelagem e implementação
-- **Arquitetura do Sistema** – Definição de camadas, APIs e serviços
-- **Configuração Docker** – Containers para backend, frontend e banco
-- **GitHub** – Organização com board, cards e versionamento
 
 
 ---
