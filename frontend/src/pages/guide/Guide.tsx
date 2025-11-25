@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
-import { Send, Bot, Sparkles } from "lucide-react"; // Ícones para melhor UX
+import { Send, Bot, Sparkles } from "lucide-react";
 
+// Mantive sua lista de tópicos original
 const topics = [
   "o que é cuidar",
   "papel do cuidador",
@@ -57,7 +58,7 @@ export default function Guide() {
   const messagesRef = useRef<HTMLDivElement>(null);
 
   const backendUrl =
-    (import.meta.env.VITE_API_BASE_CHATBOT as string) ||
+    (import.meta.env.REACT_APP_CHATBOT_BACKEND_URL as string) ||
     "http://localhost:8888/query";
 
   useEffect(() => {
@@ -74,7 +75,7 @@ export default function Guide() {
     if (!question.trim()) return;
 
     const currentInput = question;
-    setInput(""); // Limpa imediatamente para UX fluida
+    setInput("");
     setMessages((prev) => [...prev, { text: currentInput, isUser: true }]);
     setIsTyping(true);
 
@@ -92,7 +93,6 @@ export default function Guide() {
 
       let botResponse = "";
       results.forEach((res: any) => {
-        // Formatação mais limpa
         botResponse += `<div class="mb-4 last:mb-0">`;
         botResponse += `<h3 class="font-bold text-[#2c6fb5]">${
           res.topic
@@ -100,11 +100,6 @@ export default function Guide() {
           res.module || "Geral"
         })</span></h3>`;
         botResponse += `<p class="mt-1 text-sm">${res.content}</p>`;
-
-        if (res.confidence) {
-          // Opcional: mostrar confiança apenas se for relevante para debug
-          // botResponse += `<span class="text-xs text-gray-400 mt-1 block">Confiança: ${(res.confidence * 100).toFixed(0)}%</span>`;
-        }
         botResponse += `</div>`;
       });
 
@@ -114,13 +109,7 @@ export default function Guide() {
       else
         botResponse += `<div class="mt-2 pt-2 border-t border-gray-200 text-[10px] text-gray-400 italic">Fonte: Manual "Amar é Cuidar" - PUC Minas</div>`;
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          text: botResponse,
-          isUser: false,
-        },
-      ]);
+      setMessages((prev) => [...prev, { text: botResponse, isUser: false }]);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -141,12 +130,14 @@ export default function Guide() {
   };
 
   return (
-    // Mudança 1: h-screen para mobile (h-[100dvh]) e bg ajustado
-    <div className="flex justify-center items-center w-full h-[100dvh] md:h-screen bg-[#f0f4f8] md:p-5">
-      {/* Container Principal: Removemos bordas arredondadas no mobile para parecer app nativo */}
-      <div className="w-full md:max-w-[500px] bg-white md:rounded-[20px] shadow-xl flex flex-col h-full md:h-[85vh] overflow-hidden">
-        {/* HEADER: Mais compacto */}
-        <div className="bg-[#2c6fb5] text-white p-3 flex items-center gap-3 shadow-sm z-10">
+    // AJUSTE CRÍTICO AQUI:
+    // h-[calc(100dvh-85px)]: Define a altura total menos ~85px para a barra de navegação inferior.
+    // overflow-hidden: Garante que nada vaze do container principal.
+    <div className="flex flex-col items-center w-full h-[calc(100dvh-85px)] md:h-[85vh] bg-[#f0f4f8] overflow-hidden">
+      {/* Container do Chat */}
+      <div className="w-full md:max-w-[500px] bg-white md:rounded-[20px] shadow-xl flex flex-col h-full overflow-hidden">
+        {/* 1. HEADER (Fixo no topo do container) */}
+        <div className="flex-none bg-[#2c6fb5] text-white p-3 flex items-center gap-3 shadow-sm z-10">
           <div className="bg-white/20 p-2 rounded-full">
             <Bot size={24} />
           </div>
@@ -158,7 +149,7 @@ export default function Guide() {
           </div>
         </div>
 
-        {/* AREA DE MENSAGENS */}
+        {/* 2. AREA DE MENSAGENS (Flex-1 para ocupar o espaço do meio e scrollar) */}
         <div
           ref={messagesRef}
           className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 bg-[#f8fafc]"
@@ -194,12 +185,12 @@ export default function Guide() {
           )}
         </div>
 
-        {/* SUGESTÕES E INPUT */}
-        <div className="bg-white border-t border-gray-100">
-          {/* SUGESTÕES: Scroll Horizontal (Carousel) para economizar altura */}
+        {/* 3. SUGESTÕES E INPUT (Fixo na parte inferior do container) */}
+        <div className="flex-none bg-white border-t border-gray-100">
+          {/* Sugestões com Scroll Horizontal */}
           {suggestions.length > 0 && (
-            <div className="flex overflow-x-auto gap-2 p-3 pb-0 scrollbar-hide select-none mask-linear-gradient">
-              <div className="flex items-center text-xs font-bold text-[#2c6fb5] mr-1">
+            <div className="flex overflow-x-auto gap-2 p-3 pb-0 scrollbar-hide select-none">
+              <div className="flex items-center text-xs font-bold text-[#2c6fb5] mr-1 flex-shrink-0">
                 <Sparkles size={14} className="mr-1" /> Dicas:
               </div>
               {suggestions.map((sug, index) => (
@@ -214,15 +205,17 @@ export default function Guide() {
             </div>
           )}
 
-          {/* INPUT AREA */}
-          <div className="p-3 flex gap-2 items-center">
+          {/* Área de Input */}
+          <div className="p-3 flex gap-2 items-center pb-4">
+            {" "}
+            {/* pb-4 para dar um respiro antes da nav bar */}
             <Input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Digite sua dúvida..."
-              className="flex-1 bg-gray-50 border-gray-200 rounded-full px-4 focus-visible:ring-[#2c6fb5] focus-visible:ring-1"
+              className="flex-1 bg-gray-50 border-gray-200 rounded-full px-4 h-10 focus-visible:ring-[#2c6fb5] focus-visible:ring-1"
             />
             <Button
               onClick={() => sendMessage(input)}
