@@ -14,7 +14,7 @@ Cada entrega será realizada a partir da criação de uma **tag** conforme rela�
 |:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | 01 | 16/09/2025 | 06/10/2025 | ​​​​☑️ Concluído | [Entregas Sprint 1](https://github.com/DevsDomain/D-care/releases/tag/Sprint1) | [Ver Sprint 1](https://github.com/orgs/DevsDomain/projects/41/views/4) | [Ver BurnDown 1](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint1.png?raw=true) |
 | 02 | 13/10/2025 | 02/11/2025 | ☑️ Concluído | [Entregas Sprint 2](https://github.com/DevsDomain/D-care/releases/tag/Sprint2) | [Ver Sprint 2](https://github.com/orgs/DevsDomain/projects/41/views/5) | [Ver Burndown 2](https://github.com/DevsDomain/D-care/blob/main/documentos/Burndown-Sprint2.png?raw=true) |
-| 03 | 06/11/2025 | 23/11/2025 | ⏳ Em andamento | [Entregas Sprint 3](https://github.com/DevsDomain/D-care/releases/tag/Sprint3) | [Ver Sprint 3](https://github.com/orgs/DevsDomain/projects/41/views/6) | Ver BurnDown 3 |
+| 03 | 06/11/2025 | 23/11/2025 | ☑️ Concluído | [Entregas Sprint 3](https://github.com/DevsDomain/D-care/releases/tag/Sprint3) | [Ver Sprint 3](https://github.com/orgs/DevsDomain/projects/41/views/6) | Ver BurnDown 3 |
 
 ## ✍️ Product Backlog
 
@@ -110,5 +110,3 @@ O [Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Pr
 | Scrum Master    | Juliana Maciel   | [![Linkedin Badge](https://img.shields.io/badge/Linkedin-blue?style=flat-square&logo=Linkedin&logoColor=white)](https://www.linkedin.com/in/juliana-maciel-manso) [![GitHub Badge](https://img.shields.io/badge/GitHub-111217?style=flat-square&logo=github&logoColor=white)](https://github.com/Jummanso) |
 | Dev Team        | Abner Rodrigo    | [![Linkedin Badge](https://img.shields.io/badge/Linkedin-blue?style=flat-square&logo=Linkedin&logoColor=white)](https://www.linkedin.com/in/abnercosta97) [![GitHub Badge](https://img.shields.io/badge/GitHub-111217?style=flat-square&logo=github&logoColor=white)](https://github.com/abnercosta97) |
 | Dev Team        | Fernando Davi    | [![Linkedin Badge](https://img.shields.io/badge/Linkedin-blue?style=flat-square&logo=Linkedin&logoColor=white)](https://www.linkedin.com/in/fernando-davi-492842276) [![GitHub Badge](https://img.shields.io/badge/GitHub-111217?style=flat-square&logo=github&logoColor=white)](https://github.com/fnddavi) |
-
-
