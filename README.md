@@ -34,7 +34,7 @@ O [Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Pr
 | US02 | Como usuário, quero entrar no sistema com login/senha                        | Baixa        | 7            | 5               | Done        |
 | US13 | Como usuário, quero consultar uma cartilha com IA                            | Alta         | 10           | 10              | Done        |
 | US14 | Como usuário, quero aceitar termos de uso e consentimento LGPD               | Baixa        | 2            | 2               | To Do       |
-| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | To Do       |
+| US15 | Como sistema, preciso validar CRM/COREN de cuidadores                        | Média        | 4            | 7               | Done        |
 
 ---
 
@@ -43,7 +43,7 @@ O [Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Pr
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
 | US04 | Como cuidador, quero editar meu perfil (dados, geolocalização, CRM/COREN, agenda) | Alta        | 8            | 8          | Done         |
 | US06 | Como cuidador, quero definir disponibilidade (agenda) e emergências          | Alta        | 7            | 7               | Done         |
-| US10 | Como cuidador, quero aceitar/recusar solicitações de agendamento             | Baixa       | 7            | 8               | To Do        |
+| US10 | Como cuidador, quero aceitar/recusar solicitações de agendamento             | Baixa       | 7            | 8               | Done         |
 
 ---
 
@@ -51,14 +51,14 @@ O [Product Backlog](https://github.com/DevsDomain/D-care/blob/main/documentos/Pr
 | ID   | User Story                                                                 | Complexidade | Criticidade | Valor Agregado | Status       |
 | ---- | -------------------------------------------------------------------------- | ------------- | ------------ | --------------- | ------------ |
 | US03 | Como família, quero registrar um idoso (dados pessoais/saúde)                | Média        | 7            | 7               | Done         |
-| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | To Do        |
+| US05 | Como família, quero preencher o IVCF-20 digital                              | Baixa        | 4            | 4               | Done         |
 | US07 | Como família, quero buscar cuidadores com filtros                            | Alta         | 7            | 8               | Done         |
 | US08 | Como família, quero visualizar perfil do cuidador                            | Média        | 7            | 6               | Done         |
-| US09 | Como família, quero agendar um cuidador em data/hora                         | Alta         | 6            | 9               | To Do        |
-| US11 | Como família, quero avaliar o cuidador após atendimento                      | Baixa        | 4            | 5               | To Do        |
+| US09 | Como família, quero agendar um cuidador em data/hora                         | Alta         | 6            | 9               | Done         |
+| US11 | Como família, quero avaliar o cuidador após atendimento                      | Baixa        | 4            | 5               | Done         |
 | US12 | Como família, quero visualizar idosos cadastrados                            | Baixa        | 6            | 7               | Done         |
 | US16 | Como família, quero editar dados de idosos cadastrados                       | Média        | 6            | 7               | Done         |
-| US17 | Como família, quero visualizar meus agendamentos (futuros e passados)        | Média        | 7            | 8               | To Do        |
+| US17 | Como família, quero visualizar meus agendamentos (futuros e passados)        | Média        | 7            | 8               | Done         |
 
 
 ### 2. Requisitos Não Funcionais
