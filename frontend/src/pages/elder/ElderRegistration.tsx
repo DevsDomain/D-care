@@ -150,7 +150,6 @@ export default function ElderRegistration() {
 
   const handleSubmit = async () => {
     try {
-      console.log(formData);
       if (!formData.name || !formData.birthDate) {
         toast({
           title: "Erro",
@@ -161,7 +160,6 @@ export default function ElderRegistration() {
       }
 
       const data = await createElder(formData);
-      console.log(data);
       setSelectedElder(data);
 
       toast({

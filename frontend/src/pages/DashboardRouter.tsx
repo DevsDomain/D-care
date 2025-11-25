@@ -7,7 +7,6 @@ import { useAppStore } from "@/lib/stores/appStore";
 
 export default function DashboardRouter() {
   const role = useAppStore((state) => state.userRole);
-  console.log("ROLE ENCONTRADO",role)
 
   if (role === "FAMILY") return <FamilyDashboard />;
   if (role === "CAREGIVER") return <CaregiverDashboard />;

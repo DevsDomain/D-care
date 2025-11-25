@@ -86,6 +86,7 @@ export function normalizeElder(raw: any): Elder {
       zipCode: raw.zipCode ?? "",
     },
 
+    // preferências não persistidas no backend por enquanto
     preferences: raw.preferences ?? { gender: "any", language: ["Portuguese"], specialNeeds: [] },
 
     createdAt: raw.createdAt,
@@ -116,9 +117,15 @@ export async function createElder(elder: Partial<Elder>) {
   // Campos básicos
   formData.append("name", elder.name ?? "");
   if (elder.birthDate) formData.append("birthdate", elder.birthDate.toISOString());
-  
+
+  // ⚠️ Alinhado ao DTO de CREATE do backend:
+  //    - NÃO enviar "medicalConditions" (estava gerando 400)
+  //    - Enviar "conditions" (string JSON) e "medications" (string JSON)
   if (elder.conditions) formData.append("conditions", JSON.stringify(elder.conditions));
   if (elder.medications) formData.append("medications", JSON.stringify(elder.medications));
+
+  // ⚠️ NÃO enviar "preferences" enquanto o backend não aceitar
+  // if (elder.preferences) formData.append("preferences", JSON.stringify(elder.preferences));
 
   // Endereço
   const addressLine = [
@@ -149,6 +156,7 @@ export async function createElder(elder: Partial<Elder>) {
 
   if (!response.ok) {
     const text = await response.text();
+    console.error("Erro ao registrar idoso:", text);
     throw new Error(`Erro ao registrar idoso: ${response.status} ${text}`);
   }
 
@@ -232,29 +240,56 @@ export async function updateElder(
   id: string,
   payload: {
     name?: string;
-    birthdate?: string; // ISO
-    medicalConditions?: string; // JSON string
-    medications?: string; // JSON string
+    birthdate?: string;          // ISO
+    medicalConditions?: string;  // JSON string
+    medications?: string;        // JSON string
     address?: string;
     city?: string;
     state?: string;
     zipCode?: string;
+    removeAvatar?: boolean;
+
+    // pode até vir coisa extra aqui (ex: preferences),
+    // mas vamos filtrar antes de mandar pro backend
+    [key: string]: any;
   },
   avatarFile?: File | null
 ): Promise<Elder> {
   const url = `${API_BASE}/idosos/${encodeURIComponent(id)}`;
 
+  // 🔒 Só deixa passar as chaves que o backend realmente conhece
+  const allowedKeys = [
+    "name",
+    "birthdate",
+    "medicalConditions",
+    "medications",
+    "address",
+    "city",
+    "state",
+    "zipCode",
+    "removeAvatar",
+  ] as const;
+
+  const cleaned: Record<string, any> = {};
+  for (const key of allowedKeys) {
+    const value = (payload as any)[key];
+    if (value !== undefined && value !== null) {
+      cleaned[key] = value;
+    }
+  }
+
   if (avatarFile) {
+    // multipart + avatar
     const fd = new FormData();
-    Object.entries(payload).forEach(([k, v]) => {
-      if (v !== undefined && v !== null) fd.append(k, String(v));
+    Object.entries(cleaned).forEach(([k, v]) => {
+      fd.append(k, String(v));
     });
     fd.append("avatar", avatarFile);
 
     const res = await fetch(url, {
       method: "PATCH",
       headers: {
-        ...authHeaders(), // não setar Content-Type com FormData
+        ...authHeaders(), // NUNCA setar Content-Type com FormData
       },
       body: fd,
     });
@@ -266,13 +301,14 @@ export async function updateElder(
     const data = await res.json();
     return normalizeElder(data);
   } else {
+    // JSON simples
     const res = await fetch(url, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
         ...authHeaders(),
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(cleaned),
     });
 
     if (!res.ok) {
@@ -283,6 +319,7 @@ export async function updateElder(
     return normalizeElder(data);
   }
 }
+
 
 /* ==============================
  * DELETE

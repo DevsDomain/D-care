@@ -1,10 +1,11 @@
 // src/idosos/idosos.service.ts
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateElderDto } from './dto/create-elder.dto';
 import { UpdateElderDto } from './dto/update-elder.dto';
 import { StorageService } from '../storage/storage.service';
 import { getCoordinatesFromZipCode } from '../common/helper/getCoordinatesFromCep';
+import { AppointmentStatus } from '@prisma/client';
 
 function toArrayAny(val: any): string[] | undefined {
   if (val == null) return undefined;
@@ -95,30 +96,45 @@ export class IdososService {
     dto: UpdateElderDto,
     file?: Express.Multer.File,
   ) {
-    // upload opcional
+    // upload opcional (nova foto)
     let avatarUrl: string | undefined;
     if (file) {
       avatarUrl = await this.storageService.uploadFile(file, 'dcare/elders');
     }
 
+    // flag para remover avatar (vem do DTO)
+    const shouldRemoveAvatar =
+      dto.removeAvatar === true ||
+      (dto.removeAvatar as any) === 'true' ||
+      (dto.removeAvatar as any) === '1';
+
     // normalizações
     const medicalConditions = toArrayAny(dto.medicalConditions);
     const medications = toArrayAny(dto.medications);
 
-    // update único
+    // monta o objeto de update
+    const data: any = {
+      name: dto.name ?? undefined,
+      birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
+      medicalConditions,
+      medications,
+      address: dto.address ?? undefined,
+      city: dto.city ?? undefined,
+      state: dto.state ?? undefined,
+      zipCode: dto.zipCode ?? undefined,
+    };
+
+    // se veio uma nova foto, atualiza o avatarPath
+    if (avatarUrl) {
+      data.avatarPath = avatarUrl;
+    } else if (shouldRemoveAvatar) {
+      // se não veio foto nova, mas mandou remover, zera o avatarPath
+      data.avatarPath = null;
+    }
+
     const updated = await this.prisma.elders.update({
       where: { id },
-      data: {
-        name: dto.name ?? undefined,
-        birthdate: dto.birthdate ? new Date(dto.birthdate) : undefined,
-        medicalConditions,
-        medications,
-        address: dto.address ?? undefined,
-        city: dto.city ?? undefined,
-        state: dto.state ?? undefined,
-        zipCode: dto.zipCode ?? undefined,
-        ...(avatarUrl ? { avatarPath: avatarUrl } : {}),
-      },
+      data,
     });
 
     // recalcula coordenadas se trocou CEP
@@ -138,6 +154,36 @@ export class IdososService {
   }
 
   async deleteElder(id: string) {
-    return this.prisma.elders.delete({ where: { id } });
+    return this.prisma.$transaction(async (tx) => {
+      // (opcional) bloqueia exclusão se houver agendamento já aceito/ativo
+      const hasActive = await tx.appointments.count({
+        where: {
+          elderId: id,
+          status: { in: [AppointmentStatus.ACCEPTED] },
+        },
+      });
+
+      if (hasActive > 0) {
+        throw new BadRequestException(
+          'Não é possível excluir: existem agendamentos ACEITOS para este idoso.',
+        );
+      }
+
+      // 1) Cancela pedidos ainda pendentes (sem aceite) e zera o vínculo
+      await tx.appointments.updateMany({
+        where: {
+          elderId: id,
+          status: AppointmentStatus.PENDING,
+        },
+        data: {
+          status: AppointmentStatus.CANCELLED,
+          elderId: null, // evita violação de FK ao apagar o idoso
+          updatedAt: new Date(),
+        },
+      });
+
+      // 2) Exclui o idoso
+      return tx.elders.delete({ where: { id } });
+    });
   }
 }

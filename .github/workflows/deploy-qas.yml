@@ -34,6 +34,9 @@ jobs:
               ! -name 'test' \
               ! -name 'docker-compose.yml' \
               ! -name '.env' \
+              ! -name '.git' \
+              ! -name 'ai-agent' \
+
               -exec sudo rm -rf {} \;
 
             # Updated this echo command to be accurate

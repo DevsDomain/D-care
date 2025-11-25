@@ -37,23 +37,27 @@ import { AgeCalculator } from "@/components/hooks/useAge";
 import { requestAppointment } from "@/lib/api/appointment";
 
 const timeSlots = [
-  "08:00",
-  "09:00",
-  "10:00",
-  "11:00",
-  "12:00",
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00",
-  "19:00",
-  "20:00",
-  "21:00",
-  "22:00",
-  "23:00",
+  "08:00", "09:00", "10:00", "11:00",
+  "12:00", "13:00", "14:00", "15:00",
+  "16:00", "17:00", "18:00", "19:00",
+  "20:00", "21:00", "22:00", "23:00",
 ];
+
+type ElderApi = {
+  id: string;
+  familyId?: string | null;
+  family?: { id?: string | null } | null;
+  name: string;
+  birthdate?: Date | undefined;
+  birthDate?: Date | undefined;
+  avatarPath?: string | undefined;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  };
+};
 
 export default function BookingForm() {
   const navigate = useNavigate();
@@ -62,6 +66,7 @@ export default function BookingForm() {
   const { currentUser, setCurrentUser } = useAppStore();
   const { caregiverId } = useParams<{ caregiverId: string }>();
   const { caregiverPrice } = useParams<{ caregiverPrice: string }>();
+
   const [loadingElders, setLoadingElders] = useState(false);
   const [elderSelected, setElderSelected] = useState<ElderApi>();
   const [step, setStep] = useState(1);
@@ -69,51 +74,35 @@ export default function BookingForm() {
   const [formData, setFormData] = useState({
     date: new Date(),
     startTime: "",
-    duration: 4,
+    duration: 4, // horas no formulário
     emergency: false,
     elderId: selectedElder?.id || "",
     caregiverId: caregiverId || "",
     familyId: currentUser?.id || "",
     notes: "",
     address: {
-      street: selectedElder?.address.street || "",
-      city: selectedElder?.address.city || "",
-      state: selectedElder?.address.state || "",
-      zipCode: selectedElder?.address.zipCode || "",
+      street: selectedElder?.address?.street || "",
+      city: selectedElder?.address?.city || "",
+      state: selectedElder?.address?.state || "",
+      zipCode: selectedElder?.address?.zipCode || "",
     },
   });
 
-  type ElderApi = {
-    id: string;
-    familyId?: string | null;
-    family?: { id?: string | null } | null;
-    name: string;
-    birthdate?: Date | undefined;
-    birthDate?: Date | undefined;
-    avatarPath?: string | undefined;
-  };
-
-  // Busca a lista de idosos (inclui condições normalizadas)
+  // Busca lista de idosos da família
   useEffect(() => {
     const fetchElders = async () => {
       try {
         setLoadingElders(true);
-
-        // 3. Constroi a URL correta (com query param, como definimos antes)
         const url = `idosos/family?familyId=${currentUser?.id}`;
-
         const { data } = await api.get<ElderApi[]>(url);
 
-        // 5. Atualiza o usuário ATUAL com a lista de idosos vinda da API
         const updatedUser = { ...currentUser, elders: data };
-
         setCurrentUser(updatedUser);
 
-        // 6. Salva a versão atualizada no localStorage
         try {
           localStorage.setItem("user", JSON.stringify(updatedUser));
-        } catch (err) {
-          console.warn("Falha ao salvar usuário no localStorage:", err);
+        } catch {
+          // ignora erro de localStorage
         }
       } catch (err: any) {
         console.error("Falha ao buscar idosos:", err?.message ?? err);
@@ -123,13 +112,19 @@ export default function BookingForm() {
     };
 
     fetchElders();
-  }, [currentUser?.id, currentUser?.role, setCurrentUser]); // Dependências estão corretas
+  }, [currentUser?.id, currentUser?.role, setCurrentUser]);
+
+  // Helper para 'YYYY-MM-DD'
+  const toYmd = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
 
   const handleSubmit = async () => {
-    if (!currentUser!.id || !currentUser?.elders) {
+    if (!currentUser?.id || !elderSelected?.id || !elderSelected?.familyId) {
       toast({
-        title: "Error",
-        description: "Missing booking information",
+        title: "Erro",
+        description: "Dados do agendamento incompletos",
         variant: "destructive",
       });
       return;
@@ -137,14 +132,16 @@ export default function BookingForm() {
 
     setLoading(true);
     try {
-      console.log("FORM DATA", formData);
+      // duração em MINUTOS para o backend (seu service deve tratar isso)
+      const durationMinutes = formData.duration * 60;
+
       const bookingData = {
         caregiverId: caregiverId!,
-        elderId: elderSelected!.id,
-        familyId: elderSelected!.familyId!,
-        date: formData.date,
-        startTime: formData.startTime,
-        duration: formData.duration,
+        elderId: elderSelected.id,
+        familyId: elderSelected.familyId!,
+        date: toYmd(formData.date),        // 'YYYY-MM-DD'
+        startTime: formData.startTime,     // 'HH:MM'
+        duration: durationMinutes,         // minutos
         emergency: formData.emergency,
         notes: formData.notes,
         totalPrice: formData.duration * Number(caregiverPrice),
@@ -158,11 +155,19 @@ export default function BookingForm() {
           description: "O cuidador será notificado sobre sua solicitação!",
         });
         navigate("/bookings");
+      } else {
+        console.error("Resposta inesperada ao criar agendamento:", response);
+        toast({
+          title: "Erro",
+          description: "Não foi possível criar o agendamento.",
+          variant: "destructive",
+        });
       }
-    } catch {
+    } catch (err) {
+      console.error("Erro ao criar agendamento:", err);
       toast({
-        title: "Error",
-        description: "Failed to create booking",
+        title: "Erro",
+        description: "Falha ao criar agendamento",
         variant: "destructive",
       });
     } finally {
@@ -219,10 +224,12 @@ export default function BookingForm() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="birthDate">Data</Label>
+                  {/* corrigido: htmlFor bate com id do botão */}
+                  <Label htmlFor="booking-date">Data</Label>
                   <Popover>
                     <PopoverTrigger asChild>
                       <Button
+                        id="booking-date"
                         variant="outline"
                         className="w-full justify-start text-left font-normal"
                       >
@@ -254,14 +261,17 @@ export default function BookingForm() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="startTime">Horário de Início</Label>
+                    {/* corrigido: htmlFor -> id no SelectTrigger */}
+                    <Label htmlFor="booking-startTime">
+                      Horário de Início
+                    </Label>
                     <Select
                       value={formData.startTime}
                       onValueChange={(value) =>
                         setFormData((prev) => ({ ...prev, startTime: value }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="booking-startTime">
                         <SelectValue placeholder="Selecionar" />
                       </SelectTrigger>
                       <SelectContent>
@@ -275,22 +285,23 @@ export default function BookingForm() {
                   </div>
 
                   <div>
-                    <Label htmlFor="duration">Duração (horas)</Label>
+                    {/* corrigido: htmlFor -> id no SelectTrigger */}
+                    <Label htmlFor="booking-duration">Duração (horas)</Label>
                     <Select
-                      value={formData.duration.toString()}
+                      value={String(formData.duration)}
                       onValueChange={(value) =>
                         setFormData((prev) => ({
                           ...prev,
-                          duration: parseInt(value),
+                          duration: parseInt(value, 10),
                         }))
                       }
                     >
-                      <SelectTrigger>
+                      <SelectTrigger id="booking-duration">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {[2, 3, 4, 6, 8, 12].map((hours) => (
-                          <SelectItem key={hours} value={hours.toString()}>
+                          <SelectItem key={hours} value={String(hours)}>
                             {hours}h
                           </SelectItem>
                         ))}
@@ -343,7 +354,10 @@ export default function BookingForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {/* corrigido: adicionados id + name */}
                 <Textarea
+                  id="booking-notes"
+                  name="notes"
                   value={formData.notes}
                   onChange={(e) =>
                     setFormData((prev) => ({ ...prev, notes: e.target.value }))
@@ -358,7 +372,7 @@ export default function BookingForm() {
               <Users className="w-5 h-5 text-healthcare-light" />
               <CardTitle>Selecione um idoso:</CardTitle>
             </CardHeader>
-            {/* Select Elder */}
+
             {loadingElders ? (
               <Card className="p-4">
                 <p className="text-sm text-muted-foreground">Carregando...</p>
@@ -382,10 +396,7 @@ export default function BookingForm() {
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
                         <Avatar className="h-16 w-16 border-2 border-healthcare-light/20">
-                          <AvatarImage
-                            src={elder.avatarPath}
-                            alt={elder.name}
-                          />
+                          <AvatarImage src={elder.avatarPath} alt={elder.name} />
                           <AvatarFallback className="bg-healthcare-soft text-healthcare-dark font-semibold text-lg">
                             {elder.name}
                           </AvatarFallback>
@@ -464,9 +475,9 @@ export default function BookingForm() {
                       <span>Total estimado:</span>
                       <span className="text-healthcare-dark">
                         R${" "}
-                        {(formData.duration * Number(caregiverPrice)).toFixed(
-                          2
-                        )}
+                        {(
+                          formData.duration * Number(caregiverPrice)
+                        ).toFixed(2)}
                       </span>
                     </div>
                   </div>

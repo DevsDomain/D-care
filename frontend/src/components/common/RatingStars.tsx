@@ -39,20 +39,31 @@ export function RatingStars({
     lg: "text-base",
   };
 
+  // garante que o rating fique entre 0 e maxRating
+  const clampedRating = Math.max(0, Math.min(rating, maxRating));
+
   const handleStarClick = (starRating: number) => {
     if (interactive && onRatingChange) {
       onRatingChange(starRating);
     }
   };
 
+  // formata a nota como "4,3"
+  const formattedRating = Number.isFinite(clampedRating)
+    ? clampedRating.toLocaleString("pt-BR", {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    })
+    : "0,0";
+
   return (
-    <div className={cn("flex-col items-center gap-1", className)}>
+    <div className={cn("flex flex-col items-center gap-1", className)}>
       <div className="flex items-center gap-0.5">
         {Array.from({ length: maxRating }, (_, index) => {
           const starRating = index + 1;
-          const isFilled = starRating <= rating;
+          const isFilled = starRating <= clampedRating;
           const isPartiallyFilled =
-            starRating - 0.5 <= rating && starRating > rating;
+            starRating - 0.5 <= clampedRating && starRating > clampedRating;
 
           return (
             <button
@@ -63,7 +74,7 @@ export function RatingStars({
               className={cn(
                 "relative transition-colors",
                 interactive && "hover:scale-110 cursor-pointer",
-                !interactive && "cursor-default"
+                !interactive && "cursor-default",
               )}
             >
               <Star
@@ -72,7 +83,7 @@ export function RatingStars({
                   "transition-colors",
                   isFilled || isPartiallyFilled
                     ? "fill-medical-warning text-medical-warning"
-                    : "fill-none text-neutral-300"
+                    : "fill-none text-neutral-300",
                 )}
               />
               {isPartiallyFilled && (
@@ -80,7 +91,7 @@ export function RatingStars({
                   className={cn(
                     sizeClasses[size],
                     "absolute inset-0 fill-medical-warning text-medical-warning",
-                    "clip-path-[polygon(0_0,_50%_0,_50%_100%,_0_100%)]"
+                    "clip-path-[polygon(0_0,_50%_0,_50%_100%,_0_100%)]",
                   )}
                 />
               )}
@@ -94,7 +105,7 @@ export function RatingStars({
           <span className="font-medium text-foreground">
             {rating.toFixed(1)}
           </span>
-          {reviewCount !== undefined && (
+          {typeof reviewCount === "number" && reviewCount > 0 && (
             <span className="text-muted-foreground">
               ({reviewCount} {reviewCount === 1 ? "avaliação" : "avaliações"})
             </span>

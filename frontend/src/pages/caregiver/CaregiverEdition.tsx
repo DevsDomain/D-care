@@ -4,18 +4,19 @@ import {
   User,
   MapPin,
   ArrowLeft,
-  Check,
-  ArrowRight,
   Plus,
   X,
-  PillBottle,
+  Stethoscope,
   GraduationCap,
-  ShieldPlus,
   Banknote,
+  Briefcase,
+  ChevronRight,
+  Save,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button-variants";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/hooks/use-toast";
 import { AvatarInput } from "@/components/avatar-input";
@@ -34,10 +35,13 @@ export default function CaregiverEdition() {
   const { toast } = useToast();
   const { currentUser } = useAppStore();
 
-  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
+  // Local state for tags
   const [newSkill, setNewSkill] = useState("");
   const [newSpecialization, setNewSpecialization] = useState("");
+
   const [formData, setFormData] = useState<Partial<Caregiver>>({
     crm_coren: "",
     bio: "",
@@ -50,78 +54,49 @@ export default function CaregiverEdition() {
     avatarUrl: undefined,
     specializations: [],
     skills: [],
+    priceRange: "",
+    experience: "",
   });
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [noCouncilRegistration, setNoCouncilRegistration] = useState(false);
+
+  // --- Constants ---
   const commonSkills = [
     "Administração de medicamentos",
-    "Cuidados com a higiene pessoal",
+    "Higiene pessoal",
     "Alimentação assistida",
-    "Acompanhamento em consultas",
-    "Troca de curativos simples",
-    "Acompanhamento em atividades externas",
-    "Anotação de prontuário ou relatórios diários",
+    "Acompanhamento médico",
+    "Curativos simples",
+    "Atividades externas",
+    "Relatórios diários",
   ];
 
   const commonSpecializations = [
     "Geriatria",
     "Cuidador de Idosos",
-    "Clínica Médica",
-    "Medicina de Família e Comunidade",
     "Auxiliar de Enfermagem",
-    "Atendente de Enfermagem",
-    "Fisiatria e Reabilitação",
-    "Cuidados Paliativos Médicos",
-    "Cuidador Domiciliar",
+    "Fisiatria",
+    "Cuidados Paliativos",
     "Pediatria Domiciliar",
-    "Cuidador Hospitalar",
     "Técnico em Enfermagem",
-    "Técnico em Gerontologia",
-    "Técnico em Reabilitação Física",
-    "Técnico em Saúde Mental",
+    "Alzheimer e Demência",
+    "Mobilidade Reduzida",
   ];
 
-  const addSkills = (skill: string) => {
-    if (skill && !formData.skills?.includes(skill)) {
-      setFormData((prev) => ({
-        ...prev,
-        skills: [...(prev.skills || []), skill],
-      }));
-    }
-    setNewSkill("");
-  };
+  const navigationItems = [
+    { id: "personal", label: "Dados Pessoais", icon: User },
+    { id: "address", label: "Localização", icon: MapPin },
+    { id: "skills", label: "Habilidades", icon: Stethoscope },
+    { id: "professional", label: "Profissional", icon: Briefcase },
+  ];
 
-  const removeSkill = (skill: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      skills: prev.skills?.filter((c) => c !== skill) || [],
-    }));
-  };
+  // --- Logic ---
 
-  const addSpecialization = (specialization: string) => {
-    if (specialization && !formData.specializations?.includes(specialization)) {
-      setFormData((prev) => ({
-        ...prev,
-        specializations: [...(prev.specializations || []), specialization],
-      }));
-    }
-    setNewSpecialization("");
-  };
-
-  const removeSpecialization = (specialization: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      specializations:
-        prev.specializations?.filter((m) => m !== specialization) || [],
-    }));
-  };
-
-  // Load existing caregiver data
   useEffect(() => {
     const fetchCaregiver = async () => {
       try {
         const caregiver = await fetchCaregiverProfile(currentUser!.id);
-        console.log("CAREGIVER", caregiver);
         setFormData({
           crm_coren: caregiver.crm_coren || "",
           bio: caregiver.bio,
@@ -137,8 +112,15 @@ export default function CaregiverEdition() {
           priceRange: caregiver.priceRange || "",
           experience: caregiver.experience || "",
         });
+
+        if (caregiver.bio && !caregiver.crm_coren) {
+          setNoCouncilRegistration(true);
+        }
       } catch (error) {
         console.error("Error loading caregiver:", error);
+        toast({ title: "Erro ao carregar dados", variant: "destructive" });
+      } finally {
+        setInitialLoading(false);
       }
     };
 
@@ -147,72 +129,128 @@ export default function CaregiverEdition() {
     }
   }, []);
 
-  const handleGetAdress = async (cep: string) => {
-    const endereco = await getAdressByCEP(cep);
-    if (endereco?.address) {
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const addTag = (
+    value: string,
+    field: "skills" | "specializations",
+    setter: (val: string) => void
+  ) => {
+    if (value && !formData[field]?.includes(value)) {
       setFormData((prev) => ({
         ...prev,
-        address: endereco.address,
-        city: endereco.city,
-        state: endereco.state,
-        zipCode: endereco.cep,
+        [field]: [...(prev[field] || []), value],
       }));
+    }
+    setter("");
+  };
+
+  const removeTag = (value: string, field: "skills" | "specializations") => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: prev[field]?.filter((item) => item !== value) || [],
+    }));
+  };
+
+  const handleGetAdress = async (cep: string) => {
+    const cleanCep = cep.replace(/\D/g, "");
+    if (cleanCep.length === 8) {
+      const endereco = await getAdressByCEP(cleanCep);
+      if (endereco?.address) {
+        setFormData((prev) => ({
+          ...prev,
+          address: endereco.address,
+          city: endereco.city,
+          state: endereco.state,
+          zipCode: endereco.cep,
+        }));
+      }
     }
   };
 
   const handleSubmit = async () => {
     if (!currentUser?.id) return;
-    setLoading(true);
 
-    // ✅ Local validation for CRM/COREN format
-    const crmPattern = /^(CRM|COREN|CRP|CREFITO)(-[A-Z]{2})?\s?\d{4,8}$/i;
+    // Validation Check
+    const requiredFields = {
+      bio: "Biografia",
+      zipCode: "CEP",
+      address: "Endereço",
+      city: "Cidade",
+      priceRange: "Preço Hora",
+      experience: "Experiência",
+    };
 
-    if (formData.crm_coren && !crmPattern.test(formData.crm_coren.trim())) {
+    const missing = Object.entries(requiredFields).filter(
+      ([key]) => !formData[key as keyof Caregiver]
+    );
+
+    if (missing.length > 0) {
       toast({
-        title: "CRM/COREN inválido",
-        description:
-          "Use formatos válidos como: CRM-SP 123456, COREN-SP 123456, CRP 123456 ou CREFITO 123456",
+        title: "Campos obrigatórios faltando",
+        description: `Por favor preencha: ${missing
+          .map((m) => m[1])
+          .join(", ")}`,
         variant: "destructive",
       });
-      setLoading(false);
       return;
     }
 
-    try {
-      const form = new FormData();
-      form.append("crm_coren", formData.crm_coren || "");
-      form.append("bio", formData.bio || "");
-      form.append("address", formData.address || "");
-      form.append("city", formData.city || "");
-      form.append("state", formData.state || "");
-      form.append("zipCode", formData.zipCode || "");
-      form.append("skills", JSON.stringify(formData.skills || []));
-      form.append(
-        "specializations",
-        JSON.stringify(formData.specializations || [])
-      );
-      form.append("priceRange", formData.priceRange || "");
-      form.append("experience", formData.experience || "");
+    setLoading(true);
 
-      if (avatarFile) form.append("avatar", avatarFile);
+    // Registration Validation Logic
+    const registration = formData.crm_coren?.trim() || "";
+    if (!noCouncilRegistration && registration) {
+      const legacyPattern = /^(CRM|COREN)(-[A-Z]{2})?\s?\d{4,8}$/i;
+      const patterns = [
+        /^CRM[-\/ ]?[A-Z]{2}\s?\d{4,6}$/i,
+        /^COREN[-\/ ]?[A-Z]{2}[- ]?\d{4,6}$/i,
+        /^CRP\s?\d{2}\/\d{4,6}$/i,
+        /^CREFITO-?\d{1,2}[-\/ ]?\d{4,6}-?[A-Z]{1,3}$/i,
+        legacyPattern,
+      ];
+
+      if (!patterns.some((p) => p.test(registration))) {
+        toast({
+          title: "Formato de registro inválido",
+          description: "Verifique o formato do seu CRM, COREN, etc.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        // Scroll to error
+        scrollToSection("personal");
+        return;
+      }
+    }
+
+    try {
+      const normalizedCrmCoren = noCouncilRegistration ? "" : registration;
+
+      // FormData construction omitted for brevity, logic remains same
+      // ...
 
       await updateCaregiverProfile(
         formData.userId!,
-        formData,
+        { ...formData, crm_coren: normalizedCrmCoren },
         avatarFile || undefined
       );
 
       toast({
         title: "Perfil atualizado!",
-        description: "As informações foram salvas com sucesso.",
+        description: "Seus dados foram salvos com sucesso.",
+        className: "bg-green-600 text-white border-none",
       });
 
       navigate("/");
     } catch (error) {
-      console.error("Error updating caregiver:", error);
       toast({
-        title: "Erro",
-        description: "Não foi possível salvar as alterações.",
+        title: "Erro ao salvar",
+        description: "Tente novamente mais tarde.",
         variant: "destructive",
       });
     } finally {
@@ -220,461 +258,426 @@ export default function CaregiverEdition() {
     }
   };
 
-  const isStep1Valid = formData.crm_coren && formData.bio;
-  const isStep2Valid = formData.address && formData.city && formData.state;
-  const isStep3Valid = formData.skills && formData.specializations;
-  const isStep4Valid = formData.priceRange && formData.experience;
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-8 h-8 animate-spin text-healthcare-primary" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-slate-50 font-sans pb-28">
       {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-6">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={() => (step === 1 ? navigate(-1) : setStep(step - 1))}
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">
-              Edição do Cuidador
-            </h1>
-            <p className="text-sm text-muted-foreground">Passo {step} de 4</p>
-          </div>
-        </div>
-
-        <div className="mt-4 flex gap-2">
-          {[1, 2, 3, 4].map((num) => (
-            <div
-              key={num}
-              className={`h-2 flex-1 rounded-full transition-colors ${
-                step >= num ? "bg-healthcare-light" : "bg-muted"
-              }`}
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="p-4 space-y-6">
-        {/* Step 1 */}
-        {step === 1 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <User className="w-5 h-5 text-healthcare-light" />
-                  Dados Pessoais
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <AvatarInput
-                  value={avatarFile}
-                  label="Foto de Perfil"
-                  onChange={(file) => setAvatarFile(file)}
-                  defaultUrl={formData.avatarUrl || undefined}
-                />
-                <div>
-                  <Label htmlFor="crm_coren" className="mb-2">
-                    CRM/COREN
-                  </Label>
-                  <Input
-                    id="crm_coren"
-                    value={formData.crm_coren || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        crm_coren: e.target.value,
-                      }))
-                    }
-                    placeholder="Digite seu CRM ou COREN"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="bio" className="mb-2">
-                    Biografia
-                  </Label>
-                  <Textarea
-                    id="bio"
-                    value={formData.bio || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, bio: e.target.value }))
-                    }
-                    placeholder="Fale um pouco sobre você"
-                    className="h-32  text-wrap"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-4">
             <Button
-              onClick={() => setStep(2)}
-              disabled={!isStep1Valid}
-              className="w-full"
-              variant="healthcare"
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="rounded-full hover:bg-slate-100"
             >
-              <ArrowRight className="w-4 h-4 ml-2" />
-              Continuar
+              <ArrowLeft className="w-5 h-5 text-slate-600" />
+            </Button>
+            <div>
+              <h1 className="text-lg font-bold text-slate-900">
+                Editar dados profissionais
+              </h1>
+            </div>
+          </div>
+          <div className="hidden md:block">
+            <Button
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Save className="w-4 h-4 mr-2" />
+              )}
+              Salvar Alterações
             </Button>
           </div>
-        )}
+        </div>
+      </header>
 
-        {/* Step 2 */}
-        {step === 2 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MapPin className="w-5 h-5 text-healthcare-light" />
-                  Endereço
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="zipCode">CEP</Label>
-                  <Input
-                    id="zipCode"
-                    type="number"
-                    value={formData.zipCode || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        zipCode: e.target.value,
-                      }))
-                    }
-                    onBlur={() => handleGetAdress(formData.zipCode || "")}
-                    placeholder="00000-000"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="address">Endereço</Label>
-                  <Input
-                    id="address"
-                    value={formData.address || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        address: e.target.value,
-                      }))
-                    }
-                    placeholder="Rua, número"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="city">Cidade</Label>
-                  <Input
-                    id="city"
-                    value={formData.city || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, city: e.target.value }))
-                    }
-                    placeholder="Ex: São Paulo"
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="state">Estado</Label>
-                  <Input
-                    id="state"
-                    value={formData.state || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        state: e.target.value,
-                      }))
-                    }
-                    maxLength={2}
-                    placeholder="SP"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-3">
-              <Button
-                onClick={() => setStep(3)}
-                disabled={!isStep1Valid}
-                className="w-full"
-                variant="healthcare"
-              >
-                <ArrowRight className="w-4 h-4 ml-2" />
-                Continuar
-              </Button>
-              <Button
-                onClick={() => setStep(1)}
-                variant="outline"
-                className="w-full"
-              >
-                Voltar
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!isStep2Valid || loading}
-                className="w-full"
-                variant="success"
-              >
-                {loading ? "Salvando..." : <Check className="w-4 h-4 mr-2" />}
-                {loading ? "" : "Salvar Alterações"}
-              </Button>
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+          {/* Sidebar Navigation (Desktop) */}
+          <aside className="hidden md:block md:col-span-3 lg:col-span-3">
+            <div className="sticky top-24 space-y-1">
+              <p className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Seções
+              </p>
+              {navigationItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
+                  className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-medium text-slate-600 rounded-md hover:bg-slate-100 hover:text-healthcare-primary transition-colors text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon className="w-4 h-4 text-slate-400 group-hover:text-healthcare-primary" />
+                    {item.label}
+                  </div>
+                  <ChevronRight className="w-4 h-4 opacity-0 group-hover:opacity-50" />
+                </button>
+              ))}
             </div>
-          </div>
-        )}
+          </aside>
 
-        {step === 3 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <PillBottle className="w-5 h-5 text-healthcare-light" />
-                  Habilidades e Competências
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="mb-2">Habilidades Existentes</Label>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {formData.skills?.map((skill) => (
-                      <Badge
-                        key={skill}
-                        variant="secondary"
-                        className="bg-healthcare-soft text-healthcare-dark"
-                      >
-                        {skill}
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="ml-1 h-4 w-4 p-0"
-                          onClick={() => removeSkill(skill)}
-                        >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </Badge>
-                    ))}
+          {/* Form Content */}
+          <div className="md:col-span-9 lg:col-span-8 space-y-8">
+            {/* SECTION 1: Personal Data */}
+            <section id="personal" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="w-5 h-5 text-healthcare-primary" />
+                <h2 className="text-xl font-semibold text-slate-800">
+                  Dados Pessoais
+                </h2>
+              </div>
+              <Card className="border-none shadow-sm ring-1 ring-slate-200">
+                <CardContent className="p-6 space-y-6">
+                  <div className="flex flex-col sm:flex-row gap-6 items-start">
+                    <div className="shrink-0 mx-auto sm:mx-0">
+                      <AvatarInput
+                        value={avatarFile}
+                        onChange={setAvatarFile}
+                        defaultUrl={formData.avatarUrl}
+                      />
+                    </div>
+                    <div className="flex-1 space-y-4 w-full">
+                      <div>
+                        <Label className="text-base">
+                          Biografia <span className="text-red-500">*</span>
+                        </Label>
+                        <Textarea
+                          value={formData.bio || ""}
+                          onChange={(e) =>
+                            setFormData((p) => ({ ...p, bio: e.target.value }))
+                          }
+                          className="mt-2 min-h-[120px] resize-none"
+                          placeholder="Descreva sua experiência, personalidade e o que te motiva a cuidar."
+                        />
+                        <p className="text-xs text-muted-foreground mt-1 text-right">
+                          Mínimo 50 caracteres recomendado
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex gap-2">
-                    <Input
-                      value={newSkill}
-                      onChange={(e) => setNewSkill(e.target.value)}
-                      placeholder="Digite uma habilidade/competência"
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addSkills(newSkill);
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <Label className="mb-2 block">
+                      Registro Profissional (Opcional)
+                    </Label>
+                    <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                      <Input
+                        placeholder="Ex: COREN-SP 123456"
+                        className="bg-white flex-1"
+                        value={formData.crm_coren || ""}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            crm_coren: e.target.value.toUpperCase(),
+                          }))
                         }
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => addSkills(newSkill)}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {commonSkills.map((skill) => (
-                      <Button
-                        key={skill}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => addSkills(skill)}
-                        disabled={formData.skills?.includes(skill)}
-                      >
-                        {skill}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <GraduationCap className="w-5 h-5 text-healthcare-light" />
-                  Especialização e Cursos
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label className="mb-2">Especializações atuais</Label>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {formData.specializations?.map((specialization) => (
-                      <Badge
-                        key={specialization}
-                        variant="secondary"
-                        className="bg-trust-blue/10 text-trust-blue"
-                      >
-                        {specialization}
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="ml-1 h-4 w-4 p-0"
-                          onClick={() => removeSpecialization(specialization)}
+                        disabled={noCouncilRegistration}
+                      />
+                      <div className="flex items-center gap-2 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          id="no_reg"
+                          className="rounded border-slate-300"
+                          checked={noCouncilRegistration}
+                          onChange={(e) => {
+                            setNoCouncilRegistration(e.target.checked);
+                            if (e.target.checked)
+                              setFormData((p) => ({ ...p, crm_coren: "" }));
+                          }}
+                        />
+                        <Label
+                          htmlFor="no_reg"
+                          className="text-sm font-normal cursor-pointer"
                         >
-                          <X className="w-3 h-3" />
-                        </Button>
-                      </Badge>
-                    ))}
+                          Não possuo registro
+                        </Label>
+                      </div>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+            </section>
 
-                  <div className="flex gap-2">
-                    <Input
-                      value={newSpecialization}
-                      onChange={(e) => setNewSpecialization(e.target.value)}
-                      placeholder="Digite uma especialização"
-                      onKeyPress={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          addSpecialization(newSpecialization);
+            {/* SECTION 2: Address */}
+            <section id="address" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="w-5 h-5 text-healthcare-primary" />
+                <h2 className="text-xl font-semibold text-slate-800">
+                  Localização
+                </h2>
+              </div>
+              <Card className="border-none shadow-sm ring-1 ring-slate-200">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                    <div className="sm:col-span-4">
+                      <Label>
+                        CEP <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        value={formData.zipCode || ""}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            zipCode: e.target.value,
+                          }))
                         }
-                      }}
-                    />
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => addSpecialization(newSpecialization)}
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
+                        onBlur={(e) => handleGetAdress(e.target.value)}
+                        placeholder="00000-000"
+                        className="mt-1.5"
+                        maxLength={9}
+                      />
+                    </div>
+                    <div className="sm:col-span-8">
+                      <Label>Endereço</Label>
+                      <Input
+                        value={formData.address || ""}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            address: e.target.value,
+                          }))
+                        }
+                        className="mt-1.5"
+                      />
+                    </div>
+                    <div className="sm:col-span-9">
+                      <Label>Cidade</Label>
+                      <Input
+                        value={formData.city || ""}
+                        readOnly
+                        className="mt-1.5 bg-slate-50 text-slate-600"
+                      />
+                    </div>
+                    <div className="sm:col-span-3">
+                      <Label>Estado</Label>
+                      <Input
+                        value={formData.state || ""}
+                        readOnly
+                        className="mt-1.5 bg-slate-50 text-slate-600"
+                      />
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
+            </section>
 
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {commonSpecializations.map((specialization) => (
+            {/* SECTION 3: Skills */}
+            <section id="skills" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Stethoscope className="w-5 h-5 text-healthcare-primary" />
+                <h2 className="text-xl font-semibold text-slate-800">
+                  Competências
+                </h2>
+              </div>
+              <Card className="border-none shadow-sm ring-1 ring-slate-200">
+                <CardContent className="p-6 space-y-6">
+                  {/* Skills */}
+                  <div>
+                    <Label className="mb-3 block text-base">
+                      Habilidades Práticas
+                    </Label>
+                    <div className="flex gap-2 mb-4">
+                      <Input
+                        placeholder="Adicionar habilidade..."
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" &&
+                          addTag(newSkill, "skills", setNewSkill)
+                        }
+                      />
                       <Button
-                        key={specialization}
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                        onClick={() => addSpecialization(specialization)}
-                        disabled={formData.specializations?.includes(
-                          specialization
-                        )}
+                        variant="secondary"
+                        onClick={() => addTag(newSkill, "skills", setNewSkill)}
                       >
-                        {specialization}
+                        <Plus className="w-4 h-4" />
                       </Button>
-                    ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {formData.skills?.map((tag) => (
+                        <Badge
+                          key={tag}
+                          className="pl-3 pr-1 py-1 gap-1 text-sm bg-healthcare-primary/10 text-healthcare-dark hover:bg-healthcare-primary/20 border-transparent"
+                        >
+                          {tag}
+                          <X
+                            className="w-3 h-3 cursor-pointer"
+                            onClick={() => removeTag(tag, "skills")}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {commonSkills
+                        .filter((s) => !formData.skills?.includes(s))
+                        .map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => addTag(s, "skills", setNewSkill)}
+                            className="text-xs border rounded-full px-3 py-1 text-slate-500 hover:border-healthcare-primary hover:text-healthcare-primary transition-colors"
+                          >
+                            + {s}
+                          </button>
+                        ))}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <div className="space-y-6">
-              <Button
-                onClick={() => setStep(4)}
-                disabled={!isStep3Valid}
-                className="w-full"
-                variant="healthcare"
-              >
-                <ArrowRight className="w-4 h-4 ml-2" />
-                Continuar
-              </Button>
-              <Button
-                onClick={() => setStep(2)}
-                variant="outline"
-                className="w-full"
-              >
-                Voltar
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!isStep3Valid || loading}
-                className="w-full"
-                variant="success"
-              >
-                {loading ? "Salvando..." : <Check className="w-4 h-4 mr-2" />}
-                {loading ? "" : "Salvar Alterações"}
-              </Button>
-            </div>
+                  <div className="h-px bg-slate-100" />
+
+                  {/* Specializations */}
+                  <div>
+                    <Label className="mb-3 block text-base flex items-center gap-2">
+                      <GraduationCap className="w-4 h-4" /> Especializações
+                    </Label>
+                    <div className="flex gap-2 mb-4">
+                      <Input
+                        placeholder="Ex: Técnico em Enfermagem..."
+                        value={newSpecialization}
+                        onChange={(e) => setNewSpecialization(e.target.value)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" &&
+                          addTag(
+                            newSpecialization,
+                            "specializations",
+                            setNewSpecialization
+                          )
+                        }
+                      />
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          addTag(
+                            newSpecialization,
+                            "specializations",
+                            setNewSpecialization
+                          )
+                        }
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {formData.specializations?.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant="outline"
+                          className="pl-3 pr-1 py-1 gap-1 text-sm border-blue-200 bg-blue-50 text-blue-700"
+                        >
+                          {tag}
+                          <X
+                            className="w-3 h-3 cursor-pointer"
+                            onClick={() => removeTag(tag, "specializations")}
+                          />
+                        </Badge>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {commonSpecializations
+                        .filter((s) => !formData.specializations?.includes(s))
+                        .map((s) => (
+                          <button
+                            key={s}
+                            onClick={() =>
+                              addTag(s, "specializations", setNewSpecialization)
+                            }
+                            className="text-xs bg-slate-100 rounded-md px-2 py-1 text-slate-600 hover:bg-slate-200 transition-colors"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
+
+            {/* SECTION 4: Professional */}
+            <section id="professional" className="scroll-mt-24 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Briefcase className="w-5 h-5 text-healthcare-primary" />
+                <h2 className="text-xl font-semibold text-slate-800">
+                  Profissional & Financeiro
+                </h2>
+              </div>
+              <Card className="border-none shadow-sm ring-1 ring-slate-200">
+                <CardContent className="p-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label>
+                        Tempo de Experiência{" "}
+                        <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        className="mt-1.5"
+                        placeholder="Ex: 5 anos"
+                        value={formData.experience || ""}
+                        onChange={(e) =>
+                          setFormData((p) => ({
+                            ...p,
+                            experience: e.target.value,
+                          }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label>
+                        Valor Hora (R$) <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="relative mt-1.5">
+                        <span className="absolute left-3 top-2.5 text-slate-500">
+                          R$
+                        </span>
+                        <Input
+                          className="pl-10"
+                          type="number"
+                          placeholder="0,00"
+                          value={formData.priceRange || ""}
+                          onChange={(e) =>
+                            setFormData((p) => ({
+                              ...p,
+                              priceRange: e.target.value,
+                            }))
+                          }
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                        <Banknote className="w-3 h-3" /> Valor recebido
+                        diretamente do cliente
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </section>
           </div>
-        )}
+        </div>
+      </main>
 
-        {/* Step 4 */}
-        {step === 4 && (
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <ShieldPlus className="w-5 h-5 text-healthcare-light" />
-                  Profissional
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="xp" className="mb-2">
-                    Tempo de Experiência
-                  </Label>
-                  <Input
-                    id="xp"
-                    type="text"
-                    value={formData.experience || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        experience: e.target.value,
-                      }))
-                    }
-                    onBlur={() => handleGetAdress(formData.zipCode || "")}
-                    placeholder="5 anos"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Banknote className="w-5 h-5 text-healthcare-light" />
-                  Financeiro
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label htmlFor="price" className="mb-2">
-                    Preço médio do serviço por hora
-                  </Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={formData.priceRange || ""}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        priceRange: e.target.value,
-                      }))
-                    }
-                    placeholder="R$ 25 Hora"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="space-y-3">
-              <Button
-                onClick={() => setStep(3)}
-                variant="outline"
-                className="w-full"
-              >
-                Voltar
-              </Button>
-              <Button
-                onClick={handleSubmit}
-                disabled={!isStep4Valid || loading}
-                className="w-full"
-                variant="success"
-              >
-                {loading ? "Salvando..." : <Check className="w-4 h-4 mr-2" />}
-                {loading ? "" : "Salvar Alterações"}
-              </Button>
-            </div>
-          </div>
-        )}
+      {/* Floating Action Bar (Mobile/Tablet) */}
+      <div className="w-full m-auto items-center flex justify-center">
+        <Button
+          variant="success"
+          onClick={handleSubmit}
+          disabled={loading}
+          className="w-1/2 text-white h-12 text-lg shadow-md"
+        >
+          {loading ? "Salvando..." : "Salvar Alterações"}
+        </Button>
       </div>
     </div>
   );
